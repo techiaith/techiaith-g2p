@@ -1,0 +1,42 @@
+{"text": "da", "normalized": "da", "phone_tokens": ["ˈ", "d", "aa"], "ids": [1, 0, 4, 0, 38, 0, 21, 0, 2]}
+{"text": "tad", "normalized": "tad", "phone_tokens": ["ˈ", "t", "aa", "d"], "ids": [1, 0, 4, 0, 58, 0, 21, 0, 38, 0, 2]}
+{"text": "ci", "normalized": "ci", "phone_tokens": ["ˈ", "k", "ii"], "ids": [1, 0, 4, 0, 36, 0, 25, 0, 2]}
+{"text": "cul", "normalized": "cul", "phone_tokens": ["ˈ", "k", "y", "l"], "ids": [1, 0, 4, 0, 36, 0, 32, 0, 45, 0, 2]}
+{"text": "sych", "normalized": "sych", "phone_tokens": ["ˈ", "s", "yy", "x"], "ids": [1, 0, 4, 0, 56, 0, 33, 0, 37, 0, 2]}
+{"text": "llais", "normalized": "llais", "phone_tokens": ["ˈ", "lh", "ai", "s"], "ids": [1, 0, 4, 0, 46, 0, 65, 0, 56, 0, 2]}
+{"text": "cae", "normalized": "cae", "phone_tokens": ["ˈ", "k", "aay"], "ids": [1, 0, 4, 0, 36, 0, 70, 0, 2]}
+{"text": "haul", "normalized": "haul", "phone_tokens": ["ˈ", "hh", "ay", "l"], "ids": [1, 0, 4, 0, 43, 0, 69, 0, 45, 0, 2]}
+{"text": "mewn", "normalized": "mewn", "phone_tokens": ["m", "eu", "n"], "ids": [1, 0, 47, 0, 67, 0, 49, 0, 2]}
+{"text": "cnoi", "normalized": "cnoi", "phone_tokens": ["ˈ", "k", "n", "oi"], "ids": [1, 0, 4, 0, 36, 0, 49, 0, 68, 0, 2]}
+{"text": "dwyn", "normalized": "dwyn", "phone_tokens": ["ˈ", "d", "uy", "n"], "ids": [1, 0, 4, 0, 38, 0, 73, 0, 49, 0, 2]}
+{"text": "briw", "normalized": "briw", "phone_tokens": ["ˈ", "b", "r", "iu"], "ids": [1, 0, 4, 0, 35, 0, 54, 0, 74, 0, 2]}
+{"text": "trowsus", "normalized": "trowsus", "phone_tokens": ["ˈ", "t", "r", "ou", "|", "s", "y", "s"], "ids": [1, 0, 4, 0, 58, 0, 54, 0, 75, 0, 6, 0, 56, 0, 32, 0, 56, 0, 2]}
+{"text": "pawb", "normalized": "pawb", "phone_tokens": ["ˈ", "p", "au", "b"], "ids": [1, 0, 4, 0, 53, 0, 77, 0, 35, 0, 2]}
+{"text": "bach", "normalized": "bach", "phone_tokens": ["ˈ", "b", "aa", "x"], "ids": [1, 0, 4, 0, 35, 0, 21, 0, 37, 0, 2]}
+{"text": "dydd", "normalized": "dydd", "phone_tokens": ["ˈ", "d", "yy", "dh"], "ids": [1, 0, 4, 0, 38, 0, 33, 0, 39, 0, 2]}
+{"text": "rhan", "normalized": "rhan", "phone_tokens": ["ˈ", "rh", "a", "n"], "ids": [1, 0, 4, 0, 55, 0, 20, 0, 49, 0, 2]}
+{"text": "ynys", "normalized": "ynys", "phone_tokens": ["ˈ", "@", "|", "n", "y", "s"], "ids": [1, 0, 4, 0, 30, 0, 6, 0, 49, 0, 32, 0, 56, 0, 2]}
+{"text": "mynydd", "normalized": "mynydd", "phone_tokens": ["ˈ", "m", "@", "|", "n", "y", "dh"], "ids": [1, 0, 4, 0, 47, 0, 30, 0, 6, 0, 49, 0, 32, 0, 39, 0, 2]}
+{"text": "calon", "normalized": "calon", "phone_tokens": ["ˈ", "k", "a", "|", "l", "o", "n"], "ids": [1, 0, 4, 0, 36, 0, 20, 0, 6, 0, 45, 0, 26, 0, 49, 0, 2]}
+{"text": "llyfr", "normalized": "llyfr", "phone_tokens": ["ˈ", "lh", "@", "|", "v", "y", "r"], "ids": [1, 0, 4, 0, 46, 0, 30, 0, 6, 0, 40, 0, 32, 0, 54, 0, 2]}
+{"text": "saith", "normalized": "saith", "phone_tokens": ["ˈ", "s", "ai", "th"], "ids": [1, 0, 4, 0, 56, 0, 65, 0, 59, 0, 2]}
+{"text": "ateb", "normalized": "ateb", "phone_tokens": ["ˈ", "a", "|", "t", "e", "b"], "ids": [1, 0, 4, 0, 20, 0, 6, 0, 58, 0, 22, 0, 35, 0, 2]}
+{"text": "mêl", "normalized": "mêl", "phone_tokens": ["ˈ", "m", "ee", "l"], "ids": [1, 0, 4, 0, 47, 0, 23, 0, 45, 0, 2]}
+{"text": "tôn", "normalized": "tôn", "phone_tokens": ["ˈ", "t", "oo", "n"], "ids": [1, 0, 4, 0, 58, 0, 27, 0, 49, 0, 2]}
+{"text": "cŵn", "normalized": "cŵn", "phone_tokens": ["ˈ", "k", "uu", "n"], "ids": [1, 0, 4, 0, 36, 0, 29, 0, 49, 0, 2]}
+{"text": "tŷ", "normalized": "tŷ", "phone_tokens": ["ˈ", "t", "yy"], "ids": [1, 0, 4, 0, 58, 0, 33, 0, 2]}
+{"text": "iaith", "normalized": "iaith", "phone_tokens": ["ˈ", "j", "ai", "th"], "ids": [1, 0, 4, 0, 63, 0, 65, 0, 59, 0, 2]}
+{"text": "nghalon", "normalized": "nghalon", "phone_tokens": ["ˈ", "ngh", "a", "|", "l", "o", "n"], "ids": [1, 0, 4, 0, 52, 0, 20, 0, 6, 0, 45, 0, 26, 0, 49, 0, 2]}
+{"text": "computer", "normalized": "computer", "phone_tokens": ["k", "@", "m", "|", "p", "j", "ˈ", "uu", "|", "t", "@r"], "ids": [1, 0, 36, 0, 30, 0, 47, 0, 6, 0, 53, 0, 63, 0, 4, 0, 29, 0, 6, 0, 58, 0, 34, 0, 2]}
+{"text": "hello", "normalized": "hello", "phone_tokens": ["hh", "@", "|", "l", "ˈ", "ou"], "ids": [1, 0, 43, 0, 30, 0, 6, 0, 45, 0, 4, 0, 75, 0, 2]}
+{"text": "welcome", "normalized": "welcome", "phone_tokens": ["w", "ˈ", "e", "l", "|", "k", "@", "m"], "ids": [1, 0, 64, 0, 4, 0, 22, 0, 45, 0, 6, 0, 36, 0, 30, 0, 47, 0, 2]}
+{"text": "abercrâf", "normalized": "abercrâf", "phone_tokens": ["a", "|", "b", "e", "r", "|", "ˈ", "k", "r", "aa", "v"], "ids": [1, 0, 20, 0, 6, 0, 35, 0, 22, 0, 54, 0, 6, 0, 4, 0, 36, 0, 54, 0, 21, 0, 40, 0, 2]}
+{"text": "aberdeuddwr", "normalized": "aberdeuddwr", "phone_tokens": ["a", "|", "b", "e", "r", "|", "ˈ", "d", "ey", "|", "dh", "u", "r"], "ids": [1, 0, 20, 0, 6, 0, 35, 0, 22, 0, 54, 0, 6, 0, 4, 0, 38, 0, 71, 0, 6, 0, 39, 0, 28, 0, 54, 0, 2]}
+{"text": "ci bach", "normalized": "ci bach", "phone_tokens": ["ˈ", "k", "ii", " ", "ˈ", "b", "aa", "x"], "ids": [1, 0, 4, 0, 36, 0, 25, 0, 3, 0, 4, 0, 35, 0, 21, 0, 37, 0, 2]}
+{"text": "tŷ ci", "normalized": "tŷ ci", "phone_tokens": ["ˈ", "t", "yy", " ", "ˈ", "k", "ii"], "ids": [1, 0, 4, 0, 58, 0, 33, 0, 3, 0, 4, 0, 36, 0, 25, 0, 2]}
+{"text": "ci da", "normalized": "ci da", "phone_tokens": ["ˈ", "k", "ii", " ", "ˈ", "d", "aa"], "ids": [1, 0, 4, 0, 36, 0, 25, 0, 3, 0, 4, 0, 38, 0, 21, 0, 2]}
+{"text": "ci bach.", "normalized": "ci bach.", "phone_tokens": ["ˈ", "k", "ii", " ", "ˈ", "b", "aa", "x", "."], "ids": [1, 0, 4, 0, 36, 0, 25, 0, 3, 0, 4, 0, 35, 0, 21, 0, 37, 0, 7, 0, 2]}
+{"text": "ci, bach", "normalized": "ci, bach", "phone_tokens": ["ˈ", "k", "ii", ",", " ", "ˈ", "b", "aa", "x"], "ids": [1, 0, 4, 0, 36, 0, 25, 0, 8, 0, 3, 0, 4, 0, 35, 0, 21, 0, 37, 0, 2]}
+{"text": "tŷ ci?", "normalized": "tŷ ci?", "phone_tokens": ["ˈ", "t", "yy", " ", "ˈ", "k", "ii", "?"], "ids": [1, 0, 4, 0, 58, 0, 33, 0, 3, 0, 4, 0, 36, 0, 25, 0, 9, 0, 2]}
+{"text": "\"ci\"", "normalized": "\"ci\"", "phone_tokens": ["\"", "ˈ", "k", "ii", "\""], "ids": [1, 0, 16, 0, 4, 0, 36, 0, 25, 0, 16, 0, 2]}
+{"text": "da — da.", "normalized": "da — da.", "phone_tokens": ["ˈ", "d", "aa", " ", "—", " ", "ˈ", "d", "aa", "."], "ids": [1, 0, 4, 0, 38, 0, 21, 0, 3, 0, 19, 0, 3, 0, 4, 0, 38, 0, 21, 0, 7, 0, 2]}

@@ -1,0 +1,34 @@
+techiaith-g2p
+Uned Technolegau Iaith, Prifysgol Bangor / Language Technologies Unit, Bangor University
+
+The code in this package is dedicated to the public domain under CC0 1.0 Universal (see
+LICENSE) by Prifysgol Bangor University.
+
+CC0 waives the Language Technologies Unit's own rights; it cannot waive anyone else's. The
+bundled pronunciation data is third-party and keeps its own terms, so the attributions below
+still apply to anything you redistribute:
+
+* Geiriadur Ynganu Bangor (the Bangor Pronouncing Dictionary), BSD-2-Clause, Copyright (C)
+  2005-2025 Prifysgol Bangor University --
+  techiaith/g2p/data/geiriadur-ynganu-bangor/ (see its LICENSE and README), including
+  bangordict.dict, bangordict.en.dict, bangordict.xx.dict, cmudict.dict, and phoneset.md.
+  https://github.com/techiaith/geiriadur-ynganu-bangor
+
+  Its README asks: "If you make use of or redistribute this material we request that you
+  acknowledge its origin in your descriptions." This NOTICE is that acknowledgement: the
+  origin of every file in this directory is the School of Linguistics and the Language
+  Technologies Unit, Bangor University.
+
+  One file in that directory, cmudict.dict, has a second origin worth calling out on its
+  own: it is 119,305 English words and pronunciations, e.g.
+  "'cause (foreign,en,cmu) k @ z /kəz/", sourced from CMUdict and re-transcribed into the
+  Bangor phoneset. Attribution is therefore dual -- Bangor for the file and its BSD-2-Clause
+  distribution, Carnegie Mellon University for the underlying English word list and
+  pronunciations (see the CMUdict entry below).
+
+* CMUdict, 2-clause BSD, Copyright (C) 1993-2015 Carnegie Mellon University --
+  techiaith/g2p/data/cmudict/LICENSE, and the derived
+  techiaith/g2p/data/english/cmudict_native.dict.
+
+No voice model is bundled. The models carry their own licences:
+https://huggingface.co/techiaith/cy_en_GB-bu_tts

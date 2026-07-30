@@ -1,0 +1,55 @@
+[build-system]
+# >=1.26: the first release that accepts license-files as an array (below). Older hatchling
+# raises "Field 'project.license-files' must be a table" and aborts the build -- do not relax
+# this bound without checking that error is actually gone.
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "techiaith-g2p"
+version = "1.0.1"
+description = "The permissive Bangor Welsh G2P: Welsh/English text to Piper phoneme ids"
+readme = "README-pypi.md"
+requires-python = ">=3.10"
+license = "CC0-1.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Uned Technolegau Iaith, Prifysgol Bangor", email = "techiaith@bangor.ac.uk" }]
+keywords = ["welsh", "cymraeg", "g2p", "phonemizer", "tts", "text-to-speech", "piper"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+  "Topic :: Software Development :: Libraries",
+]
+# No dependencies, deliberately. See tests/test_package.py::test_no_third_party_imports_in_the_g2p
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/techiaith/techiaith-g2p"
+Model = "https://huggingface.co/techiaith/cy_en_GB-bu_tts"
+Dictionary = "https://github.com/techiaith/geiriadur-ynganu-bangor"
+
+[tool.hatch.build.targets.wheel]
+packages = ["techiaith"]
+
+# The dictionaries ARE the package: 12.57 MiB raw deflates to 2.81 MiB, far under PyPI's 100 MB
+# per-file limit. Download-on-first-use would add a network dependency to a component whose
+# selling point is having none.
+#
+# hatchling requires `exclude` as an array of strings (a table of path = true, as in an earlier
+# draft of this file, raises "Field ... must be an array of strings"). The reasons below are
+# unchanged from that draft:
+exclude = [
+  # 3.6 MB, never read at runtime -- a build-time input to scripts/build_english_lexicon.py,
+  # which produces data/english/cmudict_native.dict.
+  "techiaith/g2p/data/cmudict/cmudict.dict",
+  # The C port and its test corpora. Nothing on the Python path reads them; they live under the
+  # package only so cyp_create's core_dir stays a single directory.
+  "techiaith/g2p/c",
+]

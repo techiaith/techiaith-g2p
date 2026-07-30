@@ -1,0 +1,1903 @@
+0	sero
+1	un
+2	dau
+3	tri
+4	pedwar
+5	pump
+6	chwech
+7	saith
+8	wyth
+9	naw
+10	deg
+11	un deg un
+12	un deg dau
+13	un deg tri
+14	un deg pedwar
+15	un deg pump
+16	un deg chwech
+17	un deg saith
+18	un deg wyth
+19	un deg naw
+20	dau ddeg
+21	dau ddeg un
+22	dau ddeg dau
+23	dau ddeg tri
+24	dau ddeg pedwar
+25	dau ddeg pump
+26	dau ddeg chwech
+27	dau ddeg saith
+28	dau ddeg wyth
+29	dau ddeg naw
+30	tri deg
+31	tri deg un
+32	tri deg dau
+33	tri deg tri
+34	tri deg pedwar
+35	tri deg pump
+36	tri deg chwech
+37	tri deg saith
+38	tri deg wyth
+39	tri deg naw
+40	pedwar deg
+41	pedwar deg un
+42	pedwar deg dau
+43	pedwar deg tri
+44	pedwar deg pedwar
+45	pedwar deg pump
+46	pedwar deg chwech
+47	pedwar deg saith
+48	pedwar deg wyth
+49	pedwar deg naw
+50	pum deg
+51	pum deg un
+52	pum deg dau
+53	pum deg tri
+54	pum deg pedwar
+55	pum deg pump
+56	pum deg chwech
+57	pum deg saith
+58	pum deg wyth
+59	pum deg naw
+60	chwe deg
+61	chwe deg un
+62	chwe deg dau
+63	chwe deg tri
+64	chwe deg pedwar
+65	chwe deg pump
+66	chwe deg chwech
+67	chwe deg saith
+68	chwe deg wyth
+69	chwe deg naw
+70	saith deg
+71	saith deg un
+72	saith deg dau
+73	saith deg tri
+74	saith deg pedwar
+75	saith deg pump
+76	saith deg chwech
+77	saith deg saith
+78	saith deg wyth
+79	saith deg naw
+80	wyth deg
+81	wyth deg un
+82	wyth deg dau
+83	wyth deg tri
+84	wyth deg pedwar
+85	wyth deg pump
+86	wyth deg chwech
+87	wyth deg saith
+88	wyth deg wyth
+89	wyth deg naw
+90	naw deg
+91	naw deg un
+92	naw deg dau
+93	naw deg tri
+94	naw deg pedwar
+95	naw deg pump
+96	naw deg chwech
+97	naw deg saith
+98	naw deg wyth
+99	naw deg naw
+100	cant
+101	cant un
+102	cant dau
+103	cant tri
+104	cant pedwar
+105	cant pump
+106	cant chwech
+107	cant saith
+108	cant wyth
+109	cant naw
+110	cant deg
+111	cant un deg un
+112	cant un deg dau
+113	cant un deg tri
+114	cant un deg pedwar
+115	cant un deg pump
+116	cant un deg chwech
+117	cant un deg saith
+118	cant un deg wyth
+119	cant un deg naw
+120	cant dau ddeg
+121	cant dau ddeg un
+122	cant dau ddeg dau
+123	cant dau ddeg tri
+124	cant dau ddeg pedwar
+125	cant dau ddeg pump
+126	cant dau ddeg chwech
+127	cant dau ddeg saith
+128	cant dau ddeg wyth
+129	cant dau ddeg naw
+130	cant tri deg
+131	cant tri deg un
+132	cant tri deg dau
+133	cant tri deg tri
+134	cant tri deg pedwar
+135	cant tri deg pump
+136	cant tri deg chwech
+137	cant tri deg saith
+138	cant tri deg wyth
+139	cant tri deg naw
+140	cant pedwar deg
+141	cant pedwar deg un
+142	cant pedwar deg dau
+143	cant pedwar deg tri
+144	cant pedwar deg pedwar
+145	cant pedwar deg pump
+146	cant pedwar deg chwech
+147	cant pedwar deg saith
+148	cant pedwar deg wyth
+149	cant pedwar deg naw
+150	cant pum deg
+151	cant pum deg un
+152	cant pum deg dau
+153	cant pum deg tri
+154	cant pum deg pedwar
+155	cant pum deg pump
+156	cant pum deg chwech
+157	cant pum deg saith
+158	cant pum deg wyth
+159	cant pum deg naw
+160	cant chwe deg
+161	cant chwe deg un
+162	cant chwe deg dau
+163	cant chwe deg tri
+164	cant chwe deg pedwar
+165	cant chwe deg pump
+166	cant chwe deg chwech
+167	cant chwe deg saith
+168	cant chwe deg wyth
+169	cant chwe deg naw
+170	cant saith deg
+171	cant saith deg un
+172	cant saith deg dau
+173	cant saith deg tri
+174	cant saith deg pedwar
+175	cant saith deg pump
+176	cant saith deg chwech
+177	cant saith deg saith
+178	cant saith deg wyth
+179	cant saith deg naw
+180	cant wyth deg
+181	cant wyth deg un
+182	cant wyth deg dau
+183	cant wyth deg tri
+184	cant wyth deg pedwar
+185	cant wyth deg pump
+186	cant wyth deg chwech
+187	cant wyth deg saith
+188	cant wyth deg wyth
+189	cant wyth deg naw
+190	cant naw deg
+191	cant naw deg un
+192	cant naw deg dau
+193	cant naw deg tri
+194	cant naw deg pedwar
+195	cant naw deg pump
+196	cant naw deg chwech
+197	cant naw deg saith
+198	cant naw deg wyth
+199	cant naw deg naw
+200	dau gant
+201	dau gant un
+202	dau gant dau
+203	dau gant tri
+204	dau gant pedwar
+205	dau gant pump
+206	dau gant chwech
+207	dau gant saith
+208	dau gant wyth
+209	dau gant naw
+210	dau gant deg
+211	dau gant un deg un
+212	dau gant un deg dau
+213	dau gant un deg tri
+214	dau gant un deg pedwar
+215	dau gant un deg pump
+216	dau gant un deg chwech
+217	dau gant un deg saith
+218	dau gant un deg wyth
+219	dau gant un deg naw
+220	dau gant dau ddeg
+221	dau gant dau ddeg un
+222	dau gant dau ddeg dau
+223	dau gant dau ddeg tri
+224	dau gant dau ddeg pedwar
+225	dau gant dau ddeg pump
+226	dau gant dau ddeg chwech
+227	dau gant dau ddeg saith
+228	dau gant dau ddeg wyth
+229	dau gant dau ddeg naw
+230	dau gant tri deg
+231	dau gant tri deg un
+232	dau gant tri deg dau
+233	dau gant tri deg tri
+234	dau gant tri deg pedwar
+235	dau gant tri deg pump
+236	dau gant tri deg chwech
+237	dau gant tri deg saith
+238	dau gant tri deg wyth
+239	dau gant tri deg naw
+240	dau gant pedwar deg
+241	dau gant pedwar deg un
+242	dau gant pedwar deg dau
+243	dau gant pedwar deg tri
+244	dau gant pedwar deg pedwar
+245	dau gant pedwar deg pump
+246	dau gant pedwar deg chwech
+247	dau gant pedwar deg saith
+248	dau gant pedwar deg wyth
+249	dau gant pedwar deg naw
+250	dau gant pum deg
+251	dau gant pum deg un
+252	dau gant pum deg dau
+253	dau gant pum deg tri
+254	dau gant pum deg pedwar
+255	dau gant pum deg pump
+256	dau gant pum deg chwech
+257	dau gant pum deg saith
+258	dau gant pum deg wyth
+259	dau gant pum deg naw
+260	dau gant chwe deg
+261	dau gant chwe deg un
+262	dau gant chwe deg dau
+263	dau gant chwe deg tri
+264	dau gant chwe deg pedwar
+265	dau gant chwe deg pump
+266	dau gant chwe deg chwech
+267	dau gant chwe deg saith
+268	dau gant chwe deg wyth
+269	dau gant chwe deg naw
+270	dau gant saith deg
+271	dau gant saith deg un
+272	dau gant saith deg dau
+273	dau gant saith deg tri
+274	dau gant saith deg pedwar
+275	dau gant saith deg pump
+276	dau gant saith deg chwech
+277	dau gant saith deg saith
+278	dau gant saith deg wyth
+279	dau gant saith deg naw
+280	dau gant wyth deg
+281	dau gant wyth deg un
+282	dau gant wyth deg dau
+283	dau gant wyth deg tri
+284	dau gant wyth deg pedwar
+285	dau gant wyth deg pump
+286	dau gant wyth deg chwech
+287	dau gant wyth deg saith
+288	dau gant wyth deg wyth
+289	dau gant wyth deg naw
+290	dau gant naw deg
+291	dau gant naw deg un
+292	dau gant naw deg dau
+293	dau gant naw deg tri
+294	dau gant naw deg pedwar
+295	dau gant naw deg pump
+296	dau gant naw deg chwech
+297	dau gant naw deg saith
+298	dau gant naw deg wyth
+299	dau gant naw deg naw
+300	tri chant
+301	tri chant un
+308	tri chant wyth
+315	tri chant un deg pump
+322	tri chant dau ddeg dau
+329	tri chant dau ddeg naw
+336	tri chant tri deg chwech
+343	tri chant pedwar deg tri
+350	tri chant pum deg
+357	tri chant pum deg saith
+364	tri chant chwe deg pedwar
+371	tri chant saith deg un
+378	tri chant saith deg wyth
+385	tri chant wyth deg pump
+392	tri chant naw deg dau
+399	tri chant naw deg naw
+406	pedwar cant chwech
+413	pedwar cant un deg tri
+420	pedwar cant dau ddeg
+427	pedwar cant dau ddeg saith
+434	pedwar cant tri deg pedwar
+441	pedwar cant pedwar deg un
+448	pedwar cant pedwar deg wyth
+455	pedwar cant pum deg pump
+462	pedwar cant chwe deg dau
+469	pedwar cant chwe deg naw
+476	pedwar cant saith deg chwech
+483	pedwar cant wyth deg tri
+490	pedwar cant naw deg
+497	pedwar cant naw deg saith
+504	pum cant pedwar
+511	pum cant un deg un
+518	pum cant un deg wyth
+525	pum cant dau ddeg pump
+532	pum cant tri deg dau
+539	pum cant tri deg naw
+546	pum cant pedwar deg chwech
+553	pum cant pum deg tri
+560	pum cant chwe deg
+567	pum cant chwe deg saith
+574	pum cant saith deg pedwar
+581	pum cant wyth deg un
+588	pum cant wyth deg wyth
+595	pum cant naw deg pump
+602	chwe chant dau
+609	chwe chant naw
+616	chwe chant un deg chwech
+623	chwe chant dau ddeg tri
+630	chwe chant tri deg
+637	chwe chant tri deg saith
+644	chwe chant pedwar deg pedwar
+651	chwe chant pum deg un
+658	chwe chant pum deg wyth
+665	chwe chant chwe deg pump
+672	chwe chant saith deg dau
+679	chwe chant saith deg naw
+686	chwe chant wyth deg chwech
+693	chwe chant naw deg tri
+700	saith gant
+707	saith gant saith
+714	saith gant un deg pedwar
+721	saith gant dau ddeg un
+728	saith gant dau ddeg wyth
+735	saith gant tri deg pump
+742	saith gant pedwar deg dau
+749	saith gant pedwar deg naw
+756	saith gant pum deg chwech
+763	saith gant chwe deg tri
+770	saith gant saith deg
+777	saith gant saith deg saith
+784	saith gant wyth deg pedwar
+791	saith gant naw deg un
+798	saith gant naw deg wyth
+805	wyth gant pump
+812	wyth gant un deg dau
+819	wyth gant un deg naw
+826	wyth gant dau ddeg chwech
+833	wyth gant tri deg tri
+840	wyth gant pedwar deg
+847	wyth gant pedwar deg saith
+854	wyth gant pum deg pedwar
+861	wyth gant chwe deg un
+868	wyth gant chwe deg wyth
+875	wyth gant saith deg pump
+882	wyth gant wyth deg dau
+889	wyth gant wyth deg naw
+896	wyth gant naw deg chwech
+903	naw cant tri
+910	naw cant deg
+917	naw cant un deg saith
+924	naw cant dau ddeg pedwar
+931	naw cant tri deg un
+938	naw cant tri deg wyth
+945	naw cant pedwar deg pump
+952	naw cant pum deg dau
+959	naw cant pum deg naw
+966	naw cant chwe deg chwech
+973	naw cant saith deg tri
+980	naw cant wyth deg
+987	naw cant wyth deg saith
+994	naw cant naw deg pedwar
+1001	un mil un
+1008	un mil wyth
+1015	un mil un deg pump
+1022	un mil dau ddeg dau
+1029	un mil dau ddeg naw
+1036	un mil tri deg chwech
+1043	un mil pedwar deg tri
+1050	un mil pum deg
+1057	un mil pum deg saith
+1064	un mil chwe deg pedwar
+1071	un mil saith deg un
+1078	un mil saith deg wyth
+1085	un mil wyth deg pump
+1092	un mil naw deg dau
+1099	un mil naw deg naw
+1106	un mil cant chwech
+1113	un mil cant un deg tri
+1120	un mil cant dau ddeg
+1127	un mil cant dau ddeg saith
+1134	un mil cant tri deg pedwar
+1141	un mil cant pedwar deg un
+1148	un mil cant pedwar deg wyth
+1155	un mil cant pum deg pump
+1162	un mil cant chwe deg dau
+1169	un mil cant chwe deg naw
+1176	un mil cant saith deg chwech
+1183	un mil cant wyth deg tri
+1190	un mil cant naw deg
+1197	un mil cant naw deg saith
+1204	un mil dau gant pedwar
+1211	un mil dau gant un deg un
+1218	un mil dau gant un deg wyth
+1225	un mil dau gant dau ddeg pump
+1232	un mil dau gant tri deg dau
+1239	un mil dau gant tri deg naw
+1246	un mil dau gant pedwar deg chwech
+1253	un mil dau gant pum deg tri
+1260	un mil dau gant chwe deg
+1267	un mil dau gant chwe deg saith
+1274	un mil dau gant saith deg pedwar
+1281	un mil dau gant wyth deg un
+1288	un mil dau gant wyth deg wyth
+1295	un mil dau gant naw deg pump
+1302	un mil tri chant dau
+1309	un mil tri chant naw
+1316	un mil tri chant un deg chwech
+1323	un mil tri chant dau ddeg tri
+1330	un mil tri chant tri deg
+1337	un mil tri chant tri deg saith
+1344	un mil tri chant pedwar deg pedwar
+1351	un mil tri chant pum deg un
+1358	un mil tri chant pum deg wyth
+1365	un mil tri chant chwe deg pump
+1372	un mil tri chant saith deg dau
+1379	un mil tri chant saith deg naw
+1386	un mil tri chant wyth deg chwech
+1393	un mil tri chant naw deg tri
+1400	un mil pedwar cant
+1407	un mil pedwar cant saith
+1414	un mil pedwar cant un deg pedwar
+1421	un mil pedwar cant dau ddeg un
+1428	un mil pedwar cant dau ddeg wyth
+1435	un mil pedwar cant tri deg pump
+1442	un mil pedwar cant pedwar deg dau
+1449	un mil pedwar cant pedwar deg naw
+1456	un mil pedwar cant pum deg chwech
+1463	un mil pedwar cant chwe deg tri
+1470	un mil pedwar cant saith deg
+1477	un mil pedwar cant saith deg saith
+1484	un mil pedwar cant wyth deg pedwar
+1491	un mil pedwar cant naw deg un
+1498	un mil pedwar cant naw deg wyth
+1505	un mil pum cant pump
+1512	un mil pum cant un deg dau
+1519	un mil pum cant un deg naw
+1526	un mil pum cant dau ddeg chwech
+1533	un mil pum cant tri deg tri
+1540	un mil pum cant pedwar deg
+1547	un mil pum cant pedwar deg saith
+1554	un mil pum cant pum deg pedwar
+1561	un mil pum cant chwe deg un
+1568	un mil pum cant chwe deg wyth
+1575	un mil pum cant saith deg pump
+1582	un mil pum cant wyth deg dau
+1589	un mil pum cant wyth deg naw
+1596	un mil pum cant naw deg chwech
+1603	un mil chwe chant tri
+1610	un mil chwe chant deg
+1617	un mil chwe chant un deg saith
+1624	un mil chwe chant dau ddeg pedwar
+1631	un mil chwe chant tri deg un
+1638	un mil chwe chant tri deg wyth
+1645	un mil chwe chant pedwar deg pump
+1652	un mil chwe chant pum deg dau
+1659	un mil chwe chant pum deg naw
+1666	un mil chwe chant chwe deg chwech
+1673	un mil chwe chant saith deg tri
+1680	un mil chwe chant wyth deg
+1687	un mil chwe chant wyth deg saith
+1694	un mil chwe chant naw deg pedwar
+1701	un mil saith gant un
+1708	un mil saith gant wyth
+1715	un mil saith gant un deg pump
+1722	un mil saith gant dau ddeg dau
+1729	un mil saith gant dau ddeg naw
+1736	un mil saith gant tri deg chwech
+1743	un mil saith gant pedwar deg tri
+1750	un mil saith gant pum deg
+1757	un mil saith gant pum deg saith
+1764	un mil saith gant chwe deg pedwar
+1771	un mil saith gant saith deg un
+1778	un mil saith gant saith deg wyth
+1785	un mil saith gant wyth deg pump
+1792	un mil saith gant naw deg dau
+1799	un mil saith gant naw deg naw
+1806	un mil wyth gant chwech
+1813	un mil wyth gant un deg tri
+1820	un mil wyth gant dau ddeg
+1827	un mil wyth gant dau ddeg saith
+1834	un mil wyth gant tri deg pedwar
+1841	un mil wyth gant pedwar deg un
+1848	un mil wyth gant pedwar deg wyth
+1855	un mil wyth gant pum deg pump
+1862	un mil wyth gant chwe deg dau
+1869	un mil wyth gant chwe deg naw
+1876	un mil wyth gant saith deg chwech
+1883	un mil wyth gant wyth deg tri
+1890	un mil wyth gant naw deg
+1897	un mil wyth gant naw deg saith
+1904	un mil naw cant pedwar
+1911	un mil naw cant un deg un
+1918	un mil naw cant un deg wyth
+1925	un mil naw cant dau ddeg pump
+1932	un mil naw cant tri deg dau
+1939	un mil naw cant tri deg naw
+1946	un mil naw cant pedwar deg chwech
+1953	un mil naw cant pum deg tri
+1960	un mil naw cant chwe deg
+1967	un mil naw cant chwe deg saith
+1974	un mil naw cant saith deg pedwar
+1981	un mil naw cant wyth deg un
+1988	un mil naw cant wyth deg wyth
+1995	un mil naw cant naw deg pump
+2002	dwy fil dau
+2009	dwy fil naw
+2016	dwy fil un deg chwech
+2023	dwy fil dau ddeg tri
+2030	dwy fil tri deg
+2037	dwy fil tri deg saith
+2044	dwy fil pedwar deg pedwar
+2051	dwy fil pum deg un
+2058	dwy fil pum deg wyth
+2065	dwy fil chwe deg pump
+2072	dwy fil saith deg dau
+2079	dwy fil saith deg naw
+2086	dwy fil wyth deg chwech
+2093	dwy fil naw deg tri
+2100	dwy fil cant
+2107	dwy fil cant saith
+2114	dwy fil cant un deg pedwar
+2121	dwy fil cant dau ddeg un
+2128	dwy fil cant dau ddeg wyth
+2135	dwy fil cant tri deg pump
+2142	dwy fil cant pedwar deg dau
+2149	dwy fil cant pedwar deg naw
+2156	dwy fil cant pum deg chwech
+2163	dwy fil cant chwe deg tri
+2170	dwy fil cant saith deg
+2177	dwy fil cant saith deg saith
+2184	dwy fil cant wyth deg pedwar
+2191	dwy fil cant naw deg un
+2198	dwy fil cant naw deg wyth
+2205	dwy fil dau gant pump
+2212	dwy fil dau gant un deg dau
+2219	dwy fil dau gant un deg naw
+2226	dwy fil dau gant dau ddeg chwech
+2233	dwy fil dau gant tri deg tri
+2240	dwy fil dau gant pedwar deg
+2247	dwy fil dau gant pedwar deg saith
+2254	dwy fil dau gant pum deg pedwar
+2261	dwy fil dau gant chwe deg un
+2268	dwy fil dau gant chwe deg wyth
+2275	dwy fil dau gant saith deg pump
+2282	dwy fil dau gant wyth deg dau
+2289	dwy fil dau gant wyth deg naw
+2296	dwy fil dau gant naw deg chwech
+2303	dwy fil tri chant tri
+2310	dwy fil tri chant deg
+2317	dwy fil tri chant un deg saith
+2324	dwy fil tri chant dau ddeg pedwar
+2331	dwy fil tri chant tri deg un
+2338	dwy fil tri chant tri deg wyth
+2345	dwy fil tri chant pedwar deg pump
+2352	dwy fil tri chant pum deg dau
+2359	dwy fil tri chant pum deg naw
+2366	dwy fil tri chant chwe deg chwech
+2373	dwy fil tri chant saith deg tri
+2380	dwy fil tri chant wyth deg
+2387	dwy fil tri chant wyth deg saith
+2394	dwy fil tri chant naw deg pedwar
+2401	dwy fil pedwar cant un
+2408	dwy fil pedwar cant wyth
+2415	dwy fil pedwar cant un deg pump
+2422	dwy fil pedwar cant dau ddeg dau
+2429	dwy fil pedwar cant dau ddeg naw
+2436	dwy fil pedwar cant tri deg chwech
+2443	dwy fil pedwar cant pedwar deg tri
+2450	dwy fil pedwar cant pum deg
+2457	dwy fil pedwar cant pum deg saith
+2464	dwy fil pedwar cant chwe deg pedwar
+2471	dwy fil pedwar cant saith deg un
+2478	dwy fil pedwar cant saith deg wyth
+2485	dwy fil pedwar cant wyth deg pump
+2492	dwy fil pedwar cant naw deg dau
+2499	dwy fil pedwar cant naw deg naw
+2506	dwy fil pum cant chwech
+2513	dwy fil pum cant un deg tri
+2520	dwy fil pum cant dau ddeg
+2527	dwy fil pum cant dau ddeg saith
+2534	dwy fil pum cant tri deg pedwar
+2541	dwy fil pum cant pedwar deg un
+2548	dwy fil pum cant pedwar deg wyth
+2555	dwy fil pum cant pum deg pump
+2562	dwy fil pum cant chwe deg dau
+2569	dwy fil pum cant chwe deg naw
+2576	dwy fil pum cant saith deg chwech
+2583	dwy fil pum cant wyth deg tri
+2590	dwy fil pum cant naw deg
+2597	dwy fil pum cant naw deg saith
+2604	dwy fil chwe chant pedwar
+2611	dwy fil chwe chant un deg un
+2618	dwy fil chwe chant un deg wyth
+2625	dwy fil chwe chant dau ddeg pump
+2632	dwy fil chwe chant tri deg dau
+2639	dwy fil chwe chant tri deg naw
+2646	dwy fil chwe chant pedwar deg chwech
+2653	dwy fil chwe chant pum deg tri
+2660	dwy fil chwe chant chwe deg
+2667	dwy fil chwe chant chwe deg saith
+2674	dwy fil chwe chant saith deg pedwar
+2681	dwy fil chwe chant wyth deg un
+2688	dwy fil chwe chant wyth deg wyth
+2695	dwy fil chwe chant naw deg pump
+2702	dwy fil saith gant dau
+2709	dwy fil saith gant naw
+2716	dwy fil saith gant un deg chwech
+2723	dwy fil saith gant dau ddeg tri
+2730	dwy fil saith gant tri deg
+2737	dwy fil saith gant tri deg saith
+2744	dwy fil saith gant pedwar deg pedwar
+2751	dwy fil saith gant pum deg un
+2758	dwy fil saith gant pum deg wyth
+2765	dwy fil saith gant chwe deg pump
+2772	dwy fil saith gant saith deg dau
+2779	dwy fil saith gant saith deg naw
+2786	dwy fil saith gant wyth deg chwech
+2793	dwy fil saith gant naw deg tri
+2800	dwy fil wyth gant
+2807	dwy fil wyth gant saith
+2814	dwy fil wyth gant un deg pedwar
+2821	dwy fil wyth gant dau ddeg un
+2828	dwy fil wyth gant dau ddeg wyth
+2835	dwy fil wyth gant tri deg pump
+2842	dwy fil wyth gant pedwar deg dau
+2849	dwy fil wyth gant pedwar deg naw
+2856	dwy fil wyth gant pum deg chwech
+2863	dwy fil wyth gant chwe deg tri
+2870	dwy fil wyth gant saith deg
+2877	dwy fil wyth gant saith deg saith
+2884	dwy fil wyth gant wyth deg pedwar
+2891	dwy fil wyth gant naw deg un
+2898	dwy fil wyth gant naw deg wyth
+2905	dwy fil naw cant pump
+2912	dwy fil naw cant un deg dau
+2919	dwy fil naw cant un deg naw
+2926	dwy fil naw cant dau ddeg chwech
+2933	dwy fil naw cant tri deg tri
+2940	dwy fil naw cant pedwar deg
+2947	dwy fil naw cant pedwar deg saith
+2954	dwy fil naw cant pum deg pedwar
+2961	dwy fil naw cant chwe deg un
+2968	dwy fil naw cant chwe deg wyth
+2975	dwy fil naw cant saith deg pump
+2982	dwy fil naw cant wyth deg dau
+2989	dwy fil naw cant wyth deg naw
+2996	dwy fil naw cant naw deg chwech
+3003	tair mil tri
+3010	tair mil deg
+3017	tair mil un deg saith
+3024	tair mil dau ddeg pedwar
+3031	tair mil tri deg un
+3038	tair mil tri deg wyth
+3045	tair mil pedwar deg pump
+3052	tair mil pum deg dau
+3059	tair mil pum deg naw
+3066	tair mil chwe deg chwech
+3073	tair mil saith deg tri
+3080	tair mil wyth deg
+3087	tair mil wyth deg saith
+3094	tair mil naw deg pedwar
+3101	tair mil cant un
+3108	tair mil cant wyth
+3115	tair mil cant un deg pump
+3122	tair mil cant dau ddeg dau
+3129	tair mil cant dau ddeg naw
+3136	tair mil cant tri deg chwech
+3143	tair mil cant pedwar deg tri
+3150	tair mil cant pum deg
+3157	tair mil cant pum deg saith
+3164	tair mil cant chwe deg pedwar
+3171	tair mil cant saith deg un
+3178	tair mil cant saith deg wyth
+3185	tair mil cant wyth deg pump
+3192	tair mil cant naw deg dau
+3199	tair mil cant naw deg naw
+3206	tair mil dau gant chwech
+3213	tair mil dau gant un deg tri
+3220	tair mil dau gant dau ddeg
+3227	tair mil dau gant dau ddeg saith
+3234	tair mil dau gant tri deg pedwar
+3241	tair mil dau gant pedwar deg un
+3248	tair mil dau gant pedwar deg wyth
+3255	tair mil dau gant pum deg pump
+3262	tair mil dau gant chwe deg dau
+3269	tair mil dau gant chwe deg naw
+3276	tair mil dau gant saith deg chwech
+3283	tair mil dau gant wyth deg tri
+3290	tair mil dau gant naw deg
+3297	tair mil dau gant naw deg saith
+3304	tair mil tri chant pedwar
+3311	tair mil tri chant un deg un
+3318	tair mil tri chant un deg wyth
+3325	tair mil tri chant dau ddeg pump
+3332	tair mil tri chant tri deg dau
+3339	tair mil tri chant tri deg naw
+3346	tair mil tri chant pedwar deg chwech
+3353	tair mil tri chant pum deg tri
+3360	tair mil tri chant chwe deg
+3367	tair mil tri chant chwe deg saith
+3374	tair mil tri chant saith deg pedwar
+3381	tair mil tri chant wyth deg un
+3388	tair mil tri chant wyth deg wyth
+3395	tair mil tri chant naw deg pump
+3402	tair mil pedwar cant dau
+3409	tair mil pedwar cant naw
+3416	tair mil pedwar cant un deg chwech
+3423	tair mil pedwar cant dau ddeg tri
+3430	tair mil pedwar cant tri deg
+3437	tair mil pedwar cant tri deg saith
+3444	tair mil pedwar cant pedwar deg pedwar
+3451	tair mil pedwar cant pum deg un
+3458	tair mil pedwar cant pum deg wyth
+3465	tair mil pedwar cant chwe deg pump
+3472	tair mil pedwar cant saith deg dau
+3479	tair mil pedwar cant saith deg naw
+3486	tair mil pedwar cant wyth deg chwech
+3493	tair mil pedwar cant naw deg tri
+3500	tair mil pum cant
+3507	tair mil pum cant saith
+3514	tair mil pum cant un deg pedwar
+3521	tair mil pum cant dau ddeg un
+3528	tair mil pum cant dau ddeg wyth
+3535	tair mil pum cant tri deg pump
+3542	tair mil pum cant pedwar deg dau
+3549	tair mil pum cant pedwar deg naw
+3556	tair mil pum cant pum deg chwech
+3563	tair mil pum cant chwe deg tri
+3570	tair mil pum cant saith deg
+3577	tair mil pum cant saith deg saith
+3584	tair mil pum cant wyth deg pedwar
+3591	tair mil pum cant naw deg un
+3598	tair mil pum cant naw deg wyth
+3605	tair mil chwe chant pump
+3612	tair mil chwe chant un deg dau
+3619	tair mil chwe chant un deg naw
+3626	tair mil chwe chant dau ddeg chwech
+3633	tair mil chwe chant tri deg tri
+3640	tair mil chwe chant pedwar deg
+3647	tair mil chwe chant pedwar deg saith
+3654	tair mil chwe chant pum deg pedwar
+3661	tair mil chwe chant chwe deg un
+3668	tair mil chwe chant chwe deg wyth
+3675	tair mil chwe chant saith deg pump
+3682	tair mil chwe chant wyth deg dau
+3689	tair mil chwe chant wyth deg naw
+3696	tair mil chwe chant naw deg chwech
+3703	tair mil saith gant tri
+3710	tair mil saith gant deg
+3717	tair mil saith gant un deg saith
+3724	tair mil saith gant dau ddeg pedwar
+3731	tair mil saith gant tri deg un
+3738	tair mil saith gant tri deg wyth
+3745	tair mil saith gant pedwar deg pump
+3752	tair mil saith gant pum deg dau
+3759	tair mil saith gant pum deg naw
+3766	tair mil saith gant chwe deg chwech
+3773	tair mil saith gant saith deg tri
+3780	tair mil saith gant wyth deg
+3787	tair mil saith gant wyth deg saith
+3794	tair mil saith gant naw deg pedwar
+3801	tair mil wyth gant un
+3808	tair mil wyth gant wyth
+3815	tair mil wyth gant un deg pump
+3822	tair mil wyth gant dau ddeg dau
+3829	tair mil wyth gant dau ddeg naw
+3836	tair mil wyth gant tri deg chwech
+3843	tair mil wyth gant pedwar deg tri
+3850	tair mil wyth gant pum deg
+3857	tair mil wyth gant pum deg saith
+3864	tair mil wyth gant chwe deg pedwar
+3871	tair mil wyth gant saith deg un
+3878	tair mil wyth gant saith deg wyth
+3885	tair mil wyth gant wyth deg pump
+3892	tair mil wyth gant naw deg dau
+3899	tair mil wyth gant naw deg naw
+3906	tair mil naw cant chwech
+3913	tair mil naw cant un deg tri
+3920	tair mil naw cant dau ddeg
+3927	tair mil naw cant dau ddeg saith
+3934	tair mil naw cant tri deg pedwar
+3941	tair mil naw cant pedwar deg un
+3948	tair mil naw cant pedwar deg wyth
+3955	tair mil naw cant pum deg pump
+3962	tair mil naw cant chwe deg dau
+3969	tair mil naw cant chwe deg naw
+3976	tair mil naw cant saith deg chwech
+3983	tair mil naw cant wyth deg tri
+3990	tair mil naw cant naw deg
+3997	tair mil naw cant naw deg saith
+4004	pedair mil pedwar
+4011	pedair mil un deg un
+4018	pedair mil un deg wyth
+4025	pedair mil dau ddeg pump
+4032	pedair mil tri deg dau
+4039	pedair mil tri deg naw
+4046	pedair mil pedwar deg chwech
+4053	pedair mil pum deg tri
+4060	pedair mil chwe deg
+4067	pedair mil chwe deg saith
+4074	pedair mil saith deg pedwar
+4081	pedair mil wyth deg un
+4088	pedair mil wyth deg wyth
+4095	pedair mil naw deg pump
+4102	pedair mil cant dau
+4109	pedair mil cant naw
+4116	pedair mil cant un deg chwech
+4123	pedair mil cant dau ddeg tri
+4130	pedair mil cant tri deg
+4137	pedair mil cant tri deg saith
+4144	pedair mil cant pedwar deg pedwar
+4151	pedair mil cant pum deg un
+4158	pedair mil cant pum deg wyth
+4165	pedair mil cant chwe deg pump
+4172	pedair mil cant saith deg dau
+4179	pedair mil cant saith deg naw
+4186	pedair mil cant wyth deg chwech
+4193	pedair mil cant naw deg tri
+4200	pedair mil dau gant
+4207	pedair mil dau gant saith
+4214	pedair mil dau gant un deg pedwar
+4221	pedair mil dau gant dau ddeg un
+4228	pedair mil dau gant dau ddeg wyth
+4235	pedair mil dau gant tri deg pump
+4242	pedair mil dau gant pedwar deg dau
+4249	pedair mil dau gant pedwar deg naw
+4256	pedair mil dau gant pum deg chwech
+4263	pedair mil dau gant chwe deg tri
+4270	pedair mil dau gant saith deg
+4277	pedair mil dau gant saith deg saith
+4284	pedair mil dau gant wyth deg pedwar
+4291	pedair mil dau gant naw deg un
+4298	pedair mil dau gant naw deg wyth
+4305	pedair mil tri chant pump
+4312	pedair mil tri chant un deg dau
+4319	pedair mil tri chant un deg naw
+4326	pedair mil tri chant dau ddeg chwech
+4333	pedair mil tri chant tri deg tri
+4340	pedair mil tri chant pedwar deg
+4347	pedair mil tri chant pedwar deg saith
+4354	pedair mil tri chant pum deg pedwar
+4361	pedair mil tri chant chwe deg un
+4368	pedair mil tri chant chwe deg wyth
+4375	pedair mil tri chant saith deg pump
+4382	pedair mil tri chant wyth deg dau
+4389	pedair mil tri chant wyth deg naw
+4396	pedair mil tri chant naw deg chwech
+4403	pedair mil pedwar cant tri
+4410	pedair mil pedwar cant deg
+4417	pedair mil pedwar cant un deg saith
+4424	pedair mil pedwar cant dau ddeg pedwar
+4431	pedair mil pedwar cant tri deg un
+4438	pedair mil pedwar cant tri deg wyth
+4445	pedair mil pedwar cant pedwar deg pump
+4452	pedair mil pedwar cant pum deg dau
+4459	pedair mil pedwar cant pum deg naw
+4466	pedair mil pedwar cant chwe deg chwech
+4473	pedair mil pedwar cant saith deg tri
+4480	pedair mil pedwar cant wyth deg
+4487	pedair mil pedwar cant wyth deg saith
+4494	pedair mil pedwar cant naw deg pedwar
+4501	pedair mil pum cant un
+4508	pedair mil pum cant wyth
+4515	pedair mil pum cant un deg pump
+4522	pedair mil pum cant dau ddeg dau
+4529	pedair mil pum cant dau ddeg naw
+4536	pedair mil pum cant tri deg chwech
+4543	pedair mil pum cant pedwar deg tri
+4550	pedair mil pum cant pum deg
+4557	pedair mil pum cant pum deg saith
+4564	pedair mil pum cant chwe deg pedwar
+4571	pedair mil pum cant saith deg un
+4578	pedair mil pum cant saith deg wyth
+4585	pedair mil pum cant wyth deg pump
+4592	pedair mil pum cant naw deg dau
+4599	pedair mil pum cant naw deg naw
+4606	pedair mil chwe chant chwech
+4613	pedair mil chwe chant un deg tri
+4620	pedair mil chwe chant dau ddeg
+4627	pedair mil chwe chant dau ddeg saith
+4634	pedair mil chwe chant tri deg pedwar
+4641	pedair mil chwe chant pedwar deg un
+4648	pedair mil chwe chant pedwar deg wyth
+4655	pedair mil chwe chant pum deg pump
+4662	pedair mil chwe chant chwe deg dau
+4669	pedair mil chwe chant chwe deg naw
+4676	pedair mil chwe chant saith deg chwech
+4683	pedair mil chwe chant wyth deg tri
+4690	pedair mil chwe chant naw deg
+4697	pedair mil chwe chant naw deg saith
+4704	pedair mil saith gant pedwar
+4711	pedair mil saith gant un deg un
+4718	pedair mil saith gant un deg wyth
+4725	pedair mil saith gant dau ddeg pump
+4732	pedair mil saith gant tri deg dau
+4739	pedair mil saith gant tri deg naw
+4746	pedair mil saith gant pedwar deg chwech
+4753	pedair mil saith gant pum deg tri
+4760	pedair mil saith gant chwe deg
+4767	pedair mil saith gant chwe deg saith
+4774	pedair mil saith gant saith deg pedwar
+4781	pedair mil saith gant wyth deg un
+4788	pedair mil saith gant wyth deg wyth
+4795	pedair mil saith gant naw deg pump
+4802	pedair mil wyth gant dau
+4809	pedair mil wyth gant naw
+4816	pedair mil wyth gant un deg chwech
+4823	pedair mil wyth gant dau ddeg tri
+4830	pedair mil wyth gant tri deg
+4837	pedair mil wyth gant tri deg saith
+4844	pedair mil wyth gant pedwar deg pedwar
+4851	pedair mil wyth gant pum deg un
+4858	pedair mil wyth gant pum deg wyth
+4865	pedair mil wyth gant chwe deg pump
+4872	pedair mil wyth gant saith deg dau
+4879	pedair mil wyth gant saith deg naw
+4886	pedair mil wyth gant wyth deg chwech
+4893	pedair mil wyth gant naw deg tri
+4900	pedair mil naw cant
+4907	pedair mil naw cant saith
+4914	pedair mil naw cant un deg pedwar
+4921	pedair mil naw cant dau ddeg un
+4928	pedair mil naw cant dau ddeg wyth
+4935	pedair mil naw cant tri deg pump
+4942	pedair mil naw cant pedwar deg dau
+4949	pedair mil naw cant pedwar deg naw
+4956	pedair mil naw cant pum deg chwech
+4963	pedair mil naw cant chwe deg tri
+4970	pedair mil naw cant saith deg
+4977	pedair mil naw cant saith deg saith
+4984	pedair mil naw cant wyth deg pedwar
+4991	pedair mil naw cant naw deg un
+4998	pedair mil naw cant naw deg wyth
+5005	pum mil pump
+5012	pum mil un deg dau
+5019	pum mil un deg naw
+5026	pum mil dau ddeg chwech
+5033	pum mil tri deg tri
+5040	pum mil pedwar deg
+5047	pum mil pedwar deg saith
+5054	pum mil pum deg pedwar
+5061	pum mil chwe deg un
+5068	pum mil chwe deg wyth
+5075	pum mil saith deg pump
+5082	pum mil wyth deg dau
+5089	pum mil wyth deg naw
+5096	pum mil naw deg chwech
+5103	pum mil cant tri
+5110	pum mil cant deg
+5117	pum mil cant un deg saith
+5124	pum mil cant dau ddeg pedwar
+5131	pum mil cant tri deg un
+5138	pum mil cant tri deg wyth
+5145	pum mil cant pedwar deg pump
+5152	pum mil cant pum deg dau
+5159	pum mil cant pum deg naw
+5166	pum mil cant chwe deg chwech
+5173	pum mil cant saith deg tri
+5180	pum mil cant wyth deg
+5187	pum mil cant wyth deg saith
+5194	pum mil cant naw deg pedwar
+5201	pum mil dau gant un
+5208	pum mil dau gant wyth
+5215	pum mil dau gant un deg pump
+5222	pum mil dau gant dau ddeg dau
+5229	pum mil dau gant dau ddeg naw
+5236	pum mil dau gant tri deg chwech
+5243	pum mil dau gant pedwar deg tri
+5250	pum mil dau gant pum deg
+5257	pum mil dau gant pum deg saith
+5264	pum mil dau gant chwe deg pedwar
+5271	pum mil dau gant saith deg un
+5278	pum mil dau gant saith deg wyth
+5285	pum mil dau gant wyth deg pump
+5292	pum mil dau gant naw deg dau
+5299	pum mil dau gant naw deg naw
+5306	pum mil tri chant chwech
+5313	pum mil tri chant un deg tri
+5320	pum mil tri chant dau ddeg
+5327	pum mil tri chant dau ddeg saith
+5334	pum mil tri chant tri deg pedwar
+5341	pum mil tri chant pedwar deg un
+5348	pum mil tri chant pedwar deg wyth
+5355	pum mil tri chant pum deg pump
+5362	pum mil tri chant chwe deg dau
+5369	pum mil tri chant chwe deg naw
+5376	pum mil tri chant saith deg chwech
+5383	pum mil tri chant wyth deg tri
+5390	pum mil tri chant naw deg
+5397	pum mil tri chant naw deg saith
+5404	pum mil pedwar cant pedwar
+5411	pum mil pedwar cant un deg un
+5418	pum mil pedwar cant un deg wyth
+5425	pum mil pedwar cant dau ddeg pump
+5432	pum mil pedwar cant tri deg dau
+5439	pum mil pedwar cant tri deg naw
+5446	pum mil pedwar cant pedwar deg chwech
+5453	pum mil pedwar cant pum deg tri
+5460	pum mil pedwar cant chwe deg
+5467	pum mil pedwar cant chwe deg saith
+5474	pum mil pedwar cant saith deg pedwar
+5481	pum mil pedwar cant wyth deg un
+5488	pum mil pedwar cant wyth deg wyth
+5495	pum mil pedwar cant naw deg pump
+5502	pum mil pum cant dau
+5509	pum mil pum cant naw
+5516	pum mil pum cant un deg chwech
+5523	pum mil pum cant dau ddeg tri
+5530	pum mil pum cant tri deg
+5537	pum mil pum cant tri deg saith
+5544	pum mil pum cant pedwar deg pedwar
+5551	pum mil pum cant pum deg un
+5558	pum mil pum cant pum deg wyth
+5565	pum mil pum cant chwe deg pump
+5572	pum mil pum cant saith deg dau
+5579	pum mil pum cant saith deg naw
+5586	pum mil pum cant wyth deg chwech
+5593	pum mil pum cant naw deg tri
+5600	pum mil chwe chant
+5607	pum mil chwe chant saith
+5614	pum mil chwe chant un deg pedwar
+5621	pum mil chwe chant dau ddeg un
+5628	pum mil chwe chant dau ddeg wyth
+5635	pum mil chwe chant tri deg pump
+5642	pum mil chwe chant pedwar deg dau
+5649	pum mil chwe chant pedwar deg naw
+5656	pum mil chwe chant pum deg chwech
+5663	pum mil chwe chant chwe deg tri
+5670	pum mil chwe chant saith deg
+5677	pum mil chwe chant saith deg saith
+5684	pum mil chwe chant wyth deg pedwar
+5691	pum mil chwe chant naw deg un
+5698	pum mil chwe chant naw deg wyth
+5705	pum mil saith gant pump
+5712	pum mil saith gant un deg dau
+5719	pum mil saith gant un deg naw
+5726	pum mil saith gant dau ddeg chwech
+5733	pum mil saith gant tri deg tri
+5740	pum mil saith gant pedwar deg
+5747	pum mil saith gant pedwar deg saith
+5754	pum mil saith gant pum deg pedwar
+5761	pum mil saith gant chwe deg un
+5768	pum mil saith gant chwe deg wyth
+5775	pum mil saith gant saith deg pump
+5782	pum mil saith gant wyth deg dau
+5789	pum mil saith gant wyth deg naw
+5796	pum mil saith gant naw deg chwech
+5803	pum mil wyth gant tri
+5810	pum mil wyth gant deg
+5817	pum mil wyth gant un deg saith
+5824	pum mil wyth gant dau ddeg pedwar
+5831	pum mil wyth gant tri deg un
+5838	pum mil wyth gant tri deg wyth
+5845	pum mil wyth gant pedwar deg pump
+5852	pum mil wyth gant pum deg dau
+5859	pum mil wyth gant pum deg naw
+5866	pum mil wyth gant chwe deg chwech
+5873	pum mil wyth gant saith deg tri
+5880	pum mil wyth gant wyth deg
+5887	pum mil wyth gant wyth deg saith
+5894	pum mil wyth gant naw deg pedwar
+5901	pum mil naw cant un
+5908	pum mil naw cant wyth
+5915	pum mil naw cant un deg pump
+5922	pum mil naw cant dau ddeg dau
+5929	pum mil naw cant dau ddeg naw
+5936	pum mil naw cant tri deg chwech
+5943	pum mil naw cant pedwar deg tri
+5950	pum mil naw cant pum deg
+5957	pum mil naw cant pum deg saith
+5964	pum mil naw cant chwe deg pedwar
+5971	pum mil naw cant saith deg un
+5978	pum mil naw cant saith deg wyth
+5985	pum mil naw cant wyth deg pump
+5992	pum mil naw cant naw deg dau
+5999	pum mil naw cant naw deg naw
+6006	chwe mil chwech
+6013	chwe mil un deg tri
+6020	chwe mil dau ddeg
+6027	chwe mil dau ddeg saith
+6034	chwe mil tri deg pedwar
+6041	chwe mil pedwar deg un
+6048	chwe mil pedwar deg wyth
+6055	chwe mil pum deg pump
+6062	chwe mil chwe deg dau
+6069	chwe mil chwe deg naw
+6076	chwe mil saith deg chwech
+6083	chwe mil wyth deg tri
+6090	chwe mil naw deg
+6097	chwe mil naw deg saith
+6104	chwe mil cant pedwar
+6111	chwe mil cant un deg un
+6118	chwe mil cant un deg wyth
+6125	chwe mil cant dau ddeg pump
+6132	chwe mil cant tri deg dau
+6139	chwe mil cant tri deg naw
+6146	chwe mil cant pedwar deg chwech
+6153	chwe mil cant pum deg tri
+6160	chwe mil cant chwe deg
+6167	chwe mil cant chwe deg saith
+6174	chwe mil cant saith deg pedwar
+6181	chwe mil cant wyth deg un
+6188	chwe mil cant wyth deg wyth
+6195	chwe mil cant naw deg pump
+6202	chwe mil dau gant dau
+6209	chwe mil dau gant naw
+6216	chwe mil dau gant un deg chwech
+6223	chwe mil dau gant dau ddeg tri
+6230	chwe mil dau gant tri deg
+6237	chwe mil dau gant tri deg saith
+6244	chwe mil dau gant pedwar deg pedwar
+6251	chwe mil dau gant pum deg un
+6258	chwe mil dau gant pum deg wyth
+6265	chwe mil dau gant chwe deg pump
+6272	chwe mil dau gant saith deg dau
+6279	chwe mil dau gant saith deg naw
+6286	chwe mil dau gant wyth deg chwech
+6293	chwe mil dau gant naw deg tri
+6300	chwe mil tri chant
+6307	chwe mil tri chant saith
+6314	chwe mil tri chant un deg pedwar
+6321	chwe mil tri chant dau ddeg un
+6328	chwe mil tri chant dau ddeg wyth
+6335	chwe mil tri chant tri deg pump
+6342	chwe mil tri chant pedwar deg dau
+6349	chwe mil tri chant pedwar deg naw
+6356	chwe mil tri chant pum deg chwech
+6363	chwe mil tri chant chwe deg tri
+6370	chwe mil tri chant saith deg
+6377	chwe mil tri chant saith deg saith
+6384	chwe mil tri chant wyth deg pedwar
+6391	chwe mil tri chant naw deg un
+6398	chwe mil tri chant naw deg wyth
+6405	chwe mil pedwar cant pump
+6412	chwe mil pedwar cant un deg dau
+6419	chwe mil pedwar cant un deg naw
+6426	chwe mil pedwar cant dau ddeg chwech
+6433	chwe mil pedwar cant tri deg tri
+6440	chwe mil pedwar cant pedwar deg
+6447	chwe mil pedwar cant pedwar deg saith
+6454	chwe mil pedwar cant pum deg pedwar
+6461	chwe mil pedwar cant chwe deg un
+6468	chwe mil pedwar cant chwe deg wyth
+6475	chwe mil pedwar cant saith deg pump
+6482	chwe mil pedwar cant wyth deg dau
+6489	chwe mil pedwar cant wyth deg naw
+6496	chwe mil pedwar cant naw deg chwech
+6503	chwe mil pum cant tri
+6510	chwe mil pum cant deg
+6517	chwe mil pum cant un deg saith
+6524	chwe mil pum cant dau ddeg pedwar
+6531	chwe mil pum cant tri deg un
+6538	chwe mil pum cant tri deg wyth
+6545	chwe mil pum cant pedwar deg pump
+6552	chwe mil pum cant pum deg dau
+6559	chwe mil pum cant pum deg naw
+6566	chwe mil pum cant chwe deg chwech
+6573	chwe mil pum cant saith deg tri
+6580	chwe mil pum cant wyth deg
+6587	chwe mil pum cant wyth deg saith
+6594	chwe mil pum cant naw deg pedwar
+6601	chwe mil chwe chant un
+6608	chwe mil chwe chant wyth
+6615	chwe mil chwe chant un deg pump
+6622	chwe mil chwe chant dau ddeg dau
+6629	chwe mil chwe chant dau ddeg naw
+6636	chwe mil chwe chant tri deg chwech
+6643	chwe mil chwe chant pedwar deg tri
+6650	chwe mil chwe chant pum deg
+6657	chwe mil chwe chant pum deg saith
+6664	chwe mil chwe chant chwe deg pedwar
+6671	chwe mil chwe chant saith deg un
+6678	chwe mil chwe chant saith deg wyth
+6685	chwe mil chwe chant wyth deg pump
+6692	chwe mil chwe chant naw deg dau
+6699	chwe mil chwe chant naw deg naw
+6706	chwe mil saith gant chwech
+6713	chwe mil saith gant un deg tri
+6720	chwe mil saith gant dau ddeg
+6727	chwe mil saith gant dau ddeg saith
+6734	chwe mil saith gant tri deg pedwar
+6741	chwe mil saith gant pedwar deg un
+6748	chwe mil saith gant pedwar deg wyth
+6755	chwe mil saith gant pum deg pump
+6762	chwe mil saith gant chwe deg dau
+6769	chwe mil saith gant chwe deg naw
+6776	chwe mil saith gant saith deg chwech
+6783	chwe mil saith gant wyth deg tri
+6790	chwe mil saith gant naw deg
+6797	chwe mil saith gant naw deg saith
+6804	chwe mil wyth gant pedwar
+6811	chwe mil wyth gant un deg un
+6818	chwe mil wyth gant un deg wyth
+6825	chwe mil wyth gant dau ddeg pump
+6832	chwe mil wyth gant tri deg dau
+6839	chwe mil wyth gant tri deg naw
+6846	chwe mil wyth gant pedwar deg chwech
+6853	chwe mil wyth gant pum deg tri
+6860	chwe mil wyth gant chwe deg
+6867	chwe mil wyth gant chwe deg saith
+6874	chwe mil wyth gant saith deg pedwar
+6881	chwe mil wyth gant wyth deg un
+6888	chwe mil wyth gant wyth deg wyth
+6895	chwe mil wyth gant naw deg pump
+6902	chwe mil naw cant dau
+6909	chwe mil naw cant naw
+6916	chwe mil naw cant un deg chwech
+6923	chwe mil naw cant dau ddeg tri
+6930	chwe mil naw cant tri deg
+6937	chwe mil naw cant tri deg saith
+6944	chwe mil naw cant pedwar deg pedwar
+6951	chwe mil naw cant pum deg un
+6958	chwe mil naw cant pum deg wyth
+6965	chwe mil naw cant chwe deg pump
+6972	chwe mil naw cant saith deg dau
+6979	chwe mil naw cant saith deg naw
+6986	chwe mil naw cant wyth deg chwech
+6993	chwe mil naw cant naw deg tri
+7000	saith mil
+7007	saith mil saith
+7014	saith mil un deg pedwar
+7021	saith mil dau ddeg un
+7028	saith mil dau ddeg wyth
+7035	saith mil tri deg pump
+7042	saith mil pedwar deg dau
+7049	saith mil pedwar deg naw
+7056	saith mil pum deg chwech
+7063	saith mil chwe deg tri
+7070	saith mil saith deg
+7077	saith mil saith deg saith
+7084	saith mil wyth deg pedwar
+7091	saith mil naw deg un
+7098	saith mil naw deg wyth
+7105	saith mil cant pump
+7112	saith mil cant un deg dau
+7119	saith mil cant un deg naw
+7126	saith mil cant dau ddeg chwech
+7133	saith mil cant tri deg tri
+7140	saith mil cant pedwar deg
+7147	saith mil cant pedwar deg saith
+7154	saith mil cant pum deg pedwar
+7161	saith mil cant chwe deg un
+7168	saith mil cant chwe deg wyth
+7175	saith mil cant saith deg pump
+7182	saith mil cant wyth deg dau
+7189	saith mil cant wyth deg naw
+7196	saith mil cant naw deg chwech
+7203	saith mil dau gant tri
+7210	saith mil dau gant deg
+7217	saith mil dau gant un deg saith
+7224	saith mil dau gant dau ddeg pedwar
+7231	saith mil dau gant tri deg un
+7238	saith mil dau gant tri deg wyth
+7245	saith mil dau gant pedwar deg pump
+7252	saith mil dau gant pum deg dau
+7259	saith mil dau gant pum deg naw
+7266	saith mil dau gant chwe deg chwech
+7273	saith mil dau gant saith deg tri
+7280	saith mil dau gant wyth deg
+7287	saith mil dau gant wyth deg saith
+7294	saith mil dau gant naw deg pedwar
+7301	saith mil tri chant un
+7308	saith mil tri chant wyth
+7315	saith mil tri chant un deg pump
+7322	saith mil tri chant dau ddeg dau
+7329	saith mil tri chant dau ddeg naw
+7336	saith mil tri chant tri deg chwech
+7343	saith mil tri chant pedwar deg tri
+7350	saith mil tri chant pum deg
+7357	saith mil tri chant pum deg saith
+7364	saith mil tri chant chwe deg pedwar
+7371	saith mil tri chant saith deg un
+7378	saith mil tri chant saith deg wyth
+7385	saith mil tri chant wyth deg pump
+7392	saith mil tri chant naw deg dau
+7399	saith mil tri chant naw deg naw
+7406	saith mil pedwar cant chwech
+7413	saith mil pedwar cant un deg tri
+7420	saith mil pedwar cant dau ddeg
+7427	saith mil pedwar cant dau ddeg saith
+7434	saith mil pedwar cant tri deg pedwar
+7441	saith mil pedwar cant pedwar deg un
+7448	saith mil pedwar cant pedwar deg wyth
+7455	saith mil pedwar cant pum deg pump
+7462	saith mil pedwar cant chwe deg dau
+7469	saith mil pedwar cant chwe deg naw
+7476	saith mil pedwar cant saith deg chwech
+7483	saith mil pedwar cant wyth deg tri
+7490	saith mil pedwar cant naw deg
+7497	saith mil pedwar cant naw deg saith
+7504	saith mil pum cant pedwar
+7511	saith mil pum cant un deg un
+7518	saith mil pum cant un deg wyth
+7525	saith mil pum cant dau ddeg pump
+7532	saith mil pum cant tri deg dau
+7539	saith mil pum cant tri deg naw
+7546	saith mil pum cant pedwar deg chwech
+7553	saith mil pum cant pum deg tri
+7560	saith mil pum cant chwe deg
+7567	saith mil pum cant chwe deg saith
+7574	saith mil pum cant saith deg pedwar
+7581	saith mil pum cant wyth deg un
+7588	saith mil pum cant wyth deg wyth
+7595	saith mil pum cant naw deg pump
+7602	saith mil chwe chant dau
+7609	saith mil chwe chant naw
+7616	saith mil chwe chant un deg chwech
+7623	saith mil chwe chant dau ddeg tri
+7630	saith mil chwe chant tri deg
+7637	saith mil chwe chant tri deg saith
+7644	saith mil chwe chant pedwar deg pedwar
+7651	saith mil chwe chant pum deg un
+7658	saith mil chwe chant pum deg wyth
+7665	saith mil chwe chant chwe deg pump
+7672	saith mil chwe chant saith deg dau
+7679	saith mil chwe chant saith deg naw
+7686	saith mil chwe chant wyth deg chwech
+7693	saith mil chwe chant naw deg tri
+7700	saith mil saith gant
+7707	saith mil saith gant saith
+7714	saith mil saith gant un deg pedwar
+7721	saith mil saith gant dau ddeg un
+7728	saith mil saith gant dau ddeg wyth
+7735	saith mil saith gant tri deg pump
+7742	saith mil saith gant pedwar deg dau
+7749	saith mil saith gant pedwar deg naw
+7756	saith mil saith gant pum deg chwech
+7763	saith mil saith gant chwe deg tri
+7770	saith mil saith gant saith deg
+7777	saith mil saith gant saith deg saith
+7784	saith mil saith gant wyth deg pedwar
+7791	saith mil saith gant naw deg un
+7798	saith mil saith gant naw deg wyth
+7805	saith mil wyth gant pump
+7812	saith mil wyth gant un deg dau
+7819	saith mil wyth gant un deg naw
+7826	saith mil wyth gant dau ddeg chwech
+7833	saith mil wyth gant tri deg tri
+7840	saith mil wyth gant pedwar deg
+7847	saith mil wyth gant pedwar deg saith
+7854	saith mil wyth gant pum deg pedwar
+7861	saith mil wyth gant chwe deg un
+7868	saith mil wyth gant chwe deg wyth
+7875	saith mil wyth gant saith deg pump
+7882	saith mil wyth gant wyth deg dau
+7889	saith mil wyth gant wyth deg naw
+7896	saith mil wyth gant naw deg chwech
+7903	saith mil naw cant tri
+7910	saith mil naw cant deg
+7917	saith mil naw cant un deg saith
+7924	saith mil naw cant dau ddeg pedwar
+7931	saith mil naw cant tri deg un
+7938	saith mil naw cant tri deg wyth
+7945	saith mil naw cant pedwar deg pump
+7952	saith mil naw cant pum deg dau
+7959	saith mil naw cant pum deg naw
+7966	saith mil naw cant chwe deg chwech
+7973	saith mil naw cant saith deg tri
+7980	saith mil naw cant wyth deg
+7987	saith mil naw cant wyth deg saith
+7994	saith mil naw cant naw deg pedwar
+8001	wyth mil un
+8008	wyth mil wyth
+8015	wyth mil un deg pump
+8022	wyth mil dau ddeg dau
+8029	wyth mil dau ddeg naw
+8036	wyth mil tri deg chwech
+8043	wyth mil pedwar deg tri
+8050	wyth mil pum deg
+8057	wyth mil pum deg saith
+8064	wyth mil chwe deg pedwar
+8071	wyth mil saith deg un
+8078	wyth mil saith deg wyth
+8085	wyth mil wyth deg pump
+8092	wyth mil naw deg dau
+8099	wyth mil naw deg naw
+8106	wyth mil cant chwech
+8113	wyth mil cant un deg tri
+8120	wyth mil cant dau ddeg
+8127	wyth mil cant dau ddeg saith
+8134	wyth mil cant tri deg pedwar
+8141	wyth mil cant pedwar deg un
+8148	wyth mil cant pedwar deg wyth
+8155	wyth mil cant pum deg pump
+8162	wyth mil cant chwe deg dau
+8169	wyth mil cant chwe deg naw
+8176	wyth mil cant saith deg chwech
+8183	wyth mil cant wyth deg tri
+8190	wyth mil cant naw deg
+8197	wyth mil cant naw deg saith
+8204	wyth mil dau gant pedwar
+8211	wyth mil dau gant un deg un
+8218	wyth mil dau gant un deg wyth
+8225	wyth mil dau gant dau ddeg pump
+8232	wyth mil dau gant tri deg dau
+8239	wyth mil dau gant tri deg naw
+8246	wyth mil dau gant pedwar deg chwech
+8253	wyth mil dau gant pum deg tri
+8260	wyth mil dau gant chwe deg
+8267	wyth mil dau gant chwe deg saith
+8274	wyth mil dau gant saith deg pedwar
+8281	wyth mil dau gant wyth deg un
+8288	wyth mil dau gant wyth deg wyth
+8295	wyth mil dau gant naw deg pump
+8302	wyth mil tri chant dau
+8309	wyth mil tri chant naw
+8316	wyth mil tri chant un deg chwech
+8323	wyth mil tri chant dau ddeg tri
+8330	wyth mil tri chant tri deg
+8337	wyth mil tri chant tri deg saith
+8344	wyth mil tri chant pedwar deg pedwar
+8351	wyth mil tri chant pum deg un
+8358	wyth mil tri chant pum deg wyth
+8365	wyth mil tri chant chwe deg pump
+8372	wyth mil tri chant saith deg dau
+8379	wyth mil tri chant saith deg naw
+8386	wyth mil tri chant wyth deg chwech
+8393	wyth mil tri chant naw deg tri
+8400	wyth mil pedwar cant
+8407	wyth mil pedwar cant saith
+8414	wyth mil pedwar cant un deg pedwar
+8421	wyth mil pedwar cant dau ddeg un
+8428	wyth mil pedwar cant dau ddeg wyth
+8435	wyth mil pedwar cant tri deg pump
+8442	wyth mil pedwar cant pedwar deg dau
+8449	wyth mil pedwar cant pedwar deg naw
+8456	wyth mil pedwar cant pum deg chwech
+8463	wyth mil pedwar cant chwe deg tri
+8470	wyth mil pedwar cant saith deg
+8477	wyth mil pedwar cant saith deg saith
+8484	wyth mil pedwar cant wyth deg pedwar
+8491	wyth mil pedwar cant naw deg un
+8498	wyth mil pedwar cant naw deg wyth
+8505	wyth mil pum cant pump
+8512	wyth mil pum cant un deg dau
+8519	wyth mil pum cant un deg naw
+8526	wyth mil pum cant dau ddeg chwech
+8533	wyth mil pum cant tri deg tri
+8540	wyth mil pum cant pedwar deg
+8547	wyth mil pum cant pedwar deg saith
+8554	wyth mil pum cant pum deg pedwar
+8561	wyth mil pum cant chwe deg un
+8568	wyth mil pum cant chwe deg wyth
+8575	wyth mil pum cant saith deg pump
+8582	wyth mil pum cant wyth deg dau
+8589	wyth mil pum cant wyth deg naw
+8596	wyth mil pum cant naw deg chwech
+8603	wyth mil chwe chant tri
+8610	wyth mil chwe chant deg
+8617	wyth mil chwe chant un deg saith
+8624	wyth mil chwe chant dau ddeg pedwar
+8631	wyth mil chwe chant tri deg un
+8638	wyth mil chwe chant tri deg wyth
+8645	wyth mil chwe chant pedwar deg pump
+8652	wyth mil chwe chant pum deg dau
+8659	wyth mil chwe chant pum deg naw
+8666	wyth mil chwe chant chwe deg chwech
+8673	wyth mil chwe chant saith deg tri
+8680	wyth mil chwe chant wyth deg
+8687	wyth mil chwe chant wyth deg saith
+8694	wyth mil chwe chant naw deg pedwar
+8701	wyth mil saith gant un
+8708	wyth mil saith gant wyth
+8715	wyth mil saith gant un deg pump
+8722	wyth mil saith gant dau ddeg dau
+8729	wyth mil saith gant dau ddeg naw
+8736	wyth mil saith gant tri deg chwech
+8743	wyth mil saith gant pedwar deg tri
+8750	wyth mil saith gant pum deg
+8757	wyth mil saith gant pum deg saith
+8764	wyth mil saith gant chwe deg pedwar
+8771	wyth mil saith gant saith deg un
+8778	wyth mil saith gant saith deg wyth
+8785	wyth mil saith gant wyth deg pump
+8792	wyth mil saith gant naw deg dau
+8799	wyth mil saith gant naw deg naw
+8806	wyth mil wyth gant chwech
+8813	wyth mil wyth gant un deg tri
+8820	wyth mil wyth gant dau ddeg
+8827	wyth mil wyth gant dau ddeg saith
+8834	wyth mil wyth gant tri deg pedwar
+8841	wyth mil wyth gant pedwar deg un
+8848	wyth mil wyth gant pedwar deg wyth
+8855	wyth mil wyth gant pum deg pump
+8862	wyth mil wyth gant chwe deg dau
+8869	wyth mil wyth gant chwe deg naw
+8876	wyth mil wyth gant saith deg chwech
+8883	wyth mil wyth gant wyth deg tri
+8890	wyth mil wyth gant naw deg
+8897	wyth mil wyth gant naw deg saith
+8904	wyth mil naw cant pedwar
+8911	wyth mil naw cant un deg un
+8918	wyth mil naw cant un deg wyth
+8925	wyth mil naw cant dau ddeg pump
+8932	wyth mil naw cant tri deg dau
+8939	wyth mil naw cant tri deg naw
+8946	wyth mil naw cant pedwar deg chwech
+8953	wyth mil naw cant pum deg tri
+8960	wyth mil naw cant chwe deg
+8967	wyth mil naw cant chwe deg saith
+8974	wyth mil naw cant saith deg pedwar
+8981	wyth mil naw cant wyth deg un
+8988	wyth mil naw cant wyth deg wyth
+8995	wyth mil naw cant naw deg pump
+9002	naw mil dau
+9009	naw mil naw
+9016	naw mil un deg chwech
+9023	naw mil dau ddeg tri
+9030	naw mil tri deg
+9037	naw mil tri deg saith
+9044	naw mil pedwar deg pedwar
+9051	naw mil pum deg un
+9058	naw mil pum deg wyth
+9065	naw mil chwe deg pump
+9072	naw mil saith deg dau
+9079	naw mil saith deg naw
+9086	naw mil wyth deg chwech
+9093	naw mil naw deg tri
+9100	naw mil cant
+9107	naw mil cant saith
+9114	naw mil cant un deg pedwar
+9121	naw mil cant dau ddeg un
+9128	naw mil cant dau ddeg wyth
+9135	naw mil cant tri deg pump
+9142	naw mil cant pedwar deg dau
+9149	naw mil cant pedwar deg naw
+9156	naw mil cant pum deg chwech
+9163	naw mil cant chwe deg tri
+9170	naw mil cant saith deg
+9177	naw mil cant saith deg saith
+9184	naw mil cant wyth deg pedwar
+9191	naw mil cant naw deg un
+9198	naw mil cant naw deg wyth
+9205	naw mil dau gant pump
+9212	naw mil dau gant un deg dau
+9219	naw mil dau gant un deg naw
+9226	naw mil dau gant dau ddeg chwech
+9233	naw mil dau gant tri deg tri
+9240	naw mil dau gant pedwar deg
+9247	naw mil dau gant pedwar deg saith
+9254	naw mil dau gant pum deg pedwar
+9261	naw mil dau gant chwe deg un
+9268	naw mil dau gant chwe deg wyth
+9275	naw mil dau gant saith deg pump
+9282	naw mil dau gant wyth deg dau
+9289	naw mil dau gant wyth deg naw
+9296	naw mil dau gant naw deg chwech
+9303	naw mil tri chant tri
+9310	naw mil tri chant deg
+9317	naw mil tri chant un deg saith
+9324	naw mil tri chant dau ddeg pedwar
+9331	naw mil tri chant tri deg un
+9338	naw mil tri chant tri deg wyth
+9345	naw mil tri chant pedwar deg pump
+9352	naw mil tri chant pum deg dau
+9359	naw mil tri chant pum deg naw
+9366	naw mil tri chant chwe deg chwech
+9373	naw mil tri chant saith deg tri
+9380	naw mil tri chant wyth deg
+9387	naw mil tri chant wyth deg saith
+9394	naw mil tri chant naw deg pedwar
+9401	naw mil pedwar cant un
+9408	naw mil pedwar cant wyth
+9415	naw mil pedwar cant un deg pump
+9422	naw mil pedwar cant dau ddeg dau
+9429	naw mil pedwar cant dau ddeg naw
+9436	naw mil pedwar cant tri deg chwech
+9443	naw mil pedwar cant pedwar deg tri
+9450	naw mil pedwar cant pum deg
+9457	naw mil pedwar cant pum deg saith
+9464	naw mil pedwar cant chwe deg pedwar
+9471	naw mil pedwar cant saith deg un
+9478	naw mil pedwar cant saith deg wyth
+9485	naw mil pedwar cant wyth deg pump
+9492	naw mil pedwar cant naw deg dau
+9499	naw mil pedwar cant naw deg naw
+9506	naw mil pum cant chwech
+9513	naw mil pum cant un deg tri
+9520	naw mil pum cant dau ddeg
+9527	naw mil pum cant dau ddeg saith
+9534	naw mil pum cant tri deg pedwar
+9541	naw mil pum cant pedwar deg un
+9548	naw mil pum cant pedwar deg wyth
+9555	naw mil pum cant pum deg pump
+9562	naw mil pum cant chwe deg dau
+9569	naw mil pum cant chwe deg naw
+9576	naw mil pum cant saith deg chwech
+9583	naw mil pum cant wyth deg tri
+9590	naw mil pum cant naw deg
+9597	naw mil pum cant naw deg saith
+9604	naw mil chwe chant pedwar
+9611	naw mil chwe chant un deg un
+9618	naw mil chwe chant un deg wyth
+9625	naw mil chwe chant dau ddeg pump
+9632	naw mil chwe chant tri deg dau
+9639	naw mil chwe chant tri deg naw
+9646	naw mil chwe chant pedwar deg chwech
+9653	naw mil chwe chant pum deg tri
+9660	naw mil chwe chant chwe deg
+9667	naw mil chwe chant chwe deg saith
+9674	naw mil chwe chant saith deg pedwar
+9681	naw mil chwe chant wyth deg un
+9688	naw mil chwe chant wyth deg wyth
+9695	naw mil chwe chant naw deg pump
+9702	naw mil saith gant dau
+9709	naw mil saith gant naw
+9716	naw mil saith gant un deg chwech
+9723	naw mil saith gant dau ddeg tri
+9730	naw mil saith gant tri deg
+9737	naw mil saith gant tri deg saith
+9744	naw mil saith gant pedwar deg pedwar
+9751	naw mil saith gant pum deg un
+9758	naw mil saith gant pum deg wyth
+9765	naw mil saith gant chwe deg pump
+9772	naw mil saith gant saith deg dau
+9779	naw mil saith gant saith deg naw
+9786	naw mil saith gant wyth deg chwech
+9793	naw mil saith gant naw deg tri
+9800	naw mil wyth gant
+9807	naw mil wyth gant saith
+9814	naw mil wyth gant un deg pedwar
+9821	naw mil wyth gant dau ddeg un
+9828	naw mil wyth gant dau ddeg wyth
+9835	naw mil wyth gant tri deg pump
+9842	naw mil wyth gant pedwar deg dau
+9849	naw mil wyth gant pedwar deg naw
+9856	naw mil wyth gant pum deg chwech
+9863	naw mil wyth gant chwe deg tri
+9870	naw mil wyth gant saith deg
+9877	naw mil wyth gant saith deg saith
+9884	naw mil wyth gant wyth deg pedwar
+9891	naw mil wyth gant naw deg un
+9898	naw mil wyth gant naw deg wyth
+9905	naw mil naw cant pump
+9912	naw mil naw cant un deg dau
+9919	naw mil naw cant un deg naw
+9926	naw mil naw cant dau ddeg chwech
+9933	naw mil naw cant tri deg tri
+9940	naw mil naw cant pedwar deg
+9947	naw mil naw cant pedwar deg saith
+9954	naw mil naw cant pum deg pedwar
+9961	naw mil naw cant chwe deg un
+9968	naw mil naw cant chwe deg wyth
+9975	naw mil naw cant saith deg pump
+9982	naw mil naw cant wyth deg dau
+9989	naw mil naw cant wyth deg naw
+9996	naw mil naw cant naw deg chwech
+100000	can mil
+999999	naw cant naw deg naw mil naw cant naw deg naw
+1000000	un miliwn
+2000000	dwy miliwn
+1234567	un miliwn dau gant tri deg pedwar mil pum cant chwe deg saith
+2026	dwy fil dau ddeg chwech
+1984	un mil naw cant wyth deg pedwar
+999999999	naw cant naw deg naw miliwn naw cant naw deg naw mil naw cant naw deg naw
+1000000000	un biliwn
+50000000	pum deg miliwn
+200000	dau gan mil
+300000	tri chan mil
+1,000	un mil
+1,234	un mil dau gant tri deg pedwar
+12,345	un deg dau mil tri chant pedwar deg pump
+3.5	tri pwynt pump
+3.14	tri pwynt un pedwar
+20.15	dau ddeg pwynt un pump
+50%	pum deg y cant
+100 %	cant y cant
+25%	dau ddeg pump y cant
+mae 100 o bobl	mae cant o bobl
+ci & chath	ci a chath
+ci & aderyn	ci ac aderyn
+e.e.	er enghraifft
+h.y.	hynny yw
+ayb	ac yn y blaen
+ayyb	ac yn y blaen
+Dr Jones	doctor jones
+BBC	b·b·c
+S4C	s pedwar c
+Mae'r tywydd yn braf	mae'r tywydd yn braf
+Mae 234 o bobl yn y BBC	mae dau gant tri deg pedwar o bobl yn y b·b·c
+Roedd 42 o blant	roedd pedwar deg dau o blant
+yn 2026 bydd	yn dwy fil dau ddeg chwech bydd
+yr NHS a'r BBC	yr nhs a'r bbc
+e.e. cath a chi	er enghraifft cath a chi
+d.s. pwysig	dalier sylw pwysig
+S4C a'r BBC.	s pedwar c a'r b·b·c.
+A55	a pum deg pump
+A470	a pedwar cant saith deg
+OK	o·k
+HMS	h·m·s
+3D	tri d
+COVID19	c·o·v·i·d un deg naw
+B1	b un
+CROESO I GYMRU	croeso i gymru
+aeth o ar hyd yr A55	aeth o ar hyd yr a pum deg pump
+s4c	spedwarc
+y BBC	y b·b·c
+i BBC Cymru	i b·b·c cymru
+o BBC Radio	o b·b·c radio
+a BBC	a b·b·c
+BBC y dydd	b·b·c y dydd
+y CD	y c·d
+API	a·p·i
+TTS	t·t·s
+URL	u·r·l
+PDF	p·d·f
+A55 a'r M4	a pum deg pump a'r m pedwar
+1/2	hanner
+1/4	chwarter
+3/4	tri chwarter
+1/3	traean
+2/3	dwy ran o dair
+5/8	pum rhan o wyth
+7/8	saith rhan o wyth
+1/10	un rhan o ddeg
+5km	pum cilomedr
+3kg	tri chilogram
+10cm	deg centimetr
+2m	dau fetr
+500g	pum can gram
+2l	dau litr
+1,500km	un mil pum can cilomedr
+mae 3/4 o'r dosbarth	mae tri chwarter o'r dosbarth
+5mm	pum milimetr
+2mm	dau filimetr
+3mm	tri milimetr
+6mm	chwe milimetr
+10mm	deg milimetr
+1,500mm	un mil pum can milimetr
+mae 5mm o law	mae pum milimetr o law
+5/4	pump pedwar
+4/4	pedwar pedwar
+9/2	naw dau
+6/3	chwech tri
+11/7/8	un deg un saith wyth
+1/2/3	hanner tri
+5 km	pum cilomedr
+3 kg	tri chilogram
+2 m	dau fetr
+10 cm	deg centimetr
+500　g	pum can gram
+2l	dau litr
+6m	chwe metr
+7kg	saith cilogram
+£ 5m	pum miliwn o bunnoedd
+£ 5bn	pum biliwn o bunnoedd
+£ 5	pum punt
+£ 5.99	pum punt naw deg naw ceiniog
+£ 5kg	£ pum cilogram
+£　5M	£ pump m
+ci cath	ci cath
+a b	a b
+bore　da	bore da
+ci  cath	ci cath
+ bore da 	bore da
+5  km	pump km
+mae ci yma	mae ci yma
+Mae’r tywydd yn braf	mae'r tywydd yn braf
+Dw i’n mynd	dw i'n mynd
+i’w dŷ	i'w dŷ
+o’r blaen	o'r blaen
+S4C a’r BBC.	s pedwar c a'r b·b·c.
+ʼn awr	'n awr
+dydd Iau’r wythnos	dydd iau'r wythnos
+17/07/2026	yr ail ar bymtheg o orffennaf dwy fil a dau ddeg chwech
+1/1/2000	y cyntaf o ionawr dwy fil
+31/12/1999	yr unfed ar ddeg ar hugain o ragfyr mil naw naw deg naw
+3/3/2033	y trydydd o fawrth dwy fil a thri deg tri
+17 Gorffennaf 2026	yr ail ar bymtheg o orffennaf dwy fil a dau ddeg chwech
+25 Rhagfyr	y pumed ar hugain o ragfyr
+1 Ionawr 2000	y cyntaf o ionawr dwy fil
+y 5ed o Fai	y pumed o fai
+ganwyd hi ar 2/2/2022	ganwyd hi ar yr ail o chwefror dwy fil a dau ddeg dau
+£5	pum punt
+£1	un bunt
+£2	dwy bunt
+£3	tair punt
+£6	chwe phunt
+£10	deg punt
+£100	can punt
+£5.99	pum punt naw deg naw ceiniog
+£2.50	dwy bunt pum deg ceiniog
+£1234.56	un mil dau gant tri deg pedwar punt pum deg chwech ceiniog
+50p	pum deg ceiniog
+99c	naw deg naw ceiniog
+5c	pum ceiniog
+3:00	tri o'r gloch
+10:30	hanner awr wedi deg
+9:05	pum munud wedi naw
+14:45	chwarter i dri y prynhawn
+23:59	un funud i ddeuddeg yr hwyr
+12:00	deuddeg o'r gloch
+2 + 2 = 4	dau plws dau yn hafal i pedwar
+e-bost @ y safle	e-bost at y safle
+a = b + c	a yn hafal i b plws c
+£20 a 50p	dau ddeg punt a pum deg ceiniog
+ci - cath	ci - cath
+£5m	pum miliwn o bunnoedd
+£1m	un miliwn o bunnoedd
+£2m	dwy miliwn o bunnoedd
+£3m	tair miliwn o bunnoedd
+£6m	chwe miliwn o bunnoedd
+£10m	deg miliwn o bunnoedd
+£100m	can miliwn o bunnoedd
+£2.5m	dwy miliwn pum can mil o bunnoedd
+£1.5m	un miliwn pum can mil o bunnoedd
+£0.5m	pum can mil o bunnoedd
+£5.99m	pum miliwn naw cant naw deg mil o bunnoedd
+£1,500m	un biliwn pum can miliwn o bunnoedd
+£10k	deg mil o bunnoedd
+£1k	mil o bunnoedd
+£2k	dwy fil o bunnoedd
+£250k	dau gant pum deg mil o bunnoedd
+£1.5k	mil pum cant o bunnoedd
+£3bn	tri biliwn o bunnoedd
+£1bn	un biliwn o bunnoedd
+£2bn	dau biliwn o bunnoedd
+£2.5bn	dau biliwn pum can miliwn o bunnoedd
+£100bn	can biliwn o bunnoedd
+£5M	pum miliwn o bunnoedd
+£10K	deg mil o bunnoedd
+£3BN	tri biliwn o bunnoedd
+£3Bn	tri biliwn o bunnoedd
+£ 5m	pum miliwn o bunnoedd
+£5m.	pum miliwn o bunnoedd.
+mae £3m yn y gronfa	mae tair miliwn o bunnoedd yn y gronfa
+cost o £2.5m a £750k	cost o dwy miliwn pum can mil o bunnoedd a saith gant pum deg mil o bunnoedd
+£5MB	£pump m·b
+5M	pump m
+£0m	sero o bunnoedd
+£5kg	£pum cilogram
+£5km	£pum cilomedr
+£5mm	£pum milimetr
+£5cm	£pum centimetr
+£5g	£pum gram
+£5l	£pum litr
+£5 kg	£pum cilogram
+£5 m	£pum metr
+£5million	pum puntmillion
+1af	cyntaf
+2il	ail
+3ydd	trydydd
+3edd	trydedd
+5ed	pumed
+10fed	degfed
+11eg	unfed ar ddeg
+17eg	ail ar bymtheg
+20fed	ugeinfed
+21ain	unfed ar hugain
+31ain	unfed ar ddeg ar hugain
+0800x	dim wyth dim dim x
+05lhn0	dim pump lhnsero
+00c3	dim dim ctri
+007	dim dim saith
+rhif 05lhn0	rhif dim pump lhnsero
+0800/123	dim wyth dim dim cant dau ddeg tri
+ffon:01248	ffon dim un dau pedwar wyth
+01248-382000	dim un dau pedwar wyth tri wyth dau dim dim dim
+00	dim dim
+0abc	seroabc
+0d	serod
+x05	xpump
+a007	asaith
