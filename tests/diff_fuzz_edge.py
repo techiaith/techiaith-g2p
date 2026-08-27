@@ -130,10 +130,17 @@ def cases() -> list[str]:
     for d in ("٣", "٠", "١", "۵", "०", "𝟑", "𞓰"):
         out += ["0" + d + d + "x", "0" + d + d, d + d, d, "0" + d, d + "x",
                 "1" + d, "1," + d + d + d, "12" + d, "0800 " + d + d, "0800" + d]
-    # NOT added, deliberately: "٣.٣", "£٣", "٣%", "٣ Ionawr 2020". `_DECIMAL`, `_CURRENCY`,
-    # `_PERCENT` and `_DATE_MONTH` still say `\d`, so they still claim a non-ASCII decimal
-    # digit where C does not -- divergent on `main` too, no crash, and recorded in
-    # docs/FOLLOWUPS.md §G. Adding them would fail the gate on a known gap.
+    # The 2026-08-21 sweep narrowed EVERY consuming digit position to the ASCII class
+    # (`_DECIMAL`, `_CURRENCY`, `_PERCENT`, `_DATE_MONTH`, `_TIME`, `_FRACTION`, `_UNIT`,
+    # `_PENCE`, `_ORDINAL_RE`, `_BLYNEDD`, the math/degree lookarounds), so the four
+    # previously-excluded divergences are now convergent passthroughs and are IN:
+    for d in ("٣", "٠", "۵"):
+        out += [d + "." + d, "£" + d, d + "%", d + " Ionawr 2020", d + "af", d + "/" + d,
+                d + " blynedd", d + ":30", d + "km", d + "pm"]
+    # Still divergent and still excluded: "٣05" -- the digit-run patterns' NEGATIVE
+    # lookbehind guards deliberately keep `\d` (a guard narrowed is a match widened), so
+    # Python refuses the "05" after a wide digit where C's byte test accepts it.
+    # Recorded in docs/FOLLOWUPS.md §G; unchanged by the sweep.
     #
     # NOT added, deliberately: "0800α"/"0800д"/"0800中"/"0800ª"/"0800µ"/"0800ɐ". Those
     # still diverge -- Python's str.isalpha() is true for all six, but C's separator
@@ -142,6 +149,46 @@ def cases() -> list[str]:
     # knows only four Latin ranges. Adding any of these here would fail this gate, not
     # exercise a fix -- the actual fix needs real Unicode letter tables shared across
     # every \b-based pass in cy_normalize.c, which is out of scope for this task.
+    # (The digit/letter SPLITTER below deliberately shares no part of that gap: both
+    # sides use the Latin-only class, so these inputs stay out of section 11 too.)
+
+    # 11. THE DIGIT/LETTER SPLITTER (FOLLOWUPS section G's peeling job, closed). A space
+    # at every ASCII-digit <-> Latin-letter/_ boundary, both directions, mirrored between
+    # _DIGIT_LETTER_BOUNDARY (Python) and pass_digit_letter_split (C) -- plus the trailing
+    # separators inside currency and percent, which run before the splitter and glue their
+    # REPLACEMENT. The matrix crosses digit runs with letters from every Latin range the
+    # shared class knows (ASCII, Latin-1, Extended-A, Extended Additional) and "_", in
+    # both directions and sandwiched, through the suffix passes that must keep their
+    # claims (£Nx vs £NM, N% tails, pence, ordinals, the colonless clock) and the
+    # s4c-alike codes whose pence lookbehind must keep refusing.
+    latin = ["x", "q", "ê", "ō", "ŵ", "ŷ", "ḁ", "_"]
+    runs = ["5", "05", "800", "0800", "2026", "1,000"]
+    for L in latin:
+        for r in runs:
+            out += [r + L, L + r, L + r + L, r + L + r, L + " " + r + L]
+    out += ["s4c", "s4c.", "a4b5c6", "covid19", "h2o", "x£5", "£5x", "£5M", "£5Mx",
+            "£5millionx", "5%x", "50%x", "50%_", "3afx", "5kmx", "7pmx", "9ypx",
+            "x7pm", "tud.007x", "1 Ionawr 2026x", "25 Rhagfyr 1999abc", "1 Ionawr 20261",
+            "12:30x", "07:00x", "0.5x", "x0.5", "5_5", "_5_", "covid19 s4c h2o"]
+
+    # 12. THE INTERIOR PUNCTUATION PEEL (FOLLOWUPS section G, closed). Every _PUNCT
+    # member fused between word chars, at both attachment sides ("(" leads right,
+    # everything else trails left), in runs, mixed with the multibyte marks (… —),
+    # against digraph neighbours, hyphen-letter runs, the ACRONYM_JOIN marker (U+00B7,
+    # NOT a _PUNCT member -- must stay word-internal), clitics and compounds. The
+    # invariant behind these rows is phonemize(a+m+b) == phonemize(a+m+" b"); here they
+    # guard the C mirror at id level.
+    marks = [".", ",", ";", ":", "!", "?", "(", ")", '"', "…", "—"]
+    words12 = ["ie", "na", "ci", "cath", "llan", "gŵn", "b-a-ch", "i'r", "d-d-d"]
+    for m in marks:
+        for a in words12[:4]:
+            for b in words12:
+                out.append(f"{a}{m}{b}")
+        out += [f"ie{m}{m}na", f"ie{m} na", f"ie {m}na", f"a{m}(b", f"a){m}b",
+                f"5{m}7", f"x{m}5", f"{m}ie{m}", f"ie{m}"]
+    out += ["helo!!!sut", "((a))", "a.b.c.d", "un;;;dau", 'cath"…"ci', "a…—b",
+            "ty(bach)!ci", "mae'r ci!yn dda", "a·b!c", "pris·da!ie", "No.10",
+            "b-a-ch!na", "d-d-d.e-e-e", "(y)sgol", "llyfr(au)"]
 
     return out
 

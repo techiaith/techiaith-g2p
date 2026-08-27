@@ -8,7 +8,7 @@
 #include <string.h>
 
 /* Rows scripts/emit_c_data.py writes; a short corpus is a failure, not a pass. */
-enum { N_BILINGUAL_ROWS = 82 };
+enum { N_BILINGUAL_ROWS = 92 };
 
 static int run_mode(const char *core, const char *mode) {
     CyPhonemizer *p = cyp_create(core, mode);

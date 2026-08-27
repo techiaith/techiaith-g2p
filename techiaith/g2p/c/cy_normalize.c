@@ -6,6 +6,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 
@@ -263,6 +264,14 @@ static long cp_before(const char *s, int i) {
  * is the char BEFORE index i a word char? Match Python's \b over Unicode letters. */
 static int word_after(const char *s, int j) { return s[j] && cp_is_word(cp_at(s, j)); }
 static int word_before(const char *s, int i) { return i > 0 && cp_is_word(cp_before(s, i)); }
+/* Defined below, next to the digit-sequence pass that named it; forward declared here
+ * for pass_percent's trailing separator. */
+static int digit_seq_sep(const char *s, int j);
+/* Defined below (the Unicode-\s helper); forward declared for the passes above it whose
+ * whitespace loops were ASCII-only until the 2026-08-21 sweep (percent, math/degree,
+ * ampersand, date-month) -- "8<NBSP>x<NBSP>9" was the ONE divergence the 1.5M-case
+ * differential still found. */
+static int re_space_len(const char *s, int j);
 
 /* Acronyms spell out as isolated lower-case LETTERS (the G2P names each letter,
  * language-aware); the old letter-name-word table ("bi", "èc", "ce"...) is gone —
@@ -353,6 +362,35 @@ static int pound_magnitude_token(const char *s, int i, int j) {
     return p >= 2 && (unsigned char)s[p - 2] == 0xC2 && (unsigned char)s[p - 1] == 0xA3;
 }
 
+/* "7PM": the [A-Z0-9] run at s[i..j) is an upper-case clock form -- digits plus a bare
+ * meridiem marker -- which the acronym pass would otherwise claim as a code before
+ * pass_time ever runs ("7PM" -> "saith p·m", and "3:00PM" collapsed outright because
+ * "00PM" was eaten). Same stand-aside shape as pound_magnitude_token above.
+ *
+ * Two admissions, mirroring pound's narrowness. A 1-2 digit run <= 23 is a colonless
+ * hour ("7PM", "10YB" -- and "00PM", the minute fragment of "3:00PM", is 0). A run of
+ * 24-59 stands aside only as a minute field: exactly two digits, [0-5] first, directly
+ * after "digit:" or "digit." ("3:45PM", "7.30PM"). Everything else stays a code:
+ * standalone "PM" (the Prime Minister) has no digits, "45PM" alone fails both tests,
+ * and the UPPERCASE DOTTED forms ("7P.M.") never reach here at all -- the [A-Z0-9]
+ * token there is "7P", not marker-shaped, so they stay spelled out: a recorded
+ * limitation, identical in both implementations. Mirrors
+ * welsh_normalize._clock_marker_token. */
+static int clock_marker_token(const char *s, int i, int j) {
+    int len = j - i;
+    if (len < 3 || len > 4) return 0;
+    const char *mk = s + j - 2;
+    if (!((mk[0] == 'A' && mk[1] == 'M') || (mk[0] == 'P' && mk[1] == 'M') ||
+          (mk[0] == 'Y' && (mk[1] == 'B' || mk[1] == 'P' || mk[1] == 'H')))) return 0;
+    for (int t = i; t < j - 2; t++) if (!isdigit((unsigned char)s[t])) return 0;
+    /* 1-2 digits by the len gate above; same inline read as pass_time's hv (atoin is
+     * defined further down the file). */
+    int v = len == 3 ? s[i] - '0' : (s[i] - '0') * 10 + (s[i + 1] - '0');
+    if (v <= 23) return 1;
+    return len == 4 && s[i] >= '0' && s[i] <= '5'
+        && i >= 2 && (s[i - 1] == ':' || s[i - 1] == '.') && isdigit((unsigned char)s[i - 2]);
+}
+
 /* one abbreviation rule */
 typedef struct { const char *pat; int ci; int wb_end; int opt_dot; const char *repl; } Abbrev;
 static const Abbrev ABBREV[] = {
@@ -401,6 +439,99 @@ static void pass_abbrev(const char *in, char *out, const Abbrev *ab) {
     out[o] = 0;
 }
 
+/* ---- the acronym vocabulary gate — mirrors welsh_normalize._acronym_vocab ----
+ *
+ * Letter-spelling is an OOV fallback, not the reading of every all-caps token: an
+ * all-caps token whose lowercase form the pronunciation dictionaries know is a real
+ * word (or a lexicalised acronym — they carry "bbc", "nato", "dvla" with spoken
+ * forms), and the right reading is the word itself. Only a token the dictionaries do
+ * NOT know keeps the spell-out (HMS, WJEC, USB).
+ *
+ * Membership rule, byte-identical to the Python side's _VOCAB_HEADWORD regex
+ * ([A-Za-z]{2,} at line start, terminated by space/tab/\r/end-of-line, lowercased):
+ * see _acronym_vocab in welsh_normalize.py, which reads the same four files.
+ *
+ * This is the one normalizer table too large to generate as C source the way the
+ * emoji table is (140k headwords, ~1.2 MB that the data directory already ships), so
+ * it is loaded at runtime instead: cyp_create loads it for every phonemize caller, and
+ * a bare-cyp_normalize harness (test_norm.c, the ctypes tests) must call
+ * cyp_normalize_load_vocab itself. Forgetting is loud, not silent: normalize_golden.tsv
+ * pins in-vocabulary rows ("BBC" -> "bbc"), which an unloaded (empty) vocab fails. */
+static char *g_avocab_pool = NULL;      /* every headword, lowercased, NUL-terminated */
+static const char **g_avocab = NULL;    /* sorted, deduped pointers into the pool */
+static int g_avocab_n = 0;
+
+static int avocab_cmp(const void *a, const void *b) {
+    return strcmp(*(const char *const *)a, *(const char *const *)b);
+}
+
+long cyp_normalize_load_vocab(const char *core_dir) {
+    static const char *dicts[] = {"bangordict.dict", "bangordict.xx.dict",
+                                  "bangordict.en.dict", "cmudict.dict"};
+    free(g_avocab_pool); g_avocab_pool = NULL;
+    free(g_avocab); g_avocab = NULL;
+    g_avocab_n = 0;
+    size_t pool_cap = 1u << 21, pool_len = 0;   /* ~1.2 MB of headwords fits first try */
+    size_t n_cap = 1u << 16, n = 0;
+    char *pool = (char *)malloc(pool_cap);
+    size_t *offs = (size_t *)malloc(n_cap * sizeof *offs);
+    if (!pool || !offs) { free(pool); free(offs); return -1; }
+    char line[65536];
+    for (int d = 0; d < 4; d++) {
+        char path[4096];
+        snprintf(path, sizeof(path), "%s/data/geiriadur-ynganu-bangor/%s", core_dir, dicts[d]);
+        FILE *f = fopen(path, "r");
+        if (!f) { free(pool); free(offs); return -1; }
+        while (fgets(line, sizeof(line), f)) {
+            int k = 0;
+            while ((line[k] >= 'A' && line[k] <= 'Z') || (line[k] >= 'a' && line[k] <= 'z')) k++;
+            if (k < 2) continue;
+            if (line[k] != ' ' && line[k] != '\t' && line[k] != '\r' &&
+                line[k] != '\n' && line[k] != 0) continue;   /* not a whole first field */
+            if (pool_len + (size_t)k + 1 > pool_cap) {
+                pool_cap *= 2;
+                char *np = (char *)realloc(pool, pool_cap);
+                if (!np) { fclose(f); free(pool); free(offs); return -1; }
+                pool = np;
+            }
+            if (n == n_cap) {
+                n_cap *= 2;
+                size_t *no = (size_t *)realloc(offs, n_cap * sizeof *no);
+                if (!no) { fclose(f); free(pool); free(offs); return -1; }
+                offs = no;
+            }
+            offs[n++] = pool_len;
+            for (int t = 0; t < k; t++)
+                pool[pool_len++] = (char)tolower((unsigned char)line[t]);
+            pool[pool_len++] = 0;
+        }
+        fclose(f);
+    }
+    const char **ptrs = (const char **)malloc((n ? n : 1) * sizeof *ptrs);
+    if (!ptrs) { free(pool); free(offs); return -1; }
+    for (size_t t = 0; t < n; t++) ptrs[t] = pool + offs[t];
+    free(offs);
+    qsort(ptrs, n, sizeof *ptrs, avocab_cmp);
+    size_t m = 0;
+    for (size_t t = 0; t < n; t++)
+        if (m == 0 || strcmp(ptrs[m - 1], ptrs[t]) != 0) ptrs[m++] = ptrs[t];
+    g_avocab_pool = pool;
+    g_avocab = ptrs;
+    g_avocab_n = (int)m;
+    return (long)m;
+}
+
+static int avocab_has(const char *w) {
+    int lo = 0, hi = g_avocab_n - 1;
+    while (lo <= hi) {
+        int mid = lo + (hi - lo) / 2;
+        int c = strcmp(w, g_avocab[mid]);
+        if (c == 0) return 1;
+        if (c < 0) hi = mid - 1; else lo = mid + 1;
+    }
+    return 0;
+}
+
 static void pass_acronym(const char *in, char *out) {
     int i = 0, o = 0;
     while (in[i]) {
@@ -418,10 +549,31 @@ static void pass_acronym(const char *in, char *out) {
                 else digits++;   /* the char class is [A-Z0-9] */
             }
             /* >=2 caps (BBC, HMS) — or one cap plus a digit, covering codes read
-             * letter-by-letter (A55, 3D, S4C). Pure digits fall to the number pass, and
-             * a £-prefixed magnitude amount ("£5M") falls to pass_currency. */
+             * letter-by-letter (A55, 3D, S4C). Pure digits fall to the number pass, a
+             * £-prefixed magnitude amount ("£5M") falls to pass_currency, and an
+             * upper-case clock form ("7PM", the "00PM" of "3:00PM") falls to pass_time. */
             if (len >= 2 && wb_after && (uppers >= 2 || (uppers >= 1 && digits >= 1))
-                && !pound_magnitude_token(in, i, j)) {
+                && !pound_magnitude_token(in, i, j)
+                && !clock_marker_token(in, i, j)) {
+                /* The vocabulary gate (see cyp_normalize_load_vocab above): a pure-letter
+                 * token whose lowercase form the dictionaries know is a word merely
+                 * capitalised — read it, don't spell it. Digit-bearing tokens (S4C, A55)
+                 * are codes and never reach the gate. The 128 cap is safe, not a parity
+                 * hole: the longest dictionary headword is 58 bytes, so a longer token
+                 * cannot be in the vocabulary on either side. Mirrors the
+                 * tok.lower()-in-_acronym_vocab() branch of _spell_acronym. */
+                if (digits == 0 && len < 128) {
+                    char low[128];
+                    for (int t = 0; t < len; t++)
+                        low[t] = (char)tolower((unsigned char)in[i + t]);
+                    low[len] = 0;
+                    if (avocab_has(low)) {
+                        memcpy(out + o, low, (size_t)len);
+                        o += len;
+                        i = j;
+                        continue;
+                    }
+                }
                 /* Consecutive letters are joined by ACRONYM_JOIN (U+00B7, UTF-8 C2 B7) so
                  * the G2P knows they came from an acronym; a digit run breaks the join and
                  * becomes a number word (S4C -> "s pedwar c", its letters left isolated and
@@ -467,11 +619,15 @@ static void pass_percent(const char *in, char *out) {
         if (isdigit((unsigned char)in[i])) {
             int j = i;
             while (isdigit((unsigned char)in[j]) || in[j] == ',') j++;
-            int ws = j;
-            while (in[ws] == ' ' || in[ws] == '\t') ws++;
+            int ws = j;   /* \s* is Unicode (re_space_len), not ASCII -- the sweep */
+            for (int sl; (sl = re_space_len(in, ws)); ) ws += sl;
             if (in[ws] == '%') {
                 o += num_words_run_commas(in + i, j - i, out + o);
                 strcpy(out + o, " y cant"); o += 7;
+                /* "50%x" -> "... y cant x": the "%" sits between the digits and the
+                 * letter, so the digit/letter splitter never sees a boundary here.
+                 * Mirrors _percent_repl's _sep_if_latin_tail. */
+                if (digit_seq_sep(in, ws + 1)) out[o++] = ' ';
                 i = ws + 1;
                 continue;
             }
@@ -754,15 +910,15 @@ static void pass_math_deg(const char *in, char *out) {
     while (in[i]) {
         int prev_digit = (o > 0 && is_ascii_digit(out[o - 1]));
         if (prev_digit) {
-            int j = i;
-            while (in[j] == ' ') j++;
+            int j = i;   /* every \s* here is Unicode (re_space_len) -- the sweep */
+            for (int sl; (sl = re_space_len(in, j)); ) j += sl;
             int oplen = 0; const char *word = NULL;
             if (in[j] == '+') { oplen = 1; word = "plws"; }
             else if (in[j] == 'x' || in[j] == 'X') { oplen = 1; word = "lluosi"; }
             else if ((unsigned char)in[j] == 0xC3 && (unsigned char)in[j + 1] == 0x97) { oplen = 2; word = "lluosi"; }  /* U+00D7 */
             if (word) {
                 int k = j + oplen;
-                while (in[k] == ' ') k++;
+                for (int sl; (sl = re_space_len(in, k)); ) k += sl;
                 if (is_ascii_digit(in[k])) {
                     o += sprintf(out + o, " %s ", word);
                     i = k;
@@ -772,7 +928,7 @@ static void pass_math_deg(const char *in, char *out) {
             /* degree sign U+00B0, optionally followed by C or F */
             if ((unsigned char)in[j] == 0xC2 && (unsigned char)in[j + 1] == 0xB0) {
                 int k = j + 2;
-                while (in[k] == ' ') k++;
+                for (int sl; (sl = re_space_len(in, k)); ) k += sl;
                 if ((in[k] == 'C' || in[k] == 'c') && !word_after(in, k + 1)) {
                     o += sprintf(out + o, " gradd celsiws"); i = k + 1; continue;
                 }
@@ -1094,8 +1250,8 @@ static void pass_amp(const char *in, char *out) {
     int i = 0, o = 0;
     while (in[i]) {
         if (in[i] == '&') {
-            int j = i + 1;
-            while (in[j] == ' ' || in[j] == '\t') j++;
+            int j = i + 1;   /* \s* is Unicode (re_space_len), not ASCII -- the sweep */
+            for (int sl; (sl = re_space_len(in, j)); ) j += sl;
             unsigned char nxt = (unsigned char)in[j];
             /* [A-Za-z] or accented À-ÿ (0xC3 0x80..0xBF leading byte) */
             int is_letter = isalpha(nxt) || nxt == 0xC3;
@@ -1364,15 +1520,16 @@ static void pass_date_month(const char *in, char *out) {
             int j = i, ds = i;
             while (isdigit((unsigned char)in[j])) j++;
             int dl = j - ds;
-            if (dl >= 1 && dl <= 2 && (in[j] == ' ' || in[j] == '\t')) {
-                int ws = j; while (in[ws] == ' ' || in[ws] == '\t') ws++;
+            /* \s+ (>=1) then the skip loops: Unicode via re_space_len -- the sweep */
+            if (dl >= 1 && dl <= 2 && re_space_len(in, j)) {
+                int ws = j; for (int sl; (sl = re_space_len(in, ws)); ) ws += sl;
                 int mnum;
                 int ml = match_month(in + ws, &mnum);
                 if (ml) {
                     int k = ws + ml;
                     long y = -1;
                     int save = k;
-                    int ws2 = k; while (in[ws2] == ' ' || in[ws2] == '\t') ws2++;
+                    int ws2 = k; for (int sl; (sl = re_space_len(in, ws2)); ) ws2 += sl;
                     int ys = ws2; while (isdigit((unsigned char)in[ys])) ys++;
                     if (ys - ws2 == 4 && !(word_after(in, ys))) {
                         y = atoin(in + ws2, 4); save = ys;
@@ -1480,20 +1637,23 @@ static int re_space_len(const char *s, int j) {
  * pass has moved closer to it than the unit pass ever did, so it is the one to bound
  * first when the arena job is picked up.
  *
- * The IDIOMATIC CLOCK (2026-07-27) is the third big expander and is likewise unbounded:
- * "11:19pm" (7 bytes) becomes "pedair ar bymtheg munud wedi un ar ddeg y prynhawn"
- * (50 bytes), ~6.3x. Re-bisected on the same harness after it landed:
+ * The IDIOMATIC CLOCK (2026-07-27) is the third big expander — "11:19pm" (7 bytes)
+ * becomes "pedair ar bymtheg munud wedi un ar ddeg y prynhawn" (50 bytes), ~6.3x — and
+ * as of the colonless forms it is BOUNDED through put_n like fraction/unit: the
+ * colonless "9yp " -> "naw o'r gloch y prynhawn " is 6.25x per repetition, just below
+ * the colon worst ("11:19pm " -> 52 bytes, 6.5x), and either density was close enough
+ * to pass_currency's low-water mark that adding forms without the bound would have
+ * been careless. Bisection figures from when it was unbounded, kept for the record:
  *
- *     repeated input        with the idiomatic clock
+ *     repeated input        with the idiomatic clock, unbounded
  *     "123456789 "               8200     <- global floor, UNCHANGED
  *     "11:19pm "                10288     <- the clock's low-water mark
  *     "1:26yp "                 10928
  *     "3:00 "                   23416
  *
- * 10288 is above both the 8200 floor and pass_currency's 10086, so the clock did not
- * become the worst case and the overall worst case is still unchanged. (The digital
- * clock it replaced expanded only ~2.2x, so this pass did move a long way toward the
- * floor — it is now second in line behind pass_currency.)
+ * With the clock bounded, pass_currency (10086) is the sole big unbounded expander
+ * left and the one to bound first when the arena job is picked up; the 8200 floor that
+ * plain digits hit through pass_integer is unchanged by any of this.
  *
  * The real fix is bounding the remaining passes, or one saturation check in
  * cyp_normalize; that is pre-existing, spans every pass, and is a separate hardening
@@ -2006,6 +2166,11 @@ static void pass_currency(const char *in, char *out) {
                         (void)sb;
                         char pl[4300]; pounds_plural_str(pl, sizeof(pl), digs, nd);
                         o += sprintf(out + o, "%s", pl);
+                        /* Mirrors _currency_repl's _sep_if_latin_tail. Unreachable for
+                         * ASCII letters (the suffix's own trailing \b would have failed)
+                         * -- kept for symmetry with the Python repl, which applies the
+                         * separator to both returns. */
+                        if (digit_seq_sep(in, j + msl)) out[o++] = ' ';
                         i = j + msl;
                         continue;
                     }
@@ -2026,6 +2191,10 @@ static void pass_currency(const char *in, char *out) {
                     if (pv > 0) { char cb[700]; pence_words(cb, pv);
                         o += sprintf(out + o, " %s", cb); }
                 }
+                /* "£5x" -> "pum punt x", not the glued nonword "pum puntx". The splitter
+                 * cannot do it: this pass runs first and the replacement's letters erase
+                 * the boundary. Mirrors _currency_repl's _sep_if_latin_tail. */
+                if (digit_seq_sep(in, j)) out[o++] = ' ';
                 i = j; continue;
             }
         }
@@ -2073,19 +2242,27 @@ static const char *MINUTE_STANDALONE[11] = {NULL, "un funud", "dwy funud", NULL,
                                             "deng munud"};
 /* Am/pm-style markers, in _TIME's alternation order. Welsh "yb"/"y.b." (y bore),
  * "yp"/"y.p." (y prynhawn) and "yh"/"y.h." (yr hwyr), plus the English-influenced
- * "am"/"pm" Welsh text borrows verbatim. Matched case-insensitively: _TIME carries re.I.
+ * "am"/"pm" Welsh text borrows verbatim -- in both its bare and dotted ("a.m."/"p.m.")
+ * spellings. Matched case-insensitively: _TIME carries re.I.
  *
  * The DOTTED forms must come first: "yh" would otherwise match the first two characters
  * of "y.h."... it cannot (the third character differs), but "y.h." vs "yh" share a prefix
  * in the other direction, so keeping re's order removes the question entirely.
  *
+ * The marker loop in pass_time does `break` (not `continue`) when the trailing (?!\w)
+ * fails. That is equivalent to re's backtracking ONLY while no marker is a proper prefix
+ * of another, so at most one marker can match at a given position. Re-checked with the
+ * dotted English forms added: "am"/"a.m." differ at char 2, "pm"/"p.m." likewise -- the
+ * property still holds. If a future marker breaks it, switch the loop to continue.
+ *
  * "yh" is here because authors write it. BTC names it in order to recommend AGAINST
  * writing it ("10am hyd 4pm, nid ... '10yb hyd 4yh'") -- advice to writers, not to a
  * reader, and a TTS reads what is in front of it. Before this, "16:00yh" failed the whole
  * time match on the trailing (?!\w) and fell to the integer pass as "un deg
- * chwech:seroyh". */
+ * chwech:seroyh". "a.m."/"p.m." earned their place the same way, but worse: the collapsed
+ * "7:00p.m." match let _PENCE read the minute digits as money ("saith sero ceiniog.m."). */
 static const char *TIME_MARKERS[] = {"y.b.", "yb", "y.p.", "yp", "y.h.", "yh",
-                                     "am", "pm", NULL};
+                                     "a.m.", "am", "p.m.", "pm", NULL};
 
 /* y bore / y prynhawn / yr hwyr — ONLY from explicit information, never invented. An
  * explicit marker wins; failing that, an hour >= 13 is unambiguous on its own (24h
@@ -2095,9 +2272,11 @@ static const char *TIME_MARKERS[] = {"y.b.", "yb", "y.p.", "yp", "y.h.", "yh",
 static const char *clock_qualifier(int h, const char *marker, int mlen) {
     if (mlen) {
         if ((mlen == 4 && strncasecmp(marker, "y.b.", 4) == 0) ||
+            (mlen == 4 && strncasecmp(marker, "a.m.", 4) == 0) ||
             (mlen == 2 && strncasecmp(marker, "yb", 2) == 0) ||
             (mlen == 2 && strncasecmp(marker, "am", 2) == 0)) return "y bore";
         if ((mlen == 4 && strncasecmp(marker, "y.p.", 4) == 0) ||
+            (mlen == 4 && strncasecmp(marker, "p.m.", 4) == 0) ||
             (mlen == 2 && strncasecmp(marker, "yp", 2) == 0) ||
             (mlen == 2 && strncasecmp(marker, "pm", 2) == 0)) return "y prynhawn";
         /* yr hwyr, NOT y prynhawn: "yh" names the evening. "pm" stays y prynhawn as it
@@ -2120,7 +2299,7 @@ static const char *minute_phrase(int n, char *buf, size_t cap) {
     return buf;
 }
 
-static void pass_time(const char *in, char *out) {
+static void pass_time(const char *in, char *out, int max) {
     int i = 0, o = 0;
     while (in[i]) {
         int wb = !word_before(in, i);
@@ -2136,30 +2315,74 @@ static void pass_time(const char *in, char *out) {
              * it \d{1,2} while the h % 12 reduction existed made nonsense sound plausible:
              * "90:00" read as "chwech o'r gloch", "99:59" as "un funud i bedwar". */
             int hv = hl == 1 ? in[i] - '0' : (in[i] - '0') * 10 + (in[i + 1] - '0');
-            if (hl >= 1 && hl <= 2 && hv <= 23 && in[j] == ':' &&
-                in[j + 1] >= '0' && in[j + 1] <= '5' && isdigit((unsigned char)in[j + 2])) {
-                int end = j + 3;                        /* just past the two minute digits */
-                /* (?:\s?(y\.b\.|yb|y\.p\.|yp|am|pm))?(?!\w). Greedy: try the marker after
-                 * one optional whitespace CODEPOINT (Python's \s is Unicode, hence
-                 * re_space_len, not ' '), then directly, then fall back to no marker at
-                 * all — which is exactly how re backtracks when the alternation matches
-                 * but the trailing (?!\w) then fails ("3:00pmx" is not a time, and
-                 * "3:00 y.b" is a time with no marker and a literal " y.b" left behind). */
+            if (hl >= 1 && hl <= 2 && hv <= 23) {
+                int matched = 0, mm = 0, mend = 0;
                 const char *mk = NULL;
-                int mlen = 0, mend = end;
-                for (int sp = 1; sp >= 0 && !mlen; sp--) {
-                    int ms = end + (sp ? re_space_len(in, end) : 0);
-                    if (sp && ms == end) continue;      /* no whitespace: same as the sp=0 try */
+                int mlen = 0;
+                if (in[j] == ':' &&
+                    in[j + 1] >= '0' && in[j + 1] <= '5' && isdigit((unsigned char)in[j + 2])) {
+                    int end = j + 3;                    /* just past the two minute digits */
+                    mend = end;
+                    /* (?:\s?(y\.b\.|...|pm))?(?!\w). Greedy: try the marker after one
+                     * optional whitespace CODEPOINT (Python's \s is Unicode, hence
+                     * re_space_len, not ' '), then directly, then fall back to no marker
+                     * at all — which is exactly how re backtracks when the alternation
+                     * matches but the trailing (?!\w) then fails ("3:00pmx" is not a
+                     * time, and "3:00 y.b" is a time with no marker and a literal " y.b"
+                     * left behind). */
+                    for (int sp = 1; sp >= 0 && !mlen; sp--) {
+                        int ms = end + (sp ? re_space_len(in, end) : 0);
+                        if (sp && ms == end) continue;  /* no whitespace: same as the sp=0 try */
+                        for (int t = 0; TIME_MARKERS[t]; t++) {
+                            int L = (int)strlen(TIME_MARKERS[t]);
+                            if (strncasecmp(in + ms, TIME_MARKERS[t], (size_t)L) != 0) continue;
+                            if (word_after(in, ms + L)) break;   /* (?!\w) fails -> no marker */
+                            mk = in + ms; mlen = L; mend = ms + L;
+                            break;
+                        }
+                    }
+                    if (mlen || !word_after(in, end)) {
+                        matched = 1;
+                        mm = atoin(in + j + 1, 2);
+                    }
+                } else if (i == 0 || (in[i - 1] != ':' && in[i - 1] != '.' && in[i - 1] != ',')) {
+                    /* The colonless clock: H(marker) and H.MM(marker), _TIME_NOCOLON's
+                     * mirror. The marker is REQUIRED and GLUED (no whitespace try): "am"
+                     * is a Welsh preposition, and a spaced allowance turns "5 am ddim"
+                     * (five for free) into a clock reading. The byte lookbehind above is
+                     * (?<![:.,]): a failed colon/decimal/comma context ("25:00pm",
+                     * "99.15pm", "1,23pm") must not have its tail digits read as a
+                     * plausible time -- out-of-range input falls to the number passes,
+                     * audibly wrong rather than silently wrong. */
+                    int ms = j;
+                    if (in[j] == '.' &&
+                        in[j + 1] >= '0' && in[j + 1] <= '5' && isdigit((unsigned char)in[j + 2])) {
+                        ms = j + 3;                     /* dotted-hour minutes: "7.30pm" */
+                        mm = atoin(in + j + 1, 2);
+                    }
+                    /* No marker starts with '.', so when the dotted-minute sniff consumed
+                     * ".MM" there is no second, minute-less marker position to retry --
+                     * this needs no backtracking arm to stay equivalent to re. */
                     for (int t = 0; TIME_MARKERS[t]; t++) {
                         int L = (int)strlen(TIME_MARKERS[t]);
                         if (strncasecmp(in + ms, TIME_MARKERS[t], (size_t)L) != 0) continue;
-                        if (word_after(in, ms + L)) break;   /* (?!\w) fails -> no marker */
-                        mk = in + ms; mlen = L; mend = ms + L;
+                        if (word_after(in, ms + L)) break;       /* (?!\w) fails */
+                        mk = in + ms; mlen = L;
                         break;
                     }
+                    if (mlen) {
+                        matched = 1;
+                        mend = ms + mlen;
+                    } else {
+                        mm = 0;   /* discard a dotted-minute sniff that found no marker */
+                    }
                 }
-                if (mlen || !word_after(in, end)) {
-                    int h = atoin(in + i, hl), mm = atoin(in + j + 1, 2);
+                if (matched) {
+                    /* mm defaults to 0: a colonless "7pm" is on the hour, which is
+                     * behaviourally identical to ":00" -- no sentinel needed (Python maps
+                     * a None minute group to 0 the same way). h from hv, which equals the
+                     * old atoin(in + i, hl) re-parse by construction. */
+                    int h = hv;
                     const char *qual = clock_qualifier(h, mk, mlen);
                     int h12 = h % 12;
                     if (h12 == 0) h12 = 12;             /* h % 12 or 12 */
@@ -2173,13 +2396,21 @@ static void pass_time(const char *in, char *out) {
                                                 minute_phrase(mm, mb, sizeof mb), HOUR_TRAD[h12]);
                     else               snprintf(core, sizeof core, "%s i %s",
                                                 minute_phrase(60 - mm, mb, sizeof mb), HOUR_TRAD_MUT[nxt]);
-                    o += sprintf(out + o, "%s", core);
-                    if (qual) o += sprintf(out + o, " %s", qual);
+                    /* One bounded write per match, pass_fraction's convention: build the
+                     * whole replacement first, so a truncation can never leave half a
+                     * reading ("chwarter i" with no hour) in the arena. */
+                    char full[320];
+                    int fl = snprintf(full, sizeof full, "%s%s%s",
+                                      core, qual ? " " : "", qual ? qual : "");
+                    int no = put_n(out, o, max, full, fl);
+                    if (no < 0) break;
+                    o = no;
                     i = mend;
                     continue;
                 }
             }
         }
+        if (o + 1 >= max) break;
         out[o++] = in[i++];
     }
     out[o] = 0;
@@ -2209,24 +2440,86 @@ static void pass_pence(const char *in, char *out) {
     out[o] = 0;
 }
 
-static void pass_symbols(const char *in, char *out) {
+/* The digit/letter SPLITTER: one space at every ASCII-digit <-> Latin-letter/_ boundary,
+ * both directions. FOLLOWUPS section G's "general digit/letter peeling job" -- it lives
+ * here, late in the normaliser, not in the G2P as that section first suggested: by G2P
+ * time the wrong verbalisation is already baked ("x05" -> "xpump" happens in
+ * pass_integer, and phonemize skips a bare digit token). Driver placement is
+ * load-bearing on both edges and mirrors Python exactly -- AFTER every pass that
+ * legitimately consumes letter-adjacent digits (ordinal "3af", currency "£5M", unit
+ * "5km", blynedd, time "7pm"/"12:30yb", pence "50p" -- whose ASCII lookbehind is what
+ * keeps the "4c" of "s4c" from reading as fourpence, and which this pass would defeat
+ * if it ran first) and after pass_email_url; BEFORE math/percent/decimal/digit-seq/
+ * integer, whose guards then see the boundary as real (digit_seq_start_ok's deliberate
+ * lookbehind is untouched -- "x 05" now reaches the digit register where "x05" fell
+ * through to pass_integer and lost its zero).
+ *
+ * ASCII digits and Latin letters ONLY (cyp__cp_is_alpha + '_', the digit_seq_sep
+ * class): "0800α" keeps its accepted, disclosed divergence exactly as it is, and "٣05"
+ * stays untouched on both sides -- this pass can see neither. Bounded: worst case is
+ * alternating "a1a1..." at just under 2x, which WOULD overflow the shared arena on a
+ * 64K input without put_n. Mirrors welsh_normalize._DIGIT_LETTER_BOUNDARY. */
+static void pass_digit_letter_split(const char *in, char *out, int max) {
+    int i = 0, o = 0, prev = 0;      /* 0 = other, 1 = ASCII digit, 2 = Latin letter/_ */
+    while (in[i]) {
+        long cp = cp_at(in, i);
+        int adv = utf8_len((unsigned char)in[i]);
+        int cur = (cp >= '0' && cp <= '9') ? 1
+                : (cyp__cp_is_alpha(cp) || cp == '_') ? 2 : 0;
+        int no;
+        if ((prev == 1 && cur == 2) || (prev == 2 && cur == 1)) {
+            no = put_n(out, o, max, " ", 1);
+            if (no < 0) break;
+            o = no;
+        }
+        no = put_n(out, o, max, in + i, adv);
+        if (no < 0) break;
+        o = no;
+        i += adv;
+        prev = cur;
+    }
+    out[o] = 0;
+}
+
+static void pass_symbols(const char *in, char *out, int max) {
     int i = 0, o = 0;
     while (in[i]) {
         char c = in[i];
+        int no;
         if ((c == '+' || c == '=' || c == '@') && i > 0 && in[i - 1] == ' ' && in[i + 1] == ' ') {
             const char *r = c == '+' ? "plws" : c == '=' ? "yn hafal i" : "at";
-            strcpy(out + o, r); o += (int)strlen(r);
+            no = put_n(out, o, max, r, (int)strlen(r));
+            if (no < 0) break;
+            o = no;
             i++; continue;
         }
-        /* A "/" between two word characters becomes a space. Mirrors Python's
-         * `(?<=\w)/(?=\w)`; see welsh_normalize._symbols for why (the two sides used to
-         * fuse into one word and reach letter-to-sound as a nonword). word_before/
-         * word_after are the same \w this file uses everywhere else, so this inherits the
-         * disclosed Latin-only cp_is_word gap rather than introducing a new one. */
-        if ((c == '/' || c == ':') && word_before(in, i) && word_after(in, i + 1)) {
-            out[o++] = ' ';
+        /* The same three, LETTER-ADJACENT ("a+b") -- the fusion class again: unspoken,
+         * the symbol vanished at the phone layer and its sides fused into one nonword.
+         * The words are the approved registers above, only the context widens; both
+         * sides must be word chars, so "C++"/"A+"/"A+ grade" stay codes. Mirrors
+         * welsh_normalize._symbols' _C_WORD_CLASS rules (same disclosed Latin-only
+         * cp_is_word domain). */
+        if ((c == '+' || c == '=' || c == '@') && word_before(in, i) && word_after(in, i + 1)) {
+            const char *r = c == '+' ? " plws " : c == '=' ? " yn hafal i " : " at ";
+            no = put_n(out, o, max, r, (int)strlen(r));
+            if (no < 0) break;
+            o = no;
             i++; continue;
         }
+        /* A "/", ":" or "*" between two word characters becomes a space. Mirrors
+         * Python's _FUSING_PUNCT_BETWEEN_WORDS; see welsh_normalize._symbols for why
+         * (the two sides used to fuse into one word and reach letter-to-sound as a
+         * nonword; "*" has no approved spoken word, so the space is the conservative
+         * floor). word_before/word_after are the same \w this file uses everywhere
+         * else, so this inherits the disclosed Latin-only cp_is_word gap rather than
+         * introducing a new one. */
+        if ((c == '/' || c == ':' || c == '*') && word_before(in, i) && word_after(in, i + 1)) {
+            no = put_n(out, o, max, " ", 1);
+            if (no < 0) break;
+            o = no;
+            i++; continue;
+        }
+        if (o + 1 >= max) break;
         out[o++] = in[i++];
     }
     out[o] = 0;
@@ -2371,8 +2664,12 @@ void cyp_normalize(const char *in, char *out, int max) {
     /* Before pass_integer, which would otherwise flatten "10 blynedd" to "deg blynedd"
      * and lose both the nasal mutation and the "deng" form. */
     pass_blynedd(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
-    pass_time(a, b); memcpy(a, b, strlen(b) + 1);
+    pass_time(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     pass_pence(a, b); memcpy(a, b, strlen(b) + 1);
+    /* The digit/letter splitter -- placement is load-bearing on both edges; the full
+     * reasoning lives at the function. Python mirror: _DIGIT_LETTER_BOUNDARY, at the
+     * same point in normalize(). */
+    pass_digit_letter_split(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     /* Operators and the degree sign BEFORE every number pass, so their operands are still
      * DIGITS when the lookarounds run. */
     pass_math_deg(a, b); memcpy(a, b, strlen(b) + 1);
@@ -2383,6 +2680,6 @@ void cyp_normalize(const char *in, char *out, int max) {
     pass_digit_seq(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     pass_integer(a, b); memcpy(a, b, strlen(b) + 1);
     pass_amp(a, b); memcpy(a, b, strlen(b) + 1);
-    pass_symbols(a, b); memcpy(a, b, strlen(b) + 1);
+    pass_symbols(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     pass_lower_collapse(a, out);
 }

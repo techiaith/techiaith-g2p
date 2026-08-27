@@ -172,8 +172,12 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
       * 2026-07-27 isolated K -> "cê" (piper-lleol issue #5). K is absent from Tabl 1 of
         the verbatim transcription guidelines, so it falls back to Tabl 2's "ke", the
         same route that already gives q -> ciw and x -> ecs.
+      * 2026-08-25 acronym vocabulary gate: an all-caps token the dictionaries know
+        (BBC, OK, USA, TTS, CD) reads as the dictionary word, not spelled letters
+        (SPLICE_VOCAB below, spliced rather than rebuilt).
     """
-    from techiaith.g2p.bangor_g2p import BangorG2P, _CY_VOWEL_SOLO, _CY_LETTER_NAMES
+    from techiaith.g2p.bangor_g2p import (BangorG2P, _CY_VOWEL_SOLO, _CY_LETTER_NAMES,
+                                          _EN_LETTER_NAMES)
     g = BangorG2P(english_mode="native")
 
     # text -> the phone tokens the decision mandates. i/o/w already had solo vowel names
@@ -207,13 +211,58 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
     SUBST_I_TO_II = {"yn 2026"}
     _I, _II = g.id_map["i"][0], g.id_map["ii"][0]
 
+    # 2026-08-25: the acronym VOCABULARY GATE -- an all-caps token the dictionaries know
+    # reads as the dictionary word, so "BBC" is a lexicon entry now, not spelled letters.
+    # CHANGED cannot rebuild these rows (multi-word sentences) and no single-id SUBST
+    # exists, so the oracle is the FROZEN BYTES with only the affected word's span
+    # swapped: the old span rebuilt from _EN_LETTER_NAMES (the table the spelling came
+    # from), the new span a LITERAL token list frozen here with its dictionary row quoted
+    # beside it -- verifiable by eye against the data files and unable to drift with
+    # phonemize/_segment/_word_tokens, the machinery under test. The exactly-once
+    # assertion keeps each splice honest.
+    VOCAB_WORD_TOKENS = {
+        # data/english/cmudict_native.dict: "bbc	b ii b ii s ˈ ii"
+        "bbc": ["b", "ii", "b", "ii", "s", "ˈ", "ii"],
+        # data/english/cmudict_native.dict: "ok	ˈ ou k ˈ ei"
+        "ok":  ["ˈ", "ou", "k", "ˈ", "ei"],
+        # data/english/cmudict_native.dict: "usa	j uu e s ˈ ei"
+        "usa": ["j", "uu", "e", "s", "ˈ", "ei"],
+        # data/english/cmudict_native.dict: "cd	s ii d ˈ ii"
+        "cd":  ["s", "ii", "d", "ˈ", "ii"],
+        # not in the native file: the accented tables serve it (cmudict.dict
+        # "tts (foreign,en,cmu) t 'ii - t ii - ' e s")
+        "tts": ["t", "ii", "|", "t", "ii", "|", "ˈ", "e", "s"],
+        # a Welsh headword, not an acronym at all: bangordict.dict "ab a b /ab/"
+        "ab":  ["a", "b"],
+    }
+    SPLICE_VOCAB = {
+        "Mae'r BBC yn dda": "bbc", "S4C a'r BBC": "bbc", "BBC.": "bbc",
+        "S4C a'r BBC.": "bbc", "y BBC": "bbc", "y BBC yn dda": "bbc",
+        "i BBC Cymru": "bbc", "o BBC Radio": "bbc", "a BBC": "bbc",
+        "BBC y dydd": "bbc", "Mae y BBC yn dda": "bbc",
+        "OK.": "ok", "USA.": "usa", "TTS.": "tts", "y TTS": "tts",
+        "y CD newydd": "cd", "AB": "ab",
+    }
+
+    def _inner_span(tokens):
+        ids = g.phonemes_to_ids(tokens)
+        return ids[1:-2]        # strip bos and the trailing pad+eos: the in-sentence span
+
+    def _spelled_span(word):
+        tokens = []
+        for _i, _ch in enumerate(word):
+            if _i:
+                tokens.append(" ")
+            tokens.extend(_EN_LETTER_NAMES[_ch])
+        return _inner_span(tokens)
+
     PRE_LANG_ROWS = 69      # rows 1..69 are the 05d9436 file, the independent oracle
     frozen_path = REPO / "tests" / "golden" / "bilingual_prelang_native.tsv"
     rows = [line.split("\t") for line in frozen_path.read_text(encoding="utf-8").splitlines() if line.strip()]
     assert len(rows) >= PRE_LANG_ROWS, (
         f"expected at least the {PRE_LANG_ROWS} pre-lang golden rows, got {len(rows)} "
         f"(file truncated?)")
-    assert set(CHANGED) | SUBST_I_TO_II <= {text for text, _ in rows}, (
+    assert set(CHANGED) | SUBST_I_TO_II | set(SPLICE_VOCAB) <= {text for text, _ in rows}, (
         "the frozen oracle no longer contains the rows the exception list is about; "
         "it has been replaced rather than frozen")
     for text, ids_str in rows:
@@ -226,6 +275,20 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
             assert expected_ids != frozen_ids, (
                 f"the frozen oracle already carries the long vowel for {text!r}: it has been "
                 f"regenerated. Restore it from git, do not refresh it.")
+        elif text in SPLICE_VOCAB:
+            word = SPLICE_VOCAB[text]
+            old_span = _spelled_span(word)
+            new_span = _inner_span(VOCAB_WORD_TOKENS[word])
+            hits = [k for k in range(len(frozen_ids) - len(old_span) + 1)
+                    if frozen_ids[k:k + len(old_span)] == old_span]
+            assert len(hits) == 1, (
+                f"the spelled-{word} span occurs {len(hits)} times in the frozen row for "
+                f"{text!r}, so the splice is ambiguous; identify the span by hand instead")
+            k = hits[0]
+            expected_ids = frozen_ids[:k] + new_span + frozen_ids[k + len(old_span):]
+            assert expected_ids != frozen_ids, (
+                f"the frozen oracle already carries the dictionary reading for {text!r}: "
+                f"it has been regenerated. Restore it from git, do not refresh it.")
         elif text in CHANGED:
             expected_ids = g.phonemes_to_ids(CHANGED[text])
             assert expected_ids != frozen_ids, (
@@ -753,6 +816,57 @@ def test_c_agrees_with_python_on_hyphen_runs_and_solo_vowels():
         "a hyphenated single-letter run must be comma-paced; the hyphen rule did not fire")
     assert comma not in g.text_to_ids("gogledd-ddwyrain"), (
         "the hyphen rule fired on a real compound; the lexicon key has been split")
+
+
+def test_c_agrees_with_python_on_interior_punctuation_peel():
+    """The interior peel's invariant, and C's agreement with it, member by member.
+
+    FOLLOWUPS section G: an interior _PUNCT mark used to fuse its two sides into one
+    LTS nonword and vanish ("ie!na" -> one token, no pause). _segment now peels token
+    INTERIORS too, with the attachment rule that makes the invariant exact: for every
+    member m, phonemize("a"+m+"b") tokenises identically to the spaced form the model
+    trained on -- marks before the first "(" trail the left sub-word, marks from the
+    "(" lead the right one ("ty(bach)" == "ty (bach)", "a!(b" == "a! (b").
+
+    Asserted at id level against the C port for every member and the composite shapes,
+    plus the structural facts themselves (the pause id is IN the output now, and the
+    clitic/compound/acronym-marker paths are untouched)."""
+    import ctypes
+    from techiaith.g2p.bangor_g2p import BangorG2P, _PUNCT
+
+    lib = _c_lib()
+    for mode in ("native", "accented"):
+        g = BangorG2P(english_mode=mode)
+        p = lib.cyp_create(str(REPO / "techiaith" / "g2p").encode(), mode.encode())
+        assert p, f"cyp_create failed for {mode}"
+        buf = (ctypes.c_int32 * 8192)()
+        # the invariant, in Python...
+        for m in _PUNCT:
+            spaced = "a (b" if m == "(" else f"a{m} b"
+            assert g.phonemize(f"a{m}b", on_oov="lts") == g.phonemize(spaced, on_oov="lts"), (
+                f"[{mode}] interior {m!r} does not tokenise like the spaced form")
+        # ...and C's id-level agreement on members and composites
+        texts = [f"a{m}b" for m in _PUNCT] + [
+            "ie!na", "un;dau", 'cath"ci', "ty(bach)", "a!(b", "No.10", "b-a-ch!na",
+            "helo!!!sut", "a…b", "da—da", "((a))", "a.b.c.d", "un;;;dau", "5!7",
+            "$!x", "a!$", "mae'r ci!yn dda",
+            # untouched neighbours: clitics, compounds, the ACRONYM_JOIN marker
+            "i'r", "gogledd-ddwyrain", "b-a-ch", "a·b", "pris·da",
+        ]
+        bad = []
+        for text in texts:
+            n = lib.cyp_text_to_ids(p, text.encode(), buf, 8192)
+            got = None if n < 0 else list(buf[:n])
+            want = g.text_to_ids(text)
+            if got != want:
+                bad.append((text, want, got))
+        assert not bad, f"C/Python divergence in {mode} mode: {bad[:6]}"
+
+    # the structural fact: the mark's own id is emitted, not dropped
+    g = BangorG2P(english_mode="native")
+    bang = g.id_map["!"][0]
+    assert bang in g.text_to_ids("ie!na"), "the interior '!' must be emitted as its pause id"
+    assert g.text_to_ids("ie!na") == g.text_to_ids("ie! na"), "fused must equal spaced at id level"
 
 
 def test_c_spell_out_uses_the_semicolon_pause_and_letter_names():

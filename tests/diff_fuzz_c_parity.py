@@ -92,16 +92,15 @@ def build_corpus(n: int, seed: int = 1234) -> list[str]:
     # typesetting, and an ASCII-only reading left "5<NBSP>km" as "pump<NBSP>km" instead
     # of "pum cilomedr", and "ci<NBSP>cath" un-collapsed.
     #
-    # Separators are placed FREELY here -- between value and unit, around fractions, and
-    # in ordinary word gaps -- all of which are green. FOUR constructs are excluded on
-    # purpose, because their passes still read \s as ASCII and a general fuzz would go
-    # red on pre-existing divergences instead of finding new ones:
-    #     value + \s + "%"        (_PERCENT)
-    #     day   + \s + monthname  (_DATE_MONTH)
-    #     "&"   + \s + word       (_AMPERSAND)
-    #     CAPS  + \s + CAPS       (_deshout's text.split())
-    # Measured residue for each: 21/23, 21/23, 21/23 and 34/46 divergent. Those are
-    # reported, not fixed; drop an exclusion only once its pass handles Unicode \s.
+    # Separators are placed FREELY here -- between value and unit, around fractions, in
+    # ordinary word gaps, and (since the 2026-08-21 \s sweep gave percent, math/degree,
+    # ampersand and date-month re_space_len) before "%", month names and after "&" --
+    # all of which are green. ONE construct stays excluded on purpose, because its pass
+    # still reads \s as ASCII and a general fuzz would go red on a pre-existing
+    # divergence instead of finding new ones:
+    #     CAPS  + \s + CAPS       (_deshout's text.split() -- Unicode; C's word walk is not)
+    # Measured residue: 34/46 divergent. Reported, not fixed; drop the exclusion only
+    # once pass_deshout handles Unicode \s.
     unit_ws = [
         "", " ", "\t",                                  # none / ASCII
         "\u000b", "\u000c", "\u001c", "\u001d", "\u001e", "\u001f", "\u0085",  # ASCII-range \s
@@ -123,6 +122,34 @@ def build_corpus(n: int, seed: int = 1234) -> list[str]:
         # whitespace that no pass consumes, so it must survive to the closing collapse
         corpus.append(w.join(rng.choice(cy_words) for _ in range(rng.randint(2, 5))))
         corpus.append(f"{w}{rng.choice(cy_words)}{w}{v}{w}")
+        # the constructs freed by the \s sweep: percent, math/degree, ampersand, date-month
+        corpus.append(f"{v}{w}%")
+        corpus.append(f"{rng.randint(0, 99)}{w}x{w}{rng.randint(0, 99)}")
+        corpus.append(f"98.6{w}°F")
+        corpus.append(f"ci &{w}chath")
+        corpus.append(f"{rng.randint(1, 31)}{w}Ionawr{w}{rng.randint(1900, 2099)}")
+
+    # 4c. In-word digits (the digit/letter splitter) and glued clock/suffix shapes. Latin
+    # letters only, both directions and sandwiched -- non-Latin letters stay excluded for
+    # the same reason as everywhere else (the disclosed cp_is_word gap). Covers the nine
+    # section-G glue shapes by construction: value + suffix-or-not + letter tail.
+    latin_letters = ["x", "b", "q", "ê", "ô", "ŵ", "ḁ", "_"]
+    tails = ["", "%", "p", "c", "af", "km", "m", "pm", "yb", "M", "bn", "million"]
+    for _ in range(n // 10):
+        L = rng.choice(latin_letters)
+        v = rng.choice([str(rng.randint(0, 99)), f"0{rng.randint(0, 999)}",
+                        f"{rng.randint(0, 23)}:{rng.randint(0, 59):02d}",
+                        f"£{rng.randint(0, 999)}", f"{rng.randint(0, 99)}.{rng.randint(0, 9)}"])
+        t = rng.choice(tails)
+        shape = rng.randint(0, 3)
+        if shape == 0:
+            corpus.append(f"{v}{t}{L}")
+        elif shape == 1:
+            corpus.append(f"{L}{v}{t}")
+        elif shape == 2:
+            corpus.append(f"{L}{v}{L}")
+        else:
+            corpus.append(f"{rng.choice(['s4c', 'h2o', 'covid19', 'a4b5'])} {v}{t}")
 
     # 5. Code-switched Welsh+English sentences.
     cy_frame = ["Mae'r", "yn", "dweud", "bod", "wedi", "cael", "gwneud", "iawn"]

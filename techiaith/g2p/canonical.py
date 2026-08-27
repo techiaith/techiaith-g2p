@@ -5,15 +5,15 @@ Why this file exists: str.isdecimal() and str.isalpha() are Unicode-version-depe
 Python. Several are in play on a development host and they agreed only by luck. Publishing to
 PyPI widens that to whatever users have installed.
 
-MEASURED on the development host, 2026-07-29 -- and note that an earlier version of this
-docstring named "a 3.12 dev venv", which does not exist. There is no Python 3.12 on this
-machine at all; do not trust that description if you meet it elsewhere. The same table, with
-roles, is in c/README.md.
+MEASURED on the development host (macOS, since 2026-08-25; the corpora committed from it carry
+patch 3.10.11 and CI's parity:regen pin follows it -- the earlier Linux host's table, with its
+3.10.12, is preserved in git history). The same table, with roles, is in c/README.md.
 
-    /usr/bin/python3.10                        3.10.12   Unicode 13.0.0   CANONICAL, has pytest
-    /home/linuxbrew/.../bin/python3.10         3.10.20   Unicode 13.0.0
-    /home/linuxbrew/.../bin/python3.14         3.14.6    Unicode 16.0.0   has pytest
-    the dev venv (piper-cy/.venv/bin/python)   3.10.12   Unicode 13.0.0   has pytest
+    /usr/local/bin/python3.10                  3.10.11   Unicode 13.0.0   CANONICAL
+    /usr/bin/python3                           3.9.6     Unicode 13.0.0   Apple system python
+    /opt/homebrew/bin/python3.14               3.14.7    Unicode 16.0.0
+    /opt/homebrew/bin/python3.13               3.13.15   Unicode 15.1.0
+    /opt/homebrew/bin/python3.12               3.12.14   Unicode 15.0.0
 
 3.10 is canonical because it is what the deployed API container serves, and because it has the
 OLDEST character tables of the four -- anything it accepts, a newer interpreter also accepts.

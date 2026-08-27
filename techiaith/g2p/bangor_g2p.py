@@ -41,7 +41,16 @@ WORD_SEP = " "
 # model learn punctuation-conditioned pauses. Word-internal ' and - are deliberately
 # NOT here — they stay inside the word as Welsh clitics/compounds (part of lexicon
 # keys, e.g. "i'r", "gogledd-ddwyrain").
+#
+# INTERIOR members peel too (see _segment): "ie!na" used to fuse into one LTS nonword
+# with the "!" silently dropped -- FOLLOWUPS section G's word-internal punctuation
+# class. Peeling re-tokenises into ids the model already renders (the pause ids 7-19
+# are trained, verified live on the deployed model -- docs/PARITY.md section 4), so
+# _EMISSION_POLICY is deliberately NOT bumped and data_version must not move.
 _PUNCT = ".,;:!?()\"…—"
+# An interior run of _PUNCT members, for _segment's split. The capturing group keeps
+# the runs in re.split's output so they can be re-attached as lead/trail punctuation.
+_INTERIOR_PUNCT = re.compile("([" + re.escape(_PUNCT) + "]+)")
 
 # Policy string folded into data_version so any emission-policy change invalidates
 # trained models (see docs/PARITY.md §4). v2 adds punctuation/pause emission (v1
@@ -525,13 +534,23 @@ class BangorG2P:
     # --- normalization (minimal for P1; P2 adds the full verbaliser) ---
     def _segment(self, text: str):
         """Yield (leading_punct, core_word, trailing_punct) per whitespace token, in
-        source order. Punctuation in _PUNCT is peeled off each token's edges and kept
-        (emitted as standalone pause tokens by phonemize); word-internal ' and - stay
-        in the core so lexicon keys still match -- EXCEPT a hyphenated run of single
-        letters ("d-d-d", "b-a-ch"), which is keyboard echo, not a compound: those
+        source order. Punctuation in _PUNCT is peeled off each token's edges AND out of
+        its interior (emitted as standalone pause tokens by phonemize); word-internal '
+        and - stay in the core so lexicon keys still match -- EXCEPT a hyphenated run of
+        single letters ("d-d-d", "b-a-ch"), which is keyboard echo, not a compound: those
         hyphens are separators, spoken like the commas in "c, a, th" (see
         _hyphen_letter_run). A real compound's parts are never single letters
-        ("gogledd-ddwyrain" is unaffected and still found as one lexicon key)."""
+        ("gogledd-ddwyrain" is unaffected and still found as one lexicon key).
+
+        The interior peel closes FOLLOWUPS section G's word-internal punctuation class:
+        "ie!na" fused into one LTS nonword with the "!" silently dropped. Attachment side
+        is the load-bearing detail. Within an interior run, marks BEFORE the first "("
+        trail the left sub-word and marks FROM the first "(" lead the right one, which
+        makes the invariant exact: for every member m, phonemize("a" + m + "b") equals
+        phonemize("a" + m + " b") token for token -- the fused form becomes exactly the
+        shape the model trained on ("ty(bach)" tokenises as "ty (bach)" does, "a!(b" as
+        "a! (b"). Every emitted id is already trained (pause ids 7-19), so this is a
+        re-tokenisation, not an emission-policy change -- see the note above _PUNCT."""
         for raw in text.strip().lower().split():
             i, j = 0, len(raw)
             while i < j and raw[i] in _PUNCT:
@@ -539,13 +558,27 @@ class BangorG2P:
             while j > i and raw[j - 1] in _PUNCT:
                 j -= 1
             lead, core, trail = list(raw[:i]), raw[i:j], list(raw[j:])
-            letters = _hyphen_letter_run(core)
-            if letters is not None:
-                last = len(letters) - 1
-                for k, letter in enumerate(letters):
-                    yield (lead if k == 0 else []), letter, ([","] if k < last else trail)
-                continue
-            yield lead, core, trail
+            # Interior split. The core's own edges are punct-free (just peeled), and the
+            # runs are maximal, so the sub-cores are all non-empty and the pieces list
+            # alternates word, run, word, ..., word.
+            pieces = _INTERIOR_PUNCT.split(core) if core else [core]
+            cores = pieces[0::2]
+            leads: list = [lead] + [[] for _ in cores[1:]]
+            trails: list = [[] for _ in cores[1:]] + [trail]
+            for k, run in enumerate(pieces[1::2]):
+                cut = run.find("(")
+                if cut == -1:
+                    cut = len(run)
+                trails[k] = list(run[:cut])
+                leads[k + 1] = list(run[cut:])
+            for ld, c, tr in zip(leads, cores, trails):
+                letters = _hyphen_letter_run(c)
+                if letters is not None:
+                    last = len(letters) - 1
+                    for k, letter in enumerate(letters):
+                        yield (ld if k == 0 else []), letter, ([","] if k < last else tr)
+                    continue
+                yield ld, c, tr
 
     def phonemize(self, text: str, on_oov: str = "raise",
                   lang: Optional[str] = None) -> List[str]:

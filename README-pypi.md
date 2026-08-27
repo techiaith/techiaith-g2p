@@ -37,6 +37,6 @@ model's input layer, as the model card describes.
 
 - Voice model: https://huggingface.co/techiaith/cy_en_GB-bu_tts
 - Pronunciation dictionary: https://github.com/techiaith/geiriadur-ynganu-bangor
-- Source: https://github.com/techiaith/piper-lleol
+- Source: https://github.com/techiaith/techiaith-g2p
 - License: CC0-1.0 — public domain dedication (see `LICENSE`; the bundled
   pronunciation data keeps its own BSD-2-Clause terms, see `NOTICE`)

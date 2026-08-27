@@ -77,6 +77,22 @@ def _norm_digit_value(ch: str) -> int:
     return v if v >= 0 and ord(ch) < 0x80 else -1
 
 
+# EXACTLY the character classes the C port accepts, not Python's \w or str.isalpha().
+# Using \w here would be idiomatic and would also introduce a fresh Python/C divergence
+# on the first non-Latin input ("α/β" -> "α β" in Python, unchanged in C), since
+# cp_is_word is Latin-only. That gap is real and already disclosed elsewhere, but there
+# is no reason to add a NEW instance of it when the C domain is small enough to mirror
+# outright. Ranges, from cy_normalize.c: C0-FF minus x00D7 and x00F7, Latin Extended-A/B
+# and Additional. One shared constant feeds both classes so they can never drift apart:
+#   _C_WORD_CLASS   mirrors cp_is_word            (ASCII alnum + "_" + the ranges)
+#   _C_LETTER_CLASS mirrors cyp__cp_is_alpha + _  (ASCII alpha + "_" + the ranges --
+#                   the class digit_seq_sep tests; "_" included for the same reason
+#                   _sep_after_spelled_digits accepts it: it glues in identifiers)
+_C_LATIN_RANGES = ("\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF"
+                   "\u0100-\u024F\u1E00-\u1EFF")
+_C_WORD_CLASS = "0-9A-Za-z_" + _C_LATIN_RANGES
+_C_LETTER_CLASS = "A-Za-z_" + _C_LATIN_RANGES
+
 # --- cardinal number words (verified reference §1) ---
 _UNITS = {0: "", 1: "un", 2: "dau", 3: "tri", 4: "pedwar", 5: "pump",
           6: "chwech", 7: "saith", 8: "wyth", 9: "naw"}
@@ -492,9 +508,23 @@ def _date_words(d: int, m: int, y=None) -> str:
     return " ".join(parts)
 
 
-_DATE_NUM = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{2,4})\b")
-_DATE_MONTH = re.compile(r"\b(\d{1,2})\s+(" + "|".join(_MONTHS) + r")\b(?:\s+(\d{4}))?", re.I)
-_ORDINAL_RE = re.compile(r"\b(\d+)(af|il|ydd|edd|ed|fed|eg|ain)\b")
+# Every CONSUMING digit position in the specialised number patterns is the explicit
+# ASCII class (the `_D` narrowing, swept across the whole file 2026-08-21 -- FOLLOWUPS
+# section G): `\d` matched every Unicode Nd, so `£٣`/`٣%`/`٣.٣`/`٣ Ionawr 2020` were
+# claimed here and never by cy_normalize.c's byte-oriented passes -- four measured
+# divergences. NEGATIVE lookbehind guards deliberately keep their wide class (`_PHONE`'s
+# `(?<![\d,.])`): a guard narrowed is a match widened.
+_DATE_NUM = re.compile(r"\b([0-9]{1,2})/([0-9]{1,2})/([0-9]{2,4})\b")
+# The year group's trailing guard mirrors C's `!word_after(in, ys)`: "1 Ionawr 2026x" is
+# not a date-with-year ("2026x" is a code; its digits fall to the later passes, which the
+# digit/letter splitter has already separated for them). Python lacked the guard and C had
+# it, so the two engines read the YEAR differently there ("dwy fil A dau ddeg chwech" via
+# the year register vs the plain cardinal) -- a pre-existing divergence the fuzzers never
+# fed (no corpus shape puts a letter directly after a year). The class is _C_WORD_CLASS,
+# not \w, for the usual Latin-only-mirror reason at the top of the module.
+_DATE_MONTH = re.compile(r"\b([0-9]{1,2})\s+(" + "|".join(_MONTHS) + r")\b"
+                         rf"(?:\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
+_ORDINAL_RE = re.compile(r"\b([0-9]+)(af|il|ydd|edd|ed|fed|eg|ain)\b")
 
 
 def _date_num_repl(m: re.Match) -> str:
@@ -602,18 +632,23 @@ def _pounds_plural(n: int) -> str:
 # digit STRING so an absurd amount cannot overflow anything, and so the C port can
 # reproduce it without 64-bit arithmetic.
 _MAGNITUDE_ZEROS = {"k": 3, "m": 6, "bn": 9}
-_CURRENCY = re.compile(r"£\s?(\d[\d,]*)(?:\.(\d{1,2}))?(?:([Bb][Nn]|[Mm]|[Kk])\b)?")
+_CURRENCY = re.compile(r"£\s?([0-9][0-9,]*)(?:\.([0-9]{1,2}))?(?:([Bb][Nn]|[Mm]|[Kk])\b)?")
 # (?<![A-Za-z]) stops the pence rule firing inside an alphanumeric code: without it
 # the "4c" inside "s4c" read as fourpence ("spedwar ceiniog").
-_PENCE = re.compile(r"(?<![A-Za-z])(\d[\d,]*)([pc])\b")
+_PENCE = re.compile(r"(?<![A-Za-z])([0-9][0-9,]*)([pc])\b")
 # Idiomatic-register clock (language decision, 2026-07-26: the owner chose this register
 # over the previous digital default -- see docs/NORMALIZATION.md). Minutes 00-59 only
 # ([0-5]\d), not an unrestricted \d{2}, so a garbage ":99" cannot reach the minute logic
 # below. The optional trailing group is an explicit am/pm-style marker: Welsh "yb"/"y.b."
 # (y bore) and "yp"/"y.p." (y prynhawn), or the English-influenced "am"/"pm" that Welsh
-# text commonly borrows verbatim. (?!\w) rather than a trailing \b: a dotted marker like
-# "y.p." ends on a non-word character, so \b (word/non-word transition) would never fire
-# at end-of-string there, silently dropping the marker match.
+# text commonly borrows verbatim -- in both its bare and dotted ("a.m."/"p.m.") spellings.
+# The dotted English forms earn their place the hard way: absent from the alternation,
+# "7:00p.m." did not merely lose its marker -- the trailing (?!\w) failed on the unmatched
+# "p", the WHOLE time match collapsed, and the minute digits fell through to _PENCE, which
+# read "00p" as money: "saith sero ceiniog.m.". A time misread as PENCE is the exact
+# confident-wrong-reading class the yh fix below records. (?!\w) rather than a trailing
+# \b: a dotted marker like "y.p." ends on a non-word character, so \b (word/non-word
+# transition) would never fire at end-of-string there, silently dropping the marker match.
 # "yh"/"y.h." (yr hwyr, evening) are listed alongside yb/yp because authors write them:
 # the BTC style guide names them precisely to RECOMMEND AGAINST writing them ("10am hyd
 # 4pm, nid '10 am hyd 4 pm' na '10yb hyd 4yh'"), which is advice to writers, not to a
@@ -630,8 +665,32 @@ _PENCE = re.compile(r"(?<![A-Za-z])(\d[\d,]*)([pc])\b")
 # fails the match and the digits fall to the number pass, which is audibly wrong rather
 # than silently wrong -- the behaviour before the reduction existed.
 _TIME = re.compile(
-    r"\b([01]?\d|2[0-3]):([0-5]\d)"
-    r"(?:\s?(y\.b\.|yb|y\.p\.|yp|y\.h\.|yh|am|pm))?(?!\w)", re.I)
+    r"\b([01]?[0-9]|2[0-3]):([0-5][0-9])"
+    r"(?:\s?(y\.b\.|yb|y\.p\.|yp|y\.h\.|yh|a\.m\.|am|p\.m\.|pm))?(?!\w)", re.I)
+# The colonless clock: "7pm", "10yb", "7.30pm" -- the very forms BTC tells Welsh authors
+# to WRITE ("10am hyd 4pm, nid ... '10yb hyd 4yh'"), which previously fused into LTS
+# nonwords ("saithpm") or, dotted, fell to _PENCE as money ("7p.m." -> "saith
+# geiniog.m."). An ALTERNATION beside _TIME, not an optional minute group inside it:
+# making _TIME's ":MM" optional would read every bare "7" as "saith o'r gloch".
+#
+# Three deliberate restrictions, each load-bearing:
+#   - The marker is REQUIRED and GLUED (no \s?): "am" is a Welsh preposition, and a
+#     spaced allowance turns "5 am ddim" (five for free) and "2 am 1" (two for one)
+#     into clock readings -- the confident-wrong class this file exists to avoid.
+#     The spaced "7 pm" therefore stays unclaimed (reads "saith pm"): an accepted,
+#     pinned limitation. BTC's canonical written form is glued anyway.
+#   - (?<![:.,]) blocks the fragment reads a failed context would otherwise leave:
+#     "25:00pm" (invalid hour) must not have its "00pm" read as midnight, "99.15pm"
+#     its "15pm" as three o'clock, "1,23pm" its "23pm" as eleven. Out-of-range input
+#     falls to the number passes -- audibly wrong rather than silently wrong, the same
+#     fail-safe direction as _TIME's own hour/minute bounding above.
+#   - The dotted-hour minute ("7.30pm") also requires the marker: bare "7.30" belongs
+#     to _DECIMAL ("saith pwynt tri sero") and must stay there.
+# Groups align with _TIME (1=hour, 2=minutes|None, 3=marker) so one _time_repl serves
+# both patterns.
+_TIME_NOCOLON = re.compile(
+    r"\b(?<![:.,])([01]?[0-9]|2[0-3])(?:\.([0-5][0-9]))?"
+    r"(y\.b\.|yb|y\.p\.|yp|y\.h\.|yh|a\.m\.|am|p\.m\.|pm)(?!\w)", re.I)
 
 
 def _scaled_cardinal(n: int) -> str:
@@ -683,7 +742,7 @@ def _currency_repl(m: re.Match) -> str:
         # -- "£1k" and "£1000" both say "mil o bunnoedd". Before the 2026-07-28 ruling this
         # path was the ONLY one saying "o bunnoedd" at all, which is what made the two
         # spellings disagree in the first place.
-        return _pounds_plural(int(digits))
+        return _sep_if_latin_tail(_pounds_plural(int(digits)), m)
     pounds = int(m.group(1).replace(",", ""))
     pence = int(m.group(2)) if m.group(2) else 0
     # PENCE KEEP THE SINGULAR (owner, 2026-07-28): "o bunnoedd" mid-phrase is clumsy, so
@@ -700,7 +759,9 @@ def _currency_repl(m: re.Match) -> str:
             # apply here too. This path built its own string, so "£1.07" said "saith
             # ceiniog" while a bare "7c" correctly said "saith geiniog".
             out += " " + _pence_words(p)
-    return out
+    # "£5x" -> "pum punt x", not the glued nonword "pum puntx". The splitter cannot do
+    # it: this pass runs first and the replacement's letters erase the boundary.
+    return _sep_if_latin_tail(out, m)
 
 
 # BTC "Y lluosog ynteu'r unigol", verbatim:
@@ -819,15 +880,17 @@ _MINUTE_TRAD = {
 # mutate the noun itself (m -> f), the same trigger as any other numeral-noun phrase.
 _MINUTE_STANDALONE = {1: "un funud", 2: "dwy funud", 5: "pum munud", 6: "chwe munud",
                        10: "deng munud"}
-# Two-way am/pm-style markers, folded to the qualifier they explicitly request. Only the
-# bore/prynhawn split exists here (no "yr hwyr" marker) because that is what the marker
-# text itself distinguishes -- same two-way split as English am/pm.
 # marker -> the qualifier it explicitly requests. Three-way, not two: "yh" is yr hwyr
 # (evening), which is NOT y prynhawn. "pm" stays y prynhawn, as it always did -- English
 # pm spans both halves and picking a side for it would be inventing information.
+# Every form _TIME's alternation can match MUST have an entry here: a marker that
+# matches but has no entry is silently dropped (the match succeeds, the qualifier is
+# None), which is how "7p.m." once read as a bare "saith o'r gloch" in a draft of the
+# dotted fix. tests/test_normalize.py drives its marker loop off this dict so the
+# alternation and the dict cannot drift apart.
 _MARKER_QUALIFIER = {
-    "yb": "y bore",     "y.b.": "y bore",     "am": "y bore",
-    "yp": "y prynhawn", "y.p.": "y prynhawn", "pm": "y prynhawn",
+    "yb": "y bore",     "y.b.": "y bore",     "am": "y bore",     "a.m.": "y bore",
+    "yp": "y prynhawn", "y.p.": "y prynhawn", "pm": "y prynhawn", "p.m.": "y prynhawn",
     "yh": "yr hwyr",    "y.h.": "yr hwyr",
 }
 
@@ -865,7 +928,10 @@ def _minute_phrase(n: int) -> str:
 
 
 def _time_repl(m: re.Match) -> str:
-    h, mm = int(m.group(1)), int(m.group(2))
+    h = int(m.group(1))
+    # _TIME_NOCOLON's minute group is optional: a colonless "7pm" is on the hour, which
+    # is behaviourally identical to ":00" -- no sentinel needed anywhere downstream.
+    mm = int(m.group(2)) if m.group(2) is not None else 0
     qualifier = _clock_qualifier(h, m.group(3))
     h12 = h % 12 or 12
     if mm == 0:
@@ -885,16 +951,34 @@ def _time_repl(m: re.Match) -> str:
     return f"{core} {qualifier}" if qualifier else core
 
 
-# EXACTLY the character class the C port's cp_is_word accepts, not Python's \w. Using \w
-# here would be idiomatic and would also introduce a fresh Python/C divergence on the
-# first non-Latin input to touch a slash ("α/β" -> "α β" in Python, unchanged in C), since
-# cp_is_word is Latin-only. That gap is real and already disclosed elsewhere, but there is
-# no reason to add a NEW instance of it when the C domain is small enough to mirror
-# outright. Ranges, from cy_normalize.c: ASCII alnum + "_", C0-FF minus x00D7 and x00F7,
-# and Latin Extended-A/B and Additional.
-_C_WORD_CLASS = ("0-9A-Za-z_"
-                 "\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u00FF"
-                 "\u0100-\u024F\u1E00-\u1EFF")
+# (_C_WORD_CLASS / _C_LETTER_CLASS -- the C-mirror character classes -- are defined at
+# the top of the module, next to _D, because patterns above this point need them too.)
+
+# The digit/letter SPLITTER: one space at every ASCII-digit <-> Latin-letter/_ boundary,
+# both directions. This is FOLLOWUPS section G's "general digit/letter peeling job", and
+# it lives HERE, late in the normaliser, not in the G2P as that section first suggested:
+# by G2P time the wrong verbalisation is already baked ("x05" -> "xpump" happens in
+# _INTEGER, and phonemize silently skips a bare digit token, so nothing downstream can
+# recover it). Placement in normalize() is load-bearing on both edges:
+#   AFTER every pass that legitimately consumes letter-adjacent digits -- _ORDINAL_RE
+#   ("3af"), _CURRENCY ("£5M"), _UNIT ("5km"), _BLYNEDD, _TIME/_TIME_NOCOLON ("7pm",
+#   "12:30yb"), _PENCE ("50p") -- and after _EMAIL_OR_URL, so an address's digits are
+#   not split before it reads them. By then a remaining digit|letter adjacency is a
+#   junk code ("x05", "covid19", "s4c"), and splitting it is what the number passes
+#   need to verbalise the digits correctly. _PENCE in particular must have already
+#   run: its (?<![A-Za-z]) lookbehind is what keeps the "4c" of "s4c" from reading as
+#   fourpence, and this splitter would defeat it ("s 4c") if it ran first.
+#   BEFORE _DEGREE/_MATH_OPS/_PERCENT/_DECIMAL/_PHONE/_DIGIT_SEQ/_INTEGER, whose
+#   guards can then see the boundary as real: _DIGIT_SEQ's deliberate (?<![\w,.])
+#   lookbehind (d27543e) is untouched -- "x 05" now reaches the digit register on both
+#   sides where "x05" fell through to _INTEGER and int("05") lost the zero.
+# ASCII digits only ([0-9], same narrowing as _D) and Latin letters only
+# (_C_LETTER_CLASS): "0800α" keeps its accepted, disclosed divergence exactly as it is
+# (Python's older _sep_after_spelled_digits separates, C stays fused), and "٣05" stays
+# untouched on both sides -- this pass can see neither.
+_DIGIT_LETTER_BOUNDARY = re.compile(
+    rf"(?<=[0-9])(?=[{_C_LETTER_CLASS}])|(?<=[{_C_LETTER_CLASS}])(?=[0-9])")
+
 # "/" and ":" -- see _symbols. Both are word-INTERNAL punctuation, and the G2P only peels
 # punctuation from a token's EDGES, so an internal one is neither peeled nor spoken: the
 # two sides fuse into one word and go to letter-to-sound, with the character itself
@@ -904,18 +988,31 @@ _C_WORD_CLASS = ("0-9A-Za-z_"
 # echo ("b-a-ch") from a real compound ("gogledd-ddwyrain") and needs the hyphen intact;
 # spacing it would break every Welsh compound.
 #
-# This is a CLASS of defect rather than two characters -- any word-internal member of the
-# G2P's punctuation set fuses the same way. Only the two reachable ones are handled here:
-# "/" from an unverbalisable fraction, ":" from an out-of-range time. Recorded in
-# docs/FOLLOWUPS.md rather than fixed by enumeration.
+# The G2P's own _PUNCT members now peel from token interiors (bangor_g2p._segment), so
+# this class carries only the NON-_PUNCT symbols that fuse: "/" from an unverbalisable
+# fraction, ":" from an out-of-range time, and "*" -- which has no approved spoken word
+# ("lluosi" is approved only for x/× between digits, and NORMALIZATION.md's deferred
+# item 10 still owns the symbol registers), so the space is the conservative floor:
+# the two sides are at least heard as two words. "+"/"="/"@" have approved words and
+# are verbalised above instead.
 _FUSING_PUNCT_BETWEEN_WORDS = re.compile(
-    rf"(?<=[{_C_WORD_CLASS}])[/:](?=[{_C_WORD_CLASS}])")
+    rf"(?<=[{_C_WORD_CLASS}])[/:*](?=[{_C_WORD_CLASS}])")
 
 
 def _symbols(text: str) -> str:
     text = re.sub(r"(?<= )\+(?= )", "plws", text)
     text = re.sub(r"(?<= )=(?= )", "yn hafal i", text)
     text = re.sub(r"(?<= )@(?= )", "at", text)
+    # The same three, LETTER-ADJACENT ("a+b", "a=b", "a@b") -- FOLLOWUPS section G's
+    # fusion class again: unspoken, the symbol vanished at the phone layer and its two
+    # sides fused into one LTS nonword. The words are the already-approved registers
+    # above (owner wordings, 2026-07-28), so nothing new is invented -- only the
+    # context widens. Both sides must be word characters: "C++", "A+" and "A+ grade"
+    # stay codes (no word char after), exactly as before. _C_WORD_CLASS, not \w, for
+    # the usual Latin-only C-mirror reason.
+    text = re.sub(rf"(?<=[{_C_WORD_CLASS}])\+(?=[{_C_WORD_CLASS}])", " plws ", text)
+    text = re.sub(rf"(?<=[{_C_WORD_CLASS}])=(?=[{_C_WORD_CLASS}])", " yn hafal i ", text)
+    text = re.sub(rf"(?<=[{_C_WORD_CLASS}])@(?=[{_C_WORD_CLASS}])", " at ", text)
     # A "/" left BETWEEN TWO WORD CHARACTERS becomes a space. How to SAY "/" is still an open
     # convention (docs/NORMALIZATION.md deferred item 10) and BTC is silent on it, so
     # nothing is invented here -- but leaving the character in place was not "unhandled",
@@ -935,8 +1032,8 @@ def _symbols(text: str) -> str:
 
 
 _ACRONYM = re.compile(r"\b[A-Z0-9]{2,}\b")
-_PERCENT = re.compile(r"(\d[\d,]*)\s*%")
-_DECIMAL = re.compile(r"(\d+)\.(\d+)")
+_PERCENT = re.compile(r"([0-9][0-9,]*)\s*%")
+_DECIMAL = re.compile(r"([0-9]+)\.([0-9]+)")
 # ASCII, like the two patterns above and for the same reason (see `_D`): this is where
 # a digit run that the sequence patterns did not claim lands, so if its digit class were
 # wider than theirs the crash would simply move here -- `int("0٣٣")` is 33, which C,
@@ -1069,15 +1166,15 @@ def _roman_repl(m: re.Match) -> str:
 
 
 _MATH_OPS = [
-    (re.compile(r"(?<=\d)\s*\+\s*(?=\d)"), " plws "),
-    (re.compile(r"(?<=\d)\s*[xX×]\s*(?=\d)"), " lluosi "),
+    (re.compile(r"(?<=[0-9])\s*\+\s*(?=[0-9])"), " plws "),
+    (re.compile(r"(?<=[0-9])\s*[xX×]\s*(?=[0-9])"), " lluosi "),
 ]
 # Degree symbol. "gradd" alone for a bare degree, and the scale named when it is given. The
 # scale letter is consumed so it cannot fall through to the acronym pass and be spelled out.
 _DEGREE = [
-    (re.compile(r"(?<=\d)\s*°\s*[Cc]\b"), " gradd celsiws"),
-    (re.compile(r"(?<=\d)\s*°\s*[Ff]\b"), " gradd fahrenheit"),
-    (re.compile(r"(?<=\d)\s*°"), " gradd"),
+    (re.compile(r"(?<=[0-9])\s*°\s*[Cc]\b"), " gradd celsiws"),
+    (re.compile(r"(?<=[0-9])\s*°\s*[Ff]\b"), " gradd fahrenheit"),
+    (re.compile(r"(?<=[0-9])\s*°"), " gradd"),
 ]
 
 # --- emoji ------------------------------------------------------------------------------
@@ -1233,6 +1330,26 @@ def _spell_digits(s: str) -> str:
     return " ".join(_DIGIT_NAMES[str(v)] for v in map(_norm_digit_value, s) if v >= 0)
 
 
+_LATIN_TAIL = re.compile(f"[{_C_LETTER_CLASS}]")
+
+
+def _sep_if_latin_tail(out: str, m: re.Match) -> str:
+    """Append one space to `out` if the character right after the match is a Latin letter
+    or "_", so the verbalised replacement stays a separate word from what follows.
+
+    The digit/letter splitter (see normalize()) cannot reach these: by the time it runs,
+    the pass that owns the digits has already glued its REPLACEMENT to the tail ("£5x" ->
+    "pum puntx" -- letters now, no boundary left). So the two passes that both run before
+    the splitter AND write letter-adjacent replacements add the separator themselves.
+
+    Latin-only (_C_LETTER_CLASS), NOT str.isalpha(): _sep_after_spelled_digits below keeps
+    its wider Unicode class and its accepted divergence (FOLLOWUPS section G, "0800α");
+    new separator sites must not widen that gap, so this one tests exactly what C's
+    digit_seq_sep tests."""
+    tail = m.string[m.end():m.end() + 1]
+    return out + " " if tail and _LATIN_TAIL.match(tail) else out
+
+
 def _sep_after_spelled_digits(spelled: str, m: re.Match) -> str:
     """Append one space to `spelled` if the character right after the match is a letter
     or "_", so the verbalised run stays a separate word from whatever follows.
@@ -1250,6 +1367,13 @@ def _sep_after_spelled_digits(spelled: str, m: re.Match) -> str:
     """
     tail = m.string[m.end():m.end() + 1]
     return spelled + " " if tail and (tail.isalpha() or tail == "_") else spelled
+
+
+def _percent_repl(m: re.Match) -> str:
+    """"N%" -- and "50%x" stays "pum deg y cant x": the "%" sits between the digits and
+    the letter, so the splitter never sees a digit|letter boundary there. Second of the
+    two pre-splitter separator sites (see _sep_if_latin_tail)."""
+    return _sep_if_latin_tail(num_to_welsh(int(m.group(1).replace(",", ""))) + " y cant", m)
 
 
 def _digit_seq_repl(m: re.Match) -> str:
@@ -1286,12 +1410,83 @@ def _pound_magnitude_token(tok: str, text: str, start: int) -> bool:
     return before.endswith("£") or before.endswith("£ ")
 
 
+_ACRONYM_CLOCK_MARKERS = ("AM", "PM", "YB", "YP", "YH")
+
+
+def _clock_marker_token(tok: str, text: str, start: int) -> bool:
+    """True for the "7PM" of an upper-case clock form: digits plus a bare marker, which
+    [A-Z0-9]{2,} would otherwise claim as a code before the time passes ever run --
+    "7PM" spelled out as "saith p·m", and "3:00PM" collapsing outright because the
+    acronym pass ate its "00PM". Same stand-aside shape as _pound_magnitude_token.
+
+    Two admissions, mirroring pound's narrowness. A 1-2 digit run <= 23 is a colonless
+    hour ("7PM", "10YB" -- and "00PM", the minute fragment of "3:00PM", is 0). A run of
+    24-59 stands aside only as a minute field: exactly two digits, [0-5]\\d, directly
+    after "digit:" or "digit." ("3:45PM", "7.30PM"). Everything else stays a code:
+    standalone "PM" (the Prime Minister) has no digits, "45PM" alone fails both tests,
+    and the UPPERCASE DOTTED forms ("7P.M.") never reach here at all -- the [A-Z0-9]
+    token there is "7P", not marker-shaped, so they stay spelled out: a recorded
+    limitation, identical in both implementations."""
+    if len(tok) < 3 or tok[-2:] not in _ACRONYM_CLOCK_MARKERS:
+        return False                         # standalone "PM" (no digits) stays a code
+    digits = tok[:-2]
+    if not digits.isdigit() or len(digits) > 2:
+        return False
+    if int(digits) <= 23:
+        return True                          # a colonless hour: "7PM", "10YB", "00PM"
+    before = text[:start]                    # minute field 24-59: "45PM" in "3:45PM"
+    return (len(digits) == 2 and digits[0] in "012345"
+            and len(before) >= 2 and before[-1] in ":." and before[-2].isdigit())
+
+
+# --- the acronym vocabulary gate ---------------------------------------------------------
+# Letter-spelling is an OOV fallback, not the reading of every all-caps token: an all-caps
+# token whose lowercase form the G2P's own dictionaries know is a real word (or a lexicalised
+# acronym -- the dictionaries carry "bbc", "nato", "dvla" with their spoken forms), and the
+# right reading is the word itself. Only a token the dictionaries do NOT know keeps the
+# letter-by-letter spell-out (HMS, WJEC, USB). Decided 2026-08-25; before this, "ADRODDIAD"
+# alone in a sentence was spelled a·d·r·o·d·d·i·a·d because _deshout's >=2-caps-words
+# threshold never fires on a single word.
+#
+# Membership rule, mirrored EXACTLY by cyp_normalize_load_vocab in c/cy_normalize.c: a
+# dictionary line's leading run of ASCII letters, length >=2, terminated by space, tab, \r
+# or end-of-line, lowercased. ASCII-only on purpose -- _ACRONYM itself is [A-Z0-9]{2,}, so
+# no other headword can ever be queried. Digit-bearing tokens (S4C, A55) never reach the
+# gate: they are codes, unpronounceable as words, and stay with the speller.
+_VOCAB_DICTS = ("bangordict.dict", "bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict")
+_VOCAB_HEADWORD = re.compile(r"[A-Za-z]{2,}(?=[ \t\r]|$)")
+_ACRO_VOCAB: "set[str] | None" = None
+
+
+def _acronym_vocab() -> "set[str]":
+    """Lazy-loaded headword set from the packaged pronunciation dictionaries.
+
+    Loaded here rather than shared with BangorLexicon because the normalizer is
+    standalone (no id map, no phone validation): membership means "the dictionaries
+    name this word", not "this word survived phone-id mapping"."""
+    global _ACRO_VOCAB
+    if _ACRO_VOCAB is None:
+        base = Path(__file__).parent / "data" / "geiriadur-ynganu-bangor"
+        vocab = set()
+        for name in _VOCAB_DICTS:
+            for line in (base / name).read_text(encoding="utf-8").splitlines():
+                hw = _VOCAB_HEADWORD.match(line)
+                if hw:
+                    vocab.add(hw.group(0).lower())
+        _ACRO_VOCAB = vocab
+    return _ACRO_VOCAB
+
+
 def _spell_acronym(m: re.Match) -> str:
     tok = m.group(0)
     if tok.isdigit():                        # pure number -> leave to number pass
         return tok
     if _pound_magnitude_token(tok, m.string, m.start()):
         return tok                           # "£5M" belongs to _CURRENCY, not here
+    if _clock_marker_token(tok, m.string, m.start()):
+        return tok                           # "7PM" belongs to the time passes, not here
+    if not any(c.isdigit() for c in tok) and tok.lower() in _acronym_vocab():
+        return tok.lower()                   # a known word merely capitalised: read it
     caps = sum(c.isupper() for c in tok)
     # An acronym needs >=2 caps (BBC, HMS) — or one cap plus a digit, which covers
     # road/format codes read letter-by-letter (A55 -> "a pum deg pump", 3D -> "tri d").
@@ -1348,12 +1543,14 @@ def _is_caps_word(w: str) -> bool:
 def _deshout(text: str) -> str:
     """Lower-case an ALL-CAPS / shouted phrase so it is read as words, not spelled out.
 
-    A true acronym (BBC, S4C) is an isolated all-caps token in normal-case text and
-    must still be spelled by letter. But a run of mostly-uppercase words is emphasis
-    ("CROESO I GYMRU"), not a string of acronyms — the acronym speller would otherwise
-    turn every word into letter names. Heuristic: if the caps words are >=2 AND at
-    least half of the alphabetic words, treat the whole thing as shouted and lower-case
-    those words before the acronym pass. A single acronym (minority) is left alone."""
+    An isolated all-caps token in normal-case text goes to the acronym pass instead —
+    which since 2026-08-25 spells it by letter only when the dictionaries do not know
+    it as a word (see _acronym_vocab). But a run of mostly-uppercase words is emphasis
+    ("CROESO I GYMRU"), not a string of acronyms — folding the whole run here reads
+    every word as a word, in-vocabulary or not, which is what shouting means. Heuristic:
+    if the caps words are >=2 AND at least half of the alphabetic words, treat the whole
+    thing as shouted and lower-case those words before the acronym pass. A single
+    acronym (minority) is left alone."""
     words = text.split()
     caps = [w for w in words if _is_caps_word(w)]
     alpha = [w for w in words if any(c.isalpha() for c in w)]
@@ -1381,7 +1578,7 @@ _FEM_BEFORE_NOUN = {1: "un", 2: "dwy", 3: "tair", 4: "pedair", 5: "pum",
 # ch/s/n/w do not soft-mutate, so those forms are unchanged.
 _FEM_AFTER_O = {1: "un", 2: "ddwy", 3: "dair", 4: "bedair", 5: "bump",
                 6: "chwech", 7: "saith", 8: "wyth", 9: "naw", 10: "ddeg"}
-_FRACTION = re.compile(r"\b(\d+)/(\d+)\b")
+_FRACTION = re.compile(r"\b([0-9]+)/([0-9]+)\b")
 
 
 def _fraction_repl(m: re.Match) -> str:
@@ -1424,7 +1621,7 @@ _UNIT_ALT = "|".join(_UNITS_SPOKEN)
 # pattern "3.5kg" had its "5kg" eaten here and the orphaned "3." never reached _DECIMAL:
 # the result was "tri.pum cilogram", and since "." is not a phone the model heard the
 # NONWORD "tripum cilogram". Owner: "Tri pwynt pum cilogram".
-_UNIT = re.compile(r"\b(\d[\d,]*(?:\.\d+)?)\s?(" + _UNIT_ALT + r")\b")
+_UNIT = re.compile(r"\b([0-9][0-9,]*(?:\.[0-9]+)?)\s?(" + _UNIT_ALT + r")\b")
 # _UNIT's tail, anchored where a currency amount ends: see _currency_repl, which uses it
 # to yield digits that the (now later) unit pass is entitled to.
 _UNIT_TAIL = re.compile(r"\s?(?:" + _UNIT_ALT + r")\b")
@@ -1545,7 +1742,7 @@ _BLYNEDD_SINGULAR = {"blynedd": "flwyddyn"}
 # have the same pre-existing gap -- "10 Km" does not match either -- deliberately left
 # alone here rather than widened into an unreviewed change.
 _BLYNEDD = re.compile(
-    r"\b(\d[\d,]*)\s+(blynedd|mlynedd|flynedd|blwydd|mlwydd|flwydd)\b", re.I)
+    r"\b([0-9][0-9,]*)\s+(blynedd|mlynedd|flynedd|blwydd|mlwydd|flwydd)\b", re.I)
 
 
 def _blynedd_repl(m: re.Match) -> str:
@@ -1618,21 +1815,33 @@ class WelshNormalizer:
         # "deg blynedd" and lose both the nasal mutation and the "deng" form.
         text = _BLYNEDD.sub(_blynedd_repl, text)
         text = _TIME.sub(_time_repl, text)
+        # Emails and URLs BETWEEN the two clock passes, and the position is load-bearing
+        # twice over. Their dots and @ must not be seen by any number or symbol pass ("@"
+        # is the SCHWA in the phone inventory, so anything left of it is read as a vowel
+        # rather than dropped). And they must run BEFORE _TIME_NOCOLON, mirroring C's
+        # pass order (pass_email_url runs early there): "post@7pm.com" is an address
+        # whose "7pm" is then read INSIDE the verbalised form -- identically in both
+        # implementations. With the old order the colonless pass would eat the "7pm" out
+        # of the RAW address and leave a bare "@" behind.
+        text = _EMAIL_OR_URL.sub(_email_url_repl, text)
+        # After email/URLs (above); before _PENCE, or "7p.m." is stolen back by the pence
+        # rule the moment the colonless match is unavailable.
+        text = _TIME_NOCOLON.sub(_time_repl, text)
         text = _PENCE.sub(_pence_repl, text)
+        # The digit/letter splitter -- placement is load-bearing on both edges; the full
+        # reasoning lives at _DIGIT_LETTER_BOUNDARY's definition. C mirror:
+        # pass_digit_letter_split, at the same point in its driver.
+        text = _DIGIT_LETTER_BOUNDARY.sub(" ", text)
         # Operators and the degree sign BEFORE EVERY number pass, so their operands are
         # still DIGITS when the lookarounds run. Placing them after _DECIMAL silently
         # broke "98.6°F": by then the text read "...pwynt chwech°F" and the (?<=\d)
         # lookbehind saw an "h". It also means no unverbalised character is left sitting
         # between two words for the phone layer to glue into a nonword.
-        # Emails and URLs first: their dots and @ must not be seen by any number or symbol
-        # pass, and "@" is the SCHWA in the phone inventory, so anything left of it is read
-        # as a vowel rather than dropped.
-        text = _EMAIL_OR_URL.sub(_email_url_repl, text)
         for rx, rep in _DEGREE:
             text = rx.sub(rep, text)
         for rx, rep in _MATH_OPS:
             text = rx.sub(rep, text)
-        text = _PERCENT.sub(lambda m: num_to_welsh(int(m.group(1).replace(",", ""))) + " y cant", text)
+        text = _PERCENT.sub(_percent_repl, text)
         text = _DECIMAL.sub(_decimal_repl, text)
         # DIGIT SEQUENCES BEFORE _INTEGER, and after the time/date/currency passes so a
         # "07:00" or "01/01/1980" is claimed by the pass that understands it first. _DECIMAL

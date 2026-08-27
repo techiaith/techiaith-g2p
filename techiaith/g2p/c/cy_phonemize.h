@@ -66,7 +66,13 @@ int cyp_letter_tokens(CyPhonemizer *p, const char *word, int32_t *out, int max_o
 int cyp_lts(CyPhonemizer *p, const char *word, int32_t *out, int max_out);
 
 /* Welsh text normalization (mirrors welsh_normalize.py): numbers, %, decimals, &,
- * abbreviations, acronym spell-out. Standalone (no CyPhonemizer needed). */
+ * abbreviations, acronym spell-out. Standalone (no CyPhonemizer needed) -- EXCEPT that
+ * the acronym pass's vocabulary gate reads a headword set the dictionaries provide:
+ * cyp_create loads it, so phonemize callers get it for free, but a harness calling
+ * cyp_normalize directly must call cyp_normalize_load_vocab(core_dir) first (returns
+ * the headword count, <=0 on failure). With no vocab loaded, every all-caps token is
+ * letter-spelled -- which the normalize golden corpus fails loudly on. */
+long cyp_normalize_load_vocab(const char *core_dir);
 void cyp_num_to_welsh(long n, char *out, int max_out);        /* cardinal 0..999,999,999 */
 void cyp_normalize(const char *utf8_text, char *out, int max_out);
 

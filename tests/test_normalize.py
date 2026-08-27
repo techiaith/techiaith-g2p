@@ -94,18 +94,27 @@ NORMALIZE = [
     ("h.y.", "hynny yw"),
     ("ayb", "ac yn y blaen"),
     ("Dr Jones", "doctor jones"),
-    # acronyms spell out as ACRONYM_JOIN-ed letters (the G2P names them, so the spelling
-    # is language-aware there); consecutive digits read as one number and break the join
-    ("BBC", "b·b·c"),
+    # The acronym pass gates on the dictionary headword set (2026-08-25): an all-caps
+    # token the dictionaries know — as a word (ADRODDIAD) or a lexicalised acronym with
+    # its own spoken form (BBC, NATO) — reads as that word; only an OOV token spells out
+    # as ACRONYM_JOIN-ed letters (the G2P names them, so the spelling is language-aware
+    # there). Consecutive digits read as one number and break the join; digit-bearing
+    # tokens (S4C, A55) are codes, never words, and always stay with the speller.
+    ("BBC", "bbc"),                              # in cmudict: "bi bi si", not b·b·c
+    ("NATO", "nato"),                            # in bangordict as a word
+    ("ADRODDIAD", "adroddiad"),                  # a shouted single word is not an acronym
+    ("HMS", "h·m·s"),                            # OOV: keeps the letter spelling
+    ("WJEC", "w·j·e·c"),                         # OOV: keeps the letter spelling
+    ("US", "us"),                                # ACCEPTED COLLISION: vocab word wins
     ("S4C", "s pedwar c"),
-    ("S4C a'r BBC.", "s pedwar c a'r b·b·c."),   # _deshout must not swallow S4C; pence must not read "4c"
+    ("S4C a'r BBC.", "s pedwar c a'r bbc."),     # _deshout must not swallow S4C; pence must not read "4c"
     ("A55", "a pum deg pump"),
-    ("OK", "o·k"),
-    ("HMS", "h·m·s"),
-    # a one-letter Welsh word beside an acronym must stay its own token
-    ("y BBC", "y b·b·c"),
-    ("i BBC Cymru", "i b·b·c cymru"),
-    ("BBC y dydd", "b·b·c y dydd"),
+    ("OK", "ok"),                                # in cmudict: read as the word
+    # a one-letter Welsh word beside an acronym token must stay its own token
+    ("y BBC", "y bbc"),
+    ("i BBC Cymru", "i bbc cymru"),
+    ("BBC y dydd", "bbc y dydd"),
+    ("y CD", "y cd"),                            # cmudict carries "cd" with letter-name phones
     ("Mae'r tywydd yn braf", "mae'r tywydd yn braf"),
     # typographic apostrophes fold to ASCII so clitics still hit the lexicon
     ("Mae’r tywydd yn braf", "mae'r tywydd yn braf"),
@@ -266,6 +275,12 @@ def _c_normalizer():
     lib = ctypes.CDLL(str(so))
     lib.cyp_normalize.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
     lib.cyp_num_to_welsh.argtypes = [ctypes.c_long, ctypes.c_char_p, ctypes.c_int]
+    # The acronym pass gates on the dictionary headword set; a bare-cyp_normalize
+    # harness must load it itself (cyp_create does it for phonemize callers).
+    lib.cyp_normalize_load_vocab.argtypes = [ctypes.c_char_p]
+    lib.cyp_normalize_load_vocab.restype = ctypes.c_long
+    n = lib.cyp_normalize_load_vocab(str(REPO / "techiaith" / "g2p").encode())
+    assert n > 0, "cyp_normalize_load_vocab failed -- dictionary files missing?"
 
     def norm(s):
         buf = ctypes.create_string_buffer(65536)
@@ -332,17 +347,34 @@ def test_c_clock_sweep_matches_python_for_every_hour_minute_and_marker():
     # pass before pass_time ever sees it, so those never reached TIME_MARKERS and the
     # case-insensitive compare was untested -- C strncasecmp -> strncmp passed the whole
     # suite. "Pm"/"yB"/"Y.b." do reach it.
+    # UPPERCASE bare markers ("PM", "YB") now reach the clock via the acronym stand-aside
+    # (clock_marker_token, both implementations), so they are swept too. The uppercase
+    # DOTTED forms ("P.M.") stay excluded from the marker tuple's expectations the same
+    # way they stay broken in both engines: the [A-Z0-9] acronym token there is "00P",
+    # not marker-shaped, so the stand-aside never fires -- broken-but-agreeing, and the
+    # sweep only checks agreement, so they are swept for parity anyway (see "P.M." below).
     markers = ("", "yb", "y.b.", "yp", "y.p.", "yh", "y.h.", "am", "pm",
-               "Pm", "pM", "Yb", "yB", "Y.b.", "yH", "AM")
+               "a.m.", "p.m.", "A.m.", "p.M.", "P.M.",
+               "Pm", "pM", "Yb", "yB", "Y.b.", "yH", "AM", "PM", "YB", "YP", "YH")
     bad = []
     for hour in range(0, 24):
         for minute in range(0, 60):
             for marker in markers:
-                text = f"{hour}:{minute:02d}{marker}"
-                if norm(text) != py.normalize(text):
-                    bad.append((text, py.normalize(text), norm(text)))
-                    if len(bad) > 8:
-                        break
+                # the colon form, every cell
+                texts = [f"{hour}:{minute:02d}{marker}"]
+                if marker:
+                    # the dotted-hour form ("7.30pm") -- marker REQUIRED, so only when
+                    # one is present; and the hour-only form ("7pm"), once per hour
+                    texts.append(f"{hour}.{minute:02d}{marker}")
+                    if minute == 0:
+                        texts.append(f"{hour}{marker}")
+                for text in texts:
+                    if norm(text) != py.normalize(text):
+                        bad.append((text, py.normalize(text), norm(text)))
+                        if len(bad) > 8:
+                            break
+                if len(bad) > 8:
+                    break
             if len(bad) > 8:
                 break
         if len(bad) > 8:
@@ -375,28 +407,31 @@ def test_g2p_applies_normalization():
 
 
 def test_one_letter_welsh_words_survive_an_adjacent_acronym():
-    """"y BBC" must be the article plus BBC, not a four-letter English spelling.
+    """"y HMS" must be the article plus HMS, not a four-letter English spelling.
 
     The G2P used to infer acronyms from runs of adjacent single letters, so the normalized
-    "y b b c" swallowed the article and read it as the English letter Y ("wai bee bee see").
-    The acronym boundary is now marked by welsh_normalize instead of guessed at.
+    "y h m s" swallowed the article and read it as the English letter Y. The acronym
+    boundary is now marked by welsh_normalize instead of guessed at. HMS carries this
+    test since the 2026-08-25 vocabulary gate: BBC, the previous example, is in the
+    dictionaries ("bi bi si") and now reads as that word, while HMS is OOV and still
+    letter-spells -- exactly the case whose boundary must not swallow its neighbour.
     """
     from techiaith.g2p.bangor_g2p import BangorG2P, _CY_LETTER_NAMES, _EN_LETTER_NAMES
     g = BangorG2P(english_mode="native")
 
     # the acronym's own letters: English names, one spoken word each
-    assert g.phonemize(g.normalize("BBC")) == (
-        list(_EN_LETTER_NAMES["b"]) + [" "] + list(_EN_LETTER_NAMES["b"])
-        + [" "] + list(_EN_LETTER_NAMES["c"]))
+    assert g.phonemize(g.normalize("HMS")) == (
+        list(_EN_LETTER_NAMES["h"]) + [" "] + list(_EN_LETTER_NAMES["m"])
+        + [" "] + list(_EN_LETTER_NAMES["s"]))
 
     # the function word keeps its lexicon pronunciation, whichever side it sits on
-    bbc = [" "] + list(_EN_LETTER_NAMES["b"]) + [" "] + list(_EN_LETTER_NAMES["b"]) \
-        + [" "] + list(_EN_LETTER_NAMES["c"])
-    assert g.phonemize(g.normalize("y BBC")) == ["@"] + bbc
-    assert g.phonemize(g.normalize("a BBC")) == ["a"] + bbc
-    assert g.phonemize(g.normalize("o BBC")) == ["o"] + bbc
-    assert g.phonemize(g.normalize("i BBC")) == ["i"] + bbc
-    assert g.phonemize(g.normalize("BBC y dydd")) == bbc[1:] + [" ", "@", " "] \
+    hms = [" "] + list(_EN_LETTER_NAMES["h"]) + [" "] + list(_EN_LETTER_NAMES["m"]) \
+        + [" "] + list(_EN_LETTER_NAMES["s"])
+    assert g.phonemize(g.normalize("y HMS")) == ["@"] + hms
+    assert g.phonemize(g.normalize("a HMS")) == ["a"] + hms
+    assert g.phonemize(g.normalize("o HMS")) == ["o"] + hms
+    assert g.phonemize(g.normalize("i HMS")) == ["i"] + hms
+    assert g.phonemize(g.normalize("HMS y dydd")) == hms[1:] + [" ", "@", " "] \
         + g.phonemize("dydd")
 
     # vowels are absent from the letter tables on purpose — they are real Welsh words
@@ -459,25 +494,28 @@ def test_a_typed_middle_dot_never_deletes_text():
 
 
 def test_single_letter_parts_still_read_as_an_acronym():
-    """"a<U+00B7>b" keeps the acronym reading, and that is forced, not merely preferred.
+    """"j<U+00B7>w" keeps the acronym reading, and that is forced, not merely preferred.
 
-    welsh_normalize normalizes the real acronym "AB" to exactly "a<U+00B7>b", so the two
-    are indistinguishable by the time the G2P sees them. Reading a marker between single
-    letters as anything other than an acronym would therefore break every two-letter
-    acronym. The collision is real but it can only be resolved this way.
+    welsh_normalize normalizes an OOV acronym like "JW" to exactly "j<U+00B7>w", so the
+    two are indistinguishable by the time the G2P sees them. Reading a marker between
+    single letters as anything other than an acronym would therefore break every OOV
+    two-letter acronym. The collision is real but it can only be resolved this way.
+    (The example was "AB" until the 2026-08-25 vocabulary gate: "ab" is a dictionary
+    headword -- the patronymic -- so "AB" now reads as that word and never meets the
+    marker at all.)
     """
     from techiaith.g2p.bangor_g2p import BangorG2P, _EN_LETTER_NAMES
     g = BangorG2P(english_mode="native")
     dot = "\u00b7"
 
-    assert g.normalize("AB") == f"a{dot}b"
-    assert g.text_to_ids(f"a{dot}b") == g.text_to_ids("AB")
-    assert g.phonemize(g.normalize("AB")) == (
-        list(_EN_LETTER_NAMES["a"]) + [" "] + list(_EN_LETTER_NAMES["b"]))
-    # and the genuine acronyms are untouched by the stricter rule
-    assert g.phonemize(g.normalize("BBC")) == (
-        list(_EN_LETTER_NAMES["b"]) + [" "] + list(_EN_LETTER_NAMES["b"])
-        + [" "] + list(_EN_LETTER_NAMES["c"]))
+    assert g.normalize("JW") == f"j{dot}w"
+    assert g.text_to_ids(f"j{dot}w") == g.text_to_ids("JW")
+    assert g.phonemize(g.normalize("JW")) == (
+        list(_EN_LETTER_NAMES["j"]) + [" "] + list(_EN_LETTER_NAMES["w"]))
+    # and a genuine (OOV) acronym is untouched by the stricter rule
+    assert g.phonemize(g.normalize("HMS")) == (
+        list(_EN_LETTER_NAMES["h"]) + [" "] + list(_EN_LETTER_NAMES["m"])
+        + [" "] + list(_EN_LETTER_NAMES["s"]))
 
 
 def test_marker_is_safe_in_the_other_two_entry_points():
@@ -575,9 +613,89 @@ def test_yh_marker_reads_as_yr_hwyr():
     # "pm" deliberately stays y prynhawn: English pm spans both halves of the day, and
     # choosing a side would invent information the author did not give.
     assert N.normalize("16:00pm") == "pedwar o'r gloch y prynhawn"
-    # No raw colon survives into the output for any marker form.
-    for marker in ("yh", "y.h.", "yb", "y.b.", "yp", "y.p.", "am", "pm"):
+    # The dotted English forms ("a.m."/"p.m.") repeat the yh story with a nastier fall:
+    # the collapsed match handed the MINUTE digits to _PENCE, so a time read as money
+    # ("7:00p.m." -> "saith sero ceiniog.m."). The marker alternation must claim them.
+    assert N.normalize("7:00p.m.") == "saith o'r gloch y prynhawn"
+    assert N.normalize("16:00p.m.") == "pedwar o'r gloch y prynhawn"
+    assert N.normalize("3:00a.m.") == "tri o'r gloch y bore"
+    # The existing \s? means the SPACED dotted forms come along for free.
+    assert N.normalize("3:00 a.m.") == "tri o'r gloch y bore"
+    assert N.normalize("7:00 p.m.") == "saith o'r gloch y prynhawn"
+    for text in ("7:00p.m.", "16:00p.m.", "3:00 a.m."):
+        assert "ceiniog" not in N.normalize(text), text
+    # Absolute and dict-driven: every form _TIME's alternation matches must map to its
+    # qualifier through _MARKER_QUALIFIER -- a marker present in the regex but missing
+    # from the dict matches and then silently drops its qualifier, which this catches.
+    from techiaith.g2p.welsh_normalize import _MARKER_QUALIFIER
+    assert len(_MARKER_QUALIFIER) == 10
+    for marker, qualifier in _MARKER_QUALIFIER.items():
+        assert N.normalize(f"16:00{marker}") == f"pedwar o'r gloch {qualifier}", marker
+        # No raw colon survives into the output for any marker form.
         assert ":" not in N.normalize(f"16:00{marker}"), marker
+
+
+def test_colonless_glued_marker_reads_as_clock():
+    """The colonless clock forms BTC tells Welsh authors to WRITE ("10am hyd 4pm, nid ...
+    '10yb hyd 4yh'") previously fused into LTS nonwords ("7pm" -> "saithpm") or, dotted,
+    fell to _PENCE as money ("7p.m." -> "saith geiniog.m."). FOLLOWUPS section H.
+
+    The marker is REQUIRED and GLUED: "am" is a Welsh preposition, so the spaced forms
+    must never become clock readings -- pinned below alongside the accepted limitations.
+    """
+    N = WelshNormalizer()
+    assert N.normalize("7pm") == "saith o'r gloch y prynhawn"
+    assert N.normalize("7am") == "saith o'r gloch y bore"
+    assert N.normalize("2yh") == "dau o'r gloch yr hwyr"
+    assert N.normalize("7p.m.") == "saith o'r gloch y prynhawn"      # was seven PENCE
+    assert N.normalize("10am hyd 4pm") == \
+        "deg o'r gloch y bore hyd pedwar o'r gloch y prynhawn"
+    assert N.normalize("12pm") == "deuddeg o'r gloch y prynhawn"
+    assert N.normalize("12am") == "deuddeg o'r gloch y bore"
+    # Absolute and dict-driven, like the colon-form loop: regex/dict drift is caught.
+    from techiaith.g2p.welsh_normalize import _MARKER_QUALIFIER
+    for marker, qualifier in _MARKER_QUALIFIER.items():
+        assert N.normalize(f"7{marker}") == f"saith o'r gloch {qualifier}", marker
+    # Uppercase reaches the clock via the acronym stand-aside (_clock_marker_token).
+    assert N.normalize("7PM") == "saith o'r gloch y prynhawn"        # was 'saith p·m'
+    assert N.normalize("10YB") == "deg o'r gloch y bore"
+    assert N.normalize("3:00PM") == "tri o'r gloch y prynhawn"       # was 'tri sero p·m'
+    assert N.normalize("3:45PM") == "chwarter i bedwar y prynhawn"   # minute-field rule
+    assert N.normalize("AR AGOR 9AM HYD 5PM") == \
+        "ar agor naw o'r gloch y bore hyd pump o'r gloch y prynhawn"
+    # The preposition "am" must NEVER become a clock: spaced forms stay words.
+    assert N.normalize("5 am ddim") == "pump am ddim"
+    assert N.normalize("2 am 1") == "dau am un"
+    assert N.normalize("talu £5 am bob un") == "talu pum punt am bob un"
+    assert N.normalize("7 pm") == "saith pm"        # ACCEPTED LIMITATION, pinned
+    assert N.normalize("7") == "saith"              # bare hour unreachable without marker
+    # Standalone "PM" is a dictionary word since the 2026-08-25 vocabulary gate: it reads
+    # as the lexicon's "pm" ("pi em" — the Prime Minister), no longer the spelled p·m.
+    assert N.normalize("the PM said") == "the pm said"
+    assert N.normalize("45PM") == "pedwar deg pump p·m"    # not a valid hour: stays a code
+    # (?<![:.,]): a failed context must not have its tail digits read as a plausible time.
+    for text in ("25:00pm", "99.15pm", "1,23pm"):
+        out = N.normalize(text)
+        for word in ("o'r gloch", "wedi", "chwarter"):
+            assert word not in out, (text, out)
+    # Addresses: email/URLs run BETWEEN the clock passes (mirroring C's order), so the
+    # time is read INSIDE the verbalised address, not carved out of the raw one.
+    assert N.normalize("post@7pm.com") == "post at saith o'r gloch y prynhawn dot com"
+
+
+def test_dotted_hour_with_glued_marker_reads_as_clock():
+    """"7.30pm" -- the common British-style dotted hour. The marker is REQUIRED: a bare
+    "7.30" belongs to _DECIMAL and must stay there."""
+    N = WelshNormalizer()
+    assert N.normalize("7.30pm") == "hanner awr wedi saith y prynhawn"
+    assert N.normalize("16.30yh") == "hanner awr wedi pedwar yr hwyr"
+    assert N.normalize("2.50pm") == "deng munud i dri y prynhawn"
+    assert N.normalize("7.30") == "saith pwynt tri sero"     # no marker -> _DECIMAL's
+    # currency wins the amount (pass order, load-bearing); its trailing separator keeps
+    # the leftover "pm" a separate word rather than the old glued "ceiniogpm"
+    assert N.normalize("£2.50pm") == "dwy bunt pum deg ceiniog pm"
+    for word in ("o'r gloch", "wedi", "chwarter"):           # 3-digit tail is not a time
+        assert word not in N.normalize("7.300pm")
 
 
 def test_cant_punt_ceiniog_soft_mutate_after_saith_and_wyth():
@@ -1237,9 +1355,14 @@ def test_a_leading_zero_makes_a_digit_run_a_sequence_not_a_quantity():
     assert N.normalize("1,000,000") == "un miliwn"
     assert N.normalize("£1,000") == "mil o bunnoedd"
     assert N.normalize("1.0005") == "un pwynt sero sero sero pump"
-    # ... nor inside a word: "a007" must not become "adim dim saith".
-    assert N.normalize("a007") == "a007" or "dim" not in N.normalize("a007")
-    assert "dim" not in N.normalize("x0800")
+    # ... nor FUSED inside a word: "a007" must never become "adim dim saith". Since the
+    # digit/letter splitter closed the section-G mirror gap, the run reads -- as its own,
+    # SEPARATED word: the splitter's space is what lets _DIGIT_SEQ's untouched (?<![\w,.])
+    # guard see a real boundary.
+    assert N.normalize("a007") == "a dim dim saith"
+    assert N.normalize("x0800") == "x dim wyth dim dim"
+    assert "adim" not in N.normalize("a007")
+    assert "xdim" not in N.normalize("x0800")
 
     # The passes that understand these shapes must claim them first.
     assert N.normalize("07:00") == "saith o'r gloch"
@@ -1353,9 +1476,12 @@ def test_characters_that_used_to_glue_words_into_nonwords():
     assert N.normalize("Cyfrol II") == "cyfrol dau"
     assert N.normalize("Adran XII") == "adran un deg dau"
 
-    # A single letter is never a numeral, and real acronyms are untouched.
+    # A single letter is never a numeral, and non-Roman tokens are untouched by this
+    # pass (BBC reads as the dictionary word "bbc", HMS is OOV and letter-spells —
+    # either way the Roman pass must not have claimed them).
     assert N.normalize("I") == "i"
-    assert N.normalize("BBC") == "b·b·c"
+    assert N.normalize("BBC") == "bbc"
+    assert N.normalize("HMS") == "h·m·s"
     assert N.normalize("S4C") == "s pedwar c"
     # The owner confirmed these two read correctly as they were; they must not change.
     assert N.normalize("LL57 2DG") == "l·l pum deg saith dau d·g"
@@ -1467,7 +1593,87 @@ def test_leading_zero_fix_does_not_touch_the_cases_that_already_worked():
     # a real phone number, unchanged
     assert n.normalize("01248 382000") == (
         "dim un dau pedwar wyth tri wyth dau dim dim dim")
-    # a run INSIDE a word is still left to the ordinary number path (see the scope boundary)
-    assert n.normalize("a007") == "a007" or "dim dim saith" not in n.normalize("a007")
+    # a run after a letter now reads through the splitter's space -- SEPARATED, never
+    # fused ("adim dim saith" is d27543e's regression and must not come back)
+    assert n.normalize("a007") == "a dim dim saith"
+    assert "adim" not in n.normalize("a007")
     # a bare zero is not a sequence
     assert n.normalize("0") == "sero"
+
+
+def test_letter_adjacent_symbols_take_their_approved_words_or_the_space_floor():
+    """"+"/"="/"@" between word characters read their already-approved words ("a+b" ->
+    "a plws b"); "*" joins the "/"/":" space floor (no approved word -- item 10 still
+    owns the symbol registers). "C++"/"A+"/"A+ grade" stay codes: both sides must be
+    word characters."""
+    N = WelshNormalizer()
+    for text, want in [
+        ("a+b", "a plws b"), ("a=b", "a yn hafal i b"), ("a@b", "a at b"),
+        ("a*b", "a b"), ("2*3", "dau tri"), ("5*5", "pump pump"),
+        ("gôl*sgôr", "gôl sgôr"),
+        ("2 + 2 = 4", "dau plws dau yn hafal i pedwar"),   # space-bounded, unchanged
+        ("C++", "c++"), ("A+", "a+"), ("A+ grade", "a+ grade"), ("a+ b", "a+ b"),
+    ]:
+        assert N.normalize(text) == want, (text, N.normalize(text))
+    norm, _ = _c_normalizer()
+    for t in ("a+b", "a=b", "a@b", "a*b", "2*3", "5*5", "gôl*sgôr", "2 + 2 = 4",
+              "C++", "A+", "A+ grade", "a+ b", "ẁ+ŷ", "α+β"):
+        assert norm(t) == N.normalize(t), f"C/Python disagree on {t!r}"
+
+
+def test_digit_letter_splitter_separates_what_the_passes_then_verbalise():
+    """FOLLOWUPS section G's "general digit/letter peeling job", closed: one splitter pass
+    (both directions, ASCII digits <-> Latin letters/_) placed after every legitimate
+    letter-adjacent-digit consumer and before the remaining number passes, plus a trailing
+    separator inside the two passes that run BEFORE it and glue their REPLACEMENT
+    (currency, percent). All nine measured glue shapes, one per number pass."""
+    N = WelshNormalizer()
+    for text, want in [
+        ("800x", "wyth gant x"), ("5x", "pump x"), ("3.5x", "tri pwynt pump x"),
+        ("50%x", "pum deg y cant x"), ("1/2x", "un dau x"), ("£5x", "pum punt x"),
+        ("1,000x", "un mil x"), ("12:30x", "un deg dau tri deg x"),
+        ("2026x", "dwy fil dau ddeg chwech x"),
+        # the mirror direction (letter then digits) -- the old frozen Group-2 gap
+        ("x05", "x dim pump"), ("0abc", "sero abc"), ("0d", "sero d"),
+        ("05lhn0", "dim pump lhn sero"), ("00c3", "dim dim c tri"),
+        # codes fixed for free
+        ("covid19", "covid un deg naw"), ("h2o", "h dau o"), ("x800", "x wyth gant"),
+        ("_05", "_ dim pump"), ("5_x", "pump _x"),
+        ("£5million", "pum punt million"),
+    ]:
+        assert N.normalize(text) == want, (text, N.normalize(text))
+    # "s4c" now reads like "S4C": the splitter runs AFTER _PENCE, whose (?<![A-Za-z])
+    # lookbehind has already refused the "4c" -- so no fourpence, and the lower-case
+    # code matches the upper-case one.
+    assert N.normalize("s4c") == "s pedwar c" == N.normalize("S4C")
+    assert "ceiniog" not in N.normalize("s4c")
+    # The suffix consumers keep their claims: the splitter must run after ALL of them.
+    for text, want in [("£5M", "pum miliwn o bunnoedd"), ("5km", "pum cilomedr"),
+                       ("50p", "pum deg ceiniog"), ("3af", "trydydd"),
+                       ("7pm", "saith o'r gloch y prynhawn")]:
+        assert N.normalize(text) == want, (text, N.normalize(text))
+    # The year-group guard (mirrors C's !word_after): letters after a year mean it is
+    # NOT a date-with-year -- before the guard, Python read the YEAR register here and
+    # C the plain cardinal, a live divergence the fuzzers never fed.
+    assert N.normalize("1 Ionawr 2026x") == "y cyntaf o ionawr dwy fil dau ddeg chwech x"
+    assert N.normalize("1 Ionawr 2026") == "y cyntaf o ionawr dwy fil a dau ddeg chwech"
+    # Latin-only, both directions: the accepted section-G divergence is neither widened
+    # nor fixed ("0800α" keeps Python's older Unicode-wide separator; "٣05" is invisible
+    # to the splitter on both sides).
+    assert N.normalize("0800α") == "dim wyth dim dim α"
+    assert N.normalize("٣05") == "٣pump"
+    # hyphens and compounds untouched
+    assert N.normalize("b-a-ch") == "b-a-ch"
+    assert N.normalize("gogledd-ddwyrain") == "gogledd-ddwyrain"
+
+    norm, _ = _c_normalizer()
+    # "٣05" is deliberately NOT in this loop: it is the recorded PRE-EXISTING divergence
+    # (py "٣pump" vs C "٣dim pump" -- Python's \d-based lookbehinds see ٣ as a word char,
+    # C's cp_is_word does not), untouched by the splitter and excluded from the fuzzers
+    # for the same reason. The Python-only assert above pins our side of it.
+    for t in ("800x", "5x", "3.5x", "50%x", "1/2x", "£5x", "1,000x", "12:30x", "2026x",
+              "x05", "0abc", "0d", "05lhn0", "00c3", "covid19", "h2o", "x800", "_05",
+              "5_x", "£5million", "s4c", "S4C", "£5M", "5km", "50p", "3af", "7pm",
+              "1 Ionawr 2026x", "1 Ionawr 2026", "1 Ionawr 20261", "25 Rhagfyr 1999abc",
+              "ê9p", "b-a-ch", "gogledd-ddwyrain", "ffon:01248", "01248-382000"):
+        assert norm(t) == N.normalize(t), f"C/Python disagree on {t!r}"

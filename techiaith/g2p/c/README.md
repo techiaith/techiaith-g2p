@@ -49,16 +49,17 @@ letter or a digit with `str.isdecimal()` / `str.isalpha()`, and `ND_BLOCK` in
 `cy_normalize.c` is the C mirror of exactly that table. "The C port reproduces the Python
 reference byte for byte" therefore said nothing until *which* Python was named.
 
-Four interpreters are measured on the current development host (there is no Python
-3.12 anywhere on this machine — an earlier version of this table assumed a 3.12 dev
-venv that does not exist; do not trust that description):
+Measured on the current development host (macOS, since 2026-08-25 — the corpora are
+generated under its 3.10.**11**, and CI's `parity:regen` image pin follows that patch;
+the earlier Linux host's table, whose canonical was 3.10.12, is in git history):
 
 | interpreter | Python | `unicodedata` | role |
 |---|---|---|---|
-| `/usr/bin/python3.10` | 3.10.12 | 13.0.0 | **canonical** — has `pytest` |
-| `/home/linuxbrew/.linuxbrew/bin/python3.10` | 3.10.20 | 13.0.0 | no `pytest` |
-| `/home/linuxbrew/.linuxbrew/bin/python3.14` | 3.14.6 | **16.0.0** | has `pytest` — useful for checking the matrix |
-| the dev venv (`piper-cy/.venv/bin/python`) | 3.10.12 | 13.0.0 | has `pytest`, same tables as canonical |
+| `/usr/local/bin/python3.10` | 3.10.11 | 13.0.0 | **canonical** |
+| `/usr/bin/python3` | 3.9.6 | 13.0.0 | Apple system python |
+| `/opt/homebrew/bin/python3.14` | 3.14.7 | **16.0.0** | useful for checking the matrix |
+| `/opt/homebrew/bin/python3.13` | 3.13.15 | 15.1.0 | |
+| `/opt/homebrew/bin/python3.12` | 3.12.14 | 15.0.0 | |
 
 They agreed on every committed corpus (verified byte-for-byte), so the drift was latent,
 not live — but it was still an open question which one governs. **It is now decided:

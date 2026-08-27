@@ -1714,34 +1714,42 @@ h.y.	hynny yw
 ayb	ac yn y blaen
 ayyb	ac yn y blaen
 Dr Jones	doctor jones
-BBC	b·b·c
+BBC	bbc
 S4C	s pedwar c
 Mae'r tywydd yn braf	mae'r tywydd yn braf
-Mae 234 o bobl yn y BBC	mae dau gant tri deg pedwar o bobl yn y b·b·c
+Mae 234 o bobl yn y BBC	mae dau gant tri deg pedwar o bobl yn y bbc
 Roedd 42 o blant	roedd pedwar deg dau o blant
 yn 2026 bydd	yn dwy fil dau ddeg chwech bydd
 yr NHS a'r BBC	yr nhs a'r bbc
 e.e. cath a chi	er enghraifft cath a chi
 d.s. pwysig	dalier sylw pwysig
-S4C a'r BBC.	s pedwar c a'r b·b·c.
+S4C a'r BBC.	s pedwar c a'r bbc.
 A55	a pum deg pump
 A470	a pedwar cant saith deg
-OK	o·k
+OK	ok
 HMS	h·m·s
 3D	tri d
 COVID19	c·o·v·i·d un deg naw
 B1	b un
 CROESO I GYMRU	croeso i gymru
 aeth o ar hyd yr A55	aeth o ar hyd yr a pum deg pump
-s4c	spedwarc
-y BBC	y b·b·c
-i BBC Cymru	i b·b·c cymru
-o BBC Radio	o b·b·c radio
-a BBC	a b·b·c
-BBC y dydd	b·b·c y dydd
-y CD	y c·d
+s4c	s pedwar c
+ADRODDIAD	adroddiad
+NATO	nato
+DVLA	dvla
+US	us
+WJEC	w·j·e·c
+USB	u·s·b
+KGB	k·g·b
+HTML	h·t·m·l
+y BBC	y bbc
+i BBC Cymru	i bbc cymru
+o BBC Radio	o bbc radio
+a BBC	a bbc
+BBC y dydd	bbc y dydd
+y CD	y cd
 API	a·p·i
-TTS	t·t·s
+TTS	tts
 URL	u·r·l
 PDF	p·d·f
 A55 a'r M4	a pum deg pump a'r m pedwar
@@ -1799,7 +1807,7 @@ Mae’r tywydd yn braf	mae'r tywydd yn braf
 Dw i’n mynd	dw i'n mynd
 i’w dŷ	i'w dŷ
 o’r blaen	o'r blaen
-S4C a’r BBC.	s pedwar c a'r b·b·c.
+S4C a’r BBC.	s pedwar c a'r bbc.
 ʼn awr	'n awr
 dydd Iau’r wythnos	dydd iau'r wythnos
 17/07/2026	yr ail ar bymtheg o orffennaf dwy fil a dau ddeg chwech
@@ -1876,7 +1884,7 @@ cost o £2.5m a £750k	cost o dwy miliwn pum can mil o bunnoedd a saith gant pum
 £5l	£pum litr
 £5 kg	£pum cilogram
 £5 m	£pum metr
-£5million	pum puntmillion
+£5million	pum punt million
 1af	cyntaf
 2il	ail
 3ydd	trydydd
@@ -1888,16 +1896,91 @@ cost o £2.5m a £750k	cost o dwy miliwn pum can mil o bunnoedd a saith gant pum
 20fed	ugeinfed
 21ain	unfed ar hugain
 31ain	unfed ar ddeg ar hugain
+7:00p.m.	saith o'r gloch y prynhawn
+16:00p.m.	pedwar o'r gloch y prynhawn
+3:00a.m.	tri o'r gloch y bore
+3:00 a.m.	tri o'r gloch y bore
+7:00 p.m.	saith o'r gloch y prynhawn
+10:30p.m.	hanner awr wedi deg y prynhawn
+12:15p.m.	chwarter wedi deuddeg y prynhawn
+23:45a.m.	chwarter i ddeuddeg y bore
+7p	saith geiniog
+50p.	pum deg ceiniog.
+12:15P.M.	un deg dau un deg pump p.m.
+amser: 3:00p.m.	amser: tri o'r gloch y prynhawn
+7pm	saith o'r gloch y prynhawn
+7am	saith o'r gloch y bore
+9yp	naw o'r gloch y prynhawn
+2yh	dau o'r gloch yr hwyr
+10yb	deg o'r gloch y bore
+7p.m.	saith o'r gloch y prynhawn
+10am hyd 4pm	deg o'r gloch y bore hyd pedwar o'r gloch y prynhawn
+12pm	deuddeg o'r gloch y prynhawn
+12am	deuddeg o'r gloch y bore
+7PM	saith o'r gloch y prynhawn
+10YB	deg o'r gloch y bore
+3:00PM	tri o'r gloch y prynhawn
+3:45PM	chwarter i bedwar y prynhawn
+AR AGOR 9AM HYD 5PM	ar agor naw o'r gloch y bore hyd pump o'r gloch y prynhawn
+7.30pm	hanner awr wedi saith y prynhawn
+16.30yh	hanner awr wedi pedwar yr hwyr
+2.50pm	deng munud i dri y prynhawn
+post@7pm.com	post at saith o'r gloch y prynhawn dot com
+7pm@x.com	saith o'r gloch y prynhawn at x dot com
+www.7pm.com	w·w·w dot saith o'r gloch y prynhawn dot com
+7 pm	saith pm
+5 am ddim	pump am ddim
+2 am 1	dau am un
+the PM said	the pm said
+45PM	pedwar deg pump p·m
+30PM	tri deg p·m
+7.30	saith pwynt tri sero
+7.300pm	saith pwynt tri sero sero pm
+25:00pm	dau ddeg pump dim dim pm
+1,23pm	cant dau ddeg tri pm
+£2.50pm	dwy bunt pum deg ceiniog pm
+7A.M.	saith a.m.
+3:00 PM	tri o'r gloch y prynhawn
+16:00 y bore	pedwar o'r gloch y prynhawn y bore
 0800x	dim wyth dim dim x
-05lhn0	dim pump lhnsero
-00c3	dim dim ctri
+05lhn0	dim pump lhn sero
+00c3	dim dim c tri
 007	dim dim saith
-rhif 05lhn0	rhif dim pump lhnsero
+rhif 05lhn0	rhif dim pump lhn sero
 0800/123	dim wyth dim dim cant dau ddeg tri
 ffon:01248	ffon dim un dau pedwar wyth
 01248-382000	dim un dau pedwar wyth tri wyth dau dim dim dim
 00	dim dim
-0abc	seroabc
-0d	serod
-x05	xpump
-a007	asaith
+0abc	sero abc
+0d	sero d
+x05	x dim pump
+a007	a dim dim saith
+800x	wyth gant x
+5x	pump x
+3.5x	tri pwynt pump x
+50%x	pum deg y cant x
+1/2x	un dau x
+£5x	pum punt x
+1,000x	un mil x
+12:30x	un deg dau tri deg x
+2026x	dwy fil dau ddeg chwech x
+x800	x wyth gant
+covid19	covid un deg naw
+h2o	h dau o
+1 Ionawr 2026x	y cyntaf o ionawr dwy fil dau ddeg chwech x
+25 Rhagfyr 1999abc	y pumed ar hugain o ragfyr un mil naw cant naw deg naw abc
+1 Ionawr 20261	y cyntaf o ionawr dau ddeg mil dau gant chwe deg un
+ê9p	ênaw ceiniog
+_05	_ dim pump
+5_x	pump _x
+a+b	a plws b
+a=b	a yn hafal i b
+a@b	a at b
+a*b	a b
+2*3	dau tri
+5*5	pump pump
+gôl*sgôr	gôl sgôr
+C++	c++
+A+	a+
+A+ grade	a+ grade
+a+ b	a+ b

@@ -6,10 +6,14 @@
 #include <string.h>
 
 /* Rows scripts/emit_c_data.py writes; a short corpus is a failure, not a pass. */
-enum { N_NORM_ROWS = 1903 };
+enum { N_NORM_ROWS = 1986 };
 
 int main(int argc, char **argv) {
     const char *core = argc > 1 ? argv[1] : "..";
+    /* The acronym pass gates on the dictionary headword set; without it every all-caps
+     * token letter-spells and the in-vocabulary golden rows ("BBC" -> "bbc") fail. */
+    long nvocab = cyp_normalize_load_vocab(core);
+    if (nvocab <= 0) { fprintf(stderr, "acronym vocab load failed (core=%s)\n", core); return 2; }
     char path[4096];
     snprintf(path, sizeof(path), "%s/c/normalize_golden.tsv", core);
     FILE *f = fopen(path, "r");

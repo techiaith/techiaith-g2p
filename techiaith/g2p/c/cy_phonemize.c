@@ -442,6 +442,12 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
     snprintf(path, sizeof(path), "%s/c/data_version.txt", core_dir);
     f = fopen(path, "r");
     if (f) { if (fgets(p->data_version, sizeof(p->data_version), f)) rstrip(p->data_version); fclose(f); }
+
+    /* The normalizer's acronym vocabulary gate reads the same four dictionaries again
+     * (headwords only; see cyp_normalize_load_vocab). Failure is not fatal here for the
+     * same reason a missing dictionary above is not: the parity corpora catch it loudly,
+     * and cyp_create's contract has never been "all data present or NULL". */
+    cyp_normalize_load_vocab(core_dir);
     return p;
 }
 
@@ -893,38 +899,87 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
             l -= back; s[l] = 0;
         }
         t.core = s;
-        /* a dropped raw token still breaks letter-run adjacency (Python keeps every
-         * segment in its list, so "b - c" is not a run there either) */
-        if (t.nlead == 0 && t.ntrail == 0 && !has_letter(s)) {
-            gap = 1;
-            if (*s) { n_cores++; only_core_ti = -1; }     /* a core Python counts, we drop */
-            continue;
-        }
-        if (hyphen_letter_run(s)) {
-            /* Keyboard echo, not a compound: re-yield each unit as its own word with a
-             * comma pause between them, so the shape is byte-identical to typing
-             * "d, d, d" (mirrors bangor_g2p._segment). The leading punctuation belongs to
-             * the first unit and the trailing punctuation to the last. */
-            for (char *q = s; ; ) {
-                char *m = strchr(q, '-');
-                if (m) *m = 0;
-                Tok u; u.nlead = 0; u.ntrail = 0; u.core = q; u.gap_before = gap;
-                if (q == s) for (int z = 0; z < t.nlead; z++) u.lead[u.nlead++] = t.lead[z];
-                if (m) { if (comma_id >= 0) u.trail[u.ntrail++] = comma_id; }
-                else   { for (int z = 0; z < t.ntrail; z++) u.trail[u.ntrail++] = t.trail[z]; }
-                gap = 0;
-                if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
-                n_cores++; only_core_ti = nt;
-                toks[nt++] = u;
-                if (!m) break;
-                q = m + 1;
+        /* INTERIOR peel (mirrors _segment): split the cleaned core at interior _PUNCT
+         * runs, so "ie!na" tokenises exactly as "ie! na" does instead of fusing into
+         * one LTS nonword with the "!" silently dropped (FOLLOWUPS section G). Marks
+         * BEFORE the first "(" of a run trail the left sub-word; marks FROM the first
+         * "(" lead the right one ("ty(bach)" == "ty (bach)", "a!(b" == "a! (b"). The
+         * first sub-word keeps the token's leading punct, the last its trailing. Every
+         * emitted id is already trained (pause ids), so this is a re-tokenisation, not
+         * an emission-policy change. Scanning byte-by-byte is safe: punct_head matches
+         * ASCII marks or an 0xE2-led sequence, and UTF-8 continuation bytes can never
+         * begin either. Each sub-token then flows through the SAME drop / letter-run /
+         * append logic a whole token always did; only the first sub-token can carry
+         * gap_before. */
+        char *rest = s;
+        int cur_lead[8], ncur = t.nlead;
+        memcpy(cur_lead, t.lead, sizeof cur_lead);
+        for (;;) {
+            char *run = NULL;
+            int adv, id;
+            for (char *q = rest; *q; q++)
+                if (punct_head(p, q, &adv) >= 0) { run = q; break; }
+            int sub_trail[8], nsub = 0;
+            int next_lead[8], nnext = 0;
+            char *next_rest = NULL;
+            if (run) {
+                int seen_paren = 0;
+                int src[8], nsrc = 0;           /* left-trail marks, in SOURCE order */
+                char *e = run;
+                while (*e && (id = punct_head(p, e, &adv)) >= 0) {
+                    if (!seen_paren && *e == '(') seen_paren = 1;
+                    if (seen_paren) { if (nnext < 8) next_lead[nnext++] = id; }
+                    else            { if (nsrc < 8) src[nsrc++] = id; }
+                    e += adv;
+                }
+                /* Tok.trail is stored END-FIRST (punct_tail collects backwards and the
+                 * emit loop reverses), so the run's left-trail marks go in reversed --
+                 * "a).b" must speak ")" then ".", the source order. */
+                for (int z = nsrc - 1; z >= 0; z--) sub_trail[nsub++] = src[z];
+                *run = 0;                       /* terminate the left sub-core */
+                next_rest = e;
+            } else {
+                for (int z = 0; z < t.ntrail; z++)
+                    if (nsub < 8) sub_trail[nsub++] = t.trail[z];
             }
-            continue;
+            /* a dropped raw token still breaks letter-run adjacency (Python keeps every
+             * segment in its list, so "b - c" is not a run there either) */
+            if (ncur == 0 && nsub == 0 && !has_letter(rest)) {
+                gap = 1;
+                if (*rest) { n_cores++; only_core_ti = -1; }  /* a core Python counts, we drop */
+            } else if (hyphen_letter_run(rest)) {
+                /* Keyboard echo, not a compound: re-yield each unit as its own word with
+                 * a comma pause between them, so the shape is byte-identical to typing
+                 * "d, d, d" (mirrors bangor_g2p._segment). The leading punctuation
+                 * belongs to the first unit and the trailing punctuation to the last. */
+                for (char *q = rest; ; ) {
+                    char *m = strchr(q, '-');
+                    if (m) *m = 0;
+                    Tok u; u.nlead = 0; u.ntrail = 0; u.core = q; u.gap_before = gap;
+                    if (q == rest) for (int z = 0; z < ncur; z++) u.lead[u.nlead++] = cur_lead[z];
+                    if (m) { if (comma_id >= 0) u.trail[u.ntrail++] = comma_id; }
+                    else   { for (int z = 0; z < nsub; z++) u.trail[u.ntrail++] = sub_trail[z]; }
+                    gap = 0;
+                    if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
+                    n_cores++; only_core_ti = nt;
+                    toks[nt++] = u;
+                    if (!m) break;
+                    q = m + 1;
+                }
+            } else {
+                if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
+                Tok u; u.nlead = 0; u.ntrail = 0; u.core = rest;
+                for (int z = 0; z < ncur; z++) u.lead[u.nlead++] = cur_lead[z];
+                for (int z = 0; z < nsub; z++) u.trail[u.ntrail++] = sub_trail[z];
+                u.gap_before = gap; gap = 0;
+                if (*u.core) { n_cores++; only_core_ti = nt; }
+                toks[nt++] = u;
+            }
+            if (!run) break;
+            rest = next_rest;
+            memcpy(cur_lead, next_lead, sizeof cur_lead);
+            ncur = nnext;
         }
-        if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
-        t.gap_before = gap; gap = 0;
-        if (*t.core) { n_cores++; only_core_ti = nt; }
-        toks[nt++] = t;
     }
 
     /* Sentence language (native routing only) — mirrors bangor_g2p._sentence_lang over
