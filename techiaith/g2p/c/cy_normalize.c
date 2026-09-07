@@ -457,27 +457,39 @@ static void pass_abbrev(const char *in, char *out, const Abbrev *ab) {
  * a bare-cyp_normalize harness (test_norm.c, the ctypes tests) must call
  * cyp_normalize_load_vocab itself. Forgetting is loud, not silent: normalize_golden.tsv
  * pins in-vocabulary rows ("BBC" -> "bbc"), which an unloaded (empty) vocab fails. */
-static char *g_avocab_pool = NULL;      /* every headword, lowercased, NUL-terminated */
-static const char **g_avocab = NULL;    /* sorted, deduped pointers into the pool */
-static int g_avocab_n = 0;
+/* Two headword pools, mirroring welsh_normalize._VOCAB_DICTS_EN / _VOCAB_DICTS_CY. The
+ * English/foreign tables hold entries whose pronunciation IS the acronym's spoken form (bbc,
+ * usa, cd), so a token they know reads as a word at any length. The native Welsh table holds
+ * Welsh WORDS, and a short all-caps token only it knows is almost always an English acronym
+ * colliding with one ("DWP" is not the adjective dwp); native-only headwords gate from
+ * AVOCAB_CY_SHOUT_MIN_LEN letters, where the token is a shouted word (ADRODDIAD). */
+typedef struct { char *pool; const char **ptrs; int n; } AVocab;
+static AVocab g_avocab_en = {0, 0, 0};
+static AVocab g_avocab_cy = {0, 0, 0};
+#define AVOCAB_CY_SHOUT_MIN_LEN 5
 
 static int avocab_cmp(const void *a, const void *b) {
     return strcmp(*(const char *const *)a, *(const char *const *)b);
 }
 
-long cyp_normalize_load_vocab(const char *core_dir) {
-    static const char *dicts[] = {"bangordict.dict", "bangordict.xx.dict",
-                                  "bangordict.en.dict", "cmudict.dict"};
-    free(g_avocab_pool); g_avocab_pool = NULL;
-    free(g_avocab); g_avocab = NULL;
-    g_avocab_n = 0;
-    size_t pool_cap = 1u << 21, pool_len = 0;   /* ~1.2 MB of headwords fits first try */
+static void avocab_free(AVocab *v) {
+    free(v->pool); v->pool = NULL;
+    free((void *)v->ptrs); v->ptrs = NULL;
+    v->n = 0;
+}
+
+/* Load the lowercased [A-Za-z]{2,} first fields of `dicts` into `v`, sorted and deduplicated.
+ * Membership rule byte-identical to the Python side's _VOCAB_HEADWORD regex. Returns count,
+ * or -1 on failure with `v` left empty. */
+static long avocab_load(AVocab *v, const char *core_dir, const char *const *dicts, int ndicts) {
+    avocab_free(v);
+    size_t pool_cap = 1u << 21, pool_len = 0;
     size_t n_cap = 1u << 16, n = 0;
     char *pool = (char *)malloc(pool_cap);
     size_t *offs = (size_t *)malloc(n_cap * sizeof *offs);
     if (!pool || !offs) { free(pool); free(offs); return -1; }
     char line[65536];
-    for (int d = 0; d < 4; d++) {
+    for (int d = 0; d < ndicts; d++) {
         char path[4096];
         snprintf(path, sizeof(path), "%s/data/geiriadur-ynganu-bangor/%s", core_dir, dicts[d]);
         FILE *f = fopen(path, "r");
@@ -515,22 +527,36 @@ long cyp_normalize_load_vocab(const char *core_dir) {
     size_t m = 0;
     for (size_t t = 0; t < n; t++)
         if (m == 0 || strcmp(ptrs[m - 1], ptrs[t]) != 0) ptrs[m++] = ptrs[t];
-    g_avocab_pool = pool;
-    g_avocab = ptrs;
-    g_avocab_n = (int)m;
+    v->pool = pool; v->ptrs = ptrs; v->n = (int)m;
     return (long)m;
 }
 
-static int avocab_has(const char *w) {
-    int lo = 0, hi = g_avocab_n - 1;
+long cyp_normalize_load_vocab(const char *core_dir) {
+    static const char *const en[] = {"bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict"};
+    static const char *const cy[] = {"bangordict.dict"};
+    long a = avocab_load(&g_avocab_en, core_dir, en, 3);
+    long b = avocab_load(&g_avocab_cy, core_dir, cy, 1);
+    if (a < 0 || b < 0) { avocab_free(&g_avocab_en); avocab_free(&g_avocab_cy); return -1; }
+    return a + b;
+}
+
+static int avocab_in(const AVocab *v, const char *w) {
+    int lo = 0, hi = v->n - 1;
     while (lo <= hi) {
         int mid = lo + (hi - lo) / 2;
-        int c = strcmp(w, g_avocab[mid]);
+        int c = strcmp(w, v->ptrs[mid]);
         if (c == 0) return 1;
         if (c < 0) hi = mid - 1; else lo = mid + 1;
     }
     return 0;
 }
+
+/* Mirrors welsh_normalize._acronym_reads_as_word. */
+static int avocab_reads_as_word(const char *low, int len) {
+    if (avocab_in(&g_avocab_en, low)) return 1;
+    return avocab_in(&g_avocab_cy, low) && len >= AVOCAB_CY_SHOUT_MIN_LEN;
+}
+
 
 static void pass_acronym(const char *in, char *out) {
     int i = 0, o = 0;
@@ -567,7 +593,7 @@ static void pass_acronym(const char *in, char *out) {
                     for (int t = 0; t < len; t++)
                         low[t] = (char)tolower((unsigned char)in[i + t]);
                     low[len] = 0;
-                    if (avocab_has(low)) {
+                    if (avocab_reads_as_word(low, len)) {
                         memcpy(out + o, low, (size_t)len);
                         o += len;
                         i = j;

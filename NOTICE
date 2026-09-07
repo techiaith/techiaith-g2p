@@ -30,5 +30,44 @@ still apply to anything you redistribute:
   techiaith/g2p/data/cmudict/LICENSE, and the derived
   techiaith/g2p/data/english/cmudict_native.dict.
 
-No voice model is bundled. The models carry their own licences:
+* Unicode CLDR and the Unicode emoji data files -- the Welsh emoji names in
+  techiaith/g2p/data/emoji_cy.tsv (and the generated techiaith/g2p/c/cy_emoji_data.h) are
+  derived from:
+
+    - Unicode CLDR, common/annotations/cy.xml and common/annotationsDerived/cy.xml,
+      release-48-2. SPDX-License-Identifier: Unicode-3.0.
+      Copyright (C) 1991-2026 Unicode, Inc.
+    - Unicode emoji-test.txt, version 17.0, which determines WHICH sequences are emoji.
+      Copyright (C) 2025 Unicode, Inc. https://www.unicode.org/terms_of_use.html
+
+  Modifications: restricted to the sequences Unicode marks fully-qualified or component;
+  zero-width-joiner sequences excluded; CLDR's ": " qualifier separator collapsed to a
+  space so it is not read aloud. Both licences permit this. Regenerate with
+  scripts/gen_emoji_cy.py -- see techiaith/g2p/data/upstream/README.md.
+
+  This table replaced one extracted from espeak-ng's cy voice, which is GPLv3 and therefore
+  incompatible with shipping only permissive components. No espeak-ng data remains.
+
+No voice model is bundled in THIS package. The models carry their own licences:
 https://huggingface.co/techiaith/cy_en_GB-bu_tts
+
+Note for anyone packaging a model alongside this G2P: the shipped 3-speaker
+cy_en_GB-bu_tts model is warm-started from the CSTR VCTK Corpus and is therefore
+**CC BY 4.0**, not public domain. It carries an attribution obligation that must appear in
+your artifact's own NOTICE. See LICENSING.md.
+
+## Part-of-speech tagger training data (`techiaith/g2p/data/pos/pos_{cy,en}.bin`)
+
+The POS models that select heteronym readings were trained on:
+
+- **MASC: the Manually Annotated Sub-Corpus of American English** (version 3.0.0), Open American
+  National Corpus, https://anc.org/data/masc/ — licensed under the Creative Commons
+  Attribution 3.0 United States License (CC BY 3.0 US). Ide, N., Baker, C., Fellbaum, C., Fillmore,
+  C. and Passonneau, R. (2008), "MASC: the Manually Annotated Sub-Corpus of American English",
+  LREC 2008. Used as training data for `pos_en.bin`; no MASC text is redistributed. The model is a
+  derived work of the annotations and is distributed with this attribution.
+- **brawddegau-tagiedig** (Welsh tagged sentences), Uned Technolegau Iaith, Prifysgol Bangor,
+  https://github.com/techiaith/brawddegau-tagiedig — CC0-1.0. Training data for `pos_cy.bin`.
+
+No accent or pronunciation data in this package is derived from either corpus; they contribute
+part-of-speech tags only.

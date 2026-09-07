@@ -62,7 +62,11 @@ def test_no_third_party_imports_in_the_g2p():
     import pathlib
 
     import techiaith.g2p as pkg
-    allowed = {"__future__", "hashlib", "json", "re", "pathlib", "typing", "unicodedata"}
+    # All stdlib. `struct` joined the list with pos_tagger.py, which unpacks the
+    # little-endian POS model blob; the point of this test is third-party dependencies,
+    # not module count, and a stdlib addition costs the API and NVDA paths nothing.
+    allowed = {"__future__", "hashlib", "json", "re", "pathlib", "struct", "typing",
+               "unicodedata"}
     for path in pathlib.Path(pkg.__file__).parent.rglob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8"))
         for node in ast.walk(tree):

@@ -21,13 +21,15 @@ from typing import Dict, List, Optional
 
 from .bangor_lts import lts
 from .canonical import decimal_value
-from .english_g2p import EnglishG2P
+from .english_g2p import EnglishG2P, _LEX as _ENGLISH_LEXICON
+from . import pos_tagger
 from .lang_id import classify_word
 from .welsh_normalize import ACRONYM_JOIN, WelshNormalizer
 
 _HERE = Path(__file__).resolve().parent
 _DEFAULT_IDMAP = _HERE / "bangor_phoneme_id_map.json"
 _DEFAULT_DATA = _HERE / "data" / "geiriadur-ynganu-bangor"
+_POS_DATA = _HERE / "data" / "pos"
 
 # Lookup priority: native Welsh, then proper nouns, then English, then CMUdict.
 _DICT_ORDER = ["bangordict.dict", "bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict"]
@@ -57,7 +59,14 @@ _INTERIOR_PUNCT = re.compile("([" + re.escape(_PUNCT) + "]+)")
 # dropped all punctuation, so the model could not pause on it). v3 adds Welsh
 # letter-name interception for isolated consonant letters and digraphs (previously
 # a bare letter fell through the lexicon to an unpronounceable bare phone).
-_EMISSION_POLICY = "v3:stress=on;syllable=on;wordsep=on;punct=on;letters=cy-names;acronyms=en-runs;interleave=bos-pad-id-pad-eos"
+# v4 (2026-09-07) records the POS front end: heteronyms are resolved from a tag rather than
+# from a single fixed reading per spelling, so the same word can now emit different phones in
+# different sentences. The English LEXICON is unchanged from v3 -- a 2026-09-04 attempt to
+# re-derive it as "Welsh English" by rule was measured 19 points further from Bangor's own
+# transcriptions and audibly worse than the deployed API, and was withdrawn; the model was
+# trained with these labels and they are what sounds right. The POS models and the lexicon
+# are hashed below so a change to either moves data_version.
+_EMISSION_POLICY = "v4:stress=on;syllable=on;wordsep=on;punct=on;letters=cy-names;acronyms=en-runs;pos=on;interleave=bos-pad-id-pad-eos"
 
 # Welsh letter names for isolated consonant letters and digraphs, as phone tokens
 # (sources: the dictionaries' shadowed (nmcy) entries + the reference alphabet in
@@ -305,9 +314,155 @@ def _parse_line(line: str):
 #
 # "miliwn"/"biliwn"/"miloedd" are NOT here and must not be: they are polysyllabic
 # ('m i | l iu n), the syllable is open, and their short "i" is correct. Verified unchanged.
+# Override keys that are NOT expected to exist in bangordict.dict. Being absent is the
+# whole reason they need an entry, so the "word must exist" assertion is relaxed for these
+# and only these -- a typo anywhere else still fails loudly.
+_CY_PRON_ADDITIONS = frozenset({
+    "onedrive", "chromebook", "firestick", "fitbit", "tiktok", "deliveroo",
+})
+
+# --- HETERONYMS ---------------------------------------------------------------------------
+# One spelling, two pronunciations chosen by GRAMMAR rather than spelling. Neither lexicon can
+# express this: each holds exactly one reading per word, so the shipped voice says a single form
+# in every context and is wrong whenever the other reading is meant. Both routes are affected --
+# an English-context word resolves from cmudict_native.dict, a Welsh-context one from the Bangor
+# tables -- so this sits ABOVE both rather than patching either.
+#
+# Measured against MASC gold POS (592,472 tokens, CC BY 3.0 US; see docs/bilingual-pos-
+# programme.md): the shipped readings were right on only 38.7% of 933 real instances, because
+# 9 of 15 words shipped the MINORITY reading -- "live" right 3.6% of the time (ships /laɪv/ where
+# 96% of uses are the verb /lɪv/), "wind" 3.6%, "record" 5.3%, "read" 20.2%. Pointing each
+# fallback at the majority reading lifts that to 74.1% with no tagger, no retrain and no new
+# data; the POS branches earn the rest once the tagger lands. One table, filled in two stages.
+#
+# KEYED ON THE TAGGER'S OWN TAGSET, which is UD coarse with ONE split: VERB vs VPAST. "read"
+# is why the split exists -- /rɛd/ (VBD, VBN) and /riːd/ (everything else) are both `VERB` in
+# plain UD, so a purely coarse tag could not separate them at all. Everything else the
+# heteronyms need is a coarse distinction, so the tagset stays at 17 tags rather than Penn's
+# 45; that halves the exported model. See scripts/gen_pos_data.PENN_RED for the mapping from
+# MASC's Penn tags. Flat (word, tag) -> phones, which is also the shape the C mirror needs.
+#
+# Phones are the other reading of a pair the lexicon already ships, built by swapping only the
+# distinguishing segment: voice a final fricative, shift stress, reduce or unreduce a vowel.
+# Nothing is invented.
+#
+# Phones are in the lexicon's own (General American-labelled) system: that is what the model was
+# trained with, and what the deployed API speaks. A different accent is a retrain, not a table.
+_VERB_FORMS = ("VERB",)              # base/finite/gerund
+_VERB_ALL = ("VERB", "VPAST")        # ...plus past tense and past participle
+_NOUN_FORMS = ("NOUN",)
+
+
+def _het(**readings: object) -> Dict[Optional[str], List[str]]:
+    """Expand {reading: (tags, phones)} into a flat {tag: phones} map plus a None fallback.
+    The fallback is the reading named `default`, i.e. the majority reading in MASC."""
+    out: Dict[Optional[str], List[str]] = {}
+    default = readings.pop("default")
+    for tags, phones in readings.values():          # type: ignore[misc]
+        for t in tags:
+            out[t] = list(phones)
+    out[None] = list(readings[default][1])          # type: ignore[index]
+    return out
+
+
+_HETERONYM: Dict[str, Dict[Optional[str], List[str]]] = {
+    # "read": the case that forces fine tags -- VBD/VBN /rɛd/ vs VB/VBP/VBZ/VBG /riːd/, both VERB.
+    "read": _het(default="pres",
+                 pres=(_VERB_FORMS, ["ɹ", STRESS, "ii", "d"]),
+                 past=(("VPAST",), ["ɹ", STRESS, "e", "d"])),              # pres 130 / past 33
+    "use": _het(default="verb",
+                verb=(_VERB_ALL, ["j", STRESS, "uu", "z"]),
+                noun=(_NOUN_FORMS, ["j", STRESS, "uu", "s"])),             # verb 167 / noun 130
+    "live": _het(default="verb",
+                 verb=(_VERB_FORMS, ["l", STRESS, "i", "v"]),
+                 adj=(("ADJ",), ["l", STRESS, "ai", "v"])),                 # verb 106 / adj 4
+    "close": _het(default="verb",
+                  verb=(_VERB_ALL, ["k", "l", STRESS, "ou", "z"]),
+                  adj=(("ADJ", "ADV"), ["k", "l", STRESS, "ou", "s"])),      # verb 37 / adj 36
+    "record": _het(default="noun",
+                   noun=(_NOUN_FORMS, [STRESS, "ɹ", "e", "k", "@r", "d"]),
+                   verb=(_VERB_ALL, ["ɹ", "@", "k", STRESS, "oo", "ɹ", "d"])),  # noun 54 / verb 3
+    "object": _het(default="verb",
+                   verb=(_VERB_ALL, ["@", "b", "jh", STRESS, "e", "k", "t"]),
+                   noun=(_NOUN_FORMS, [STRESS, "aa", "b", "jh", "e", "k", "t"])),  # verb 37 / noun 7
+    "separate": _het(default="adj",
+                     adj=(("ADJ",), ["s", STRESS, "e", "p", "@r", "@", "t"]),
+                     verb=(_VERB_ALL, ["s", STRESS, "e", "p", "@r", "ei", "t"])),  # adj 26 / verb 6
+    "wind": _het(default="noun",
+                 noun=(_NOUN_FORMS, ["w", STRESS, "i", "n", "d"]),
+                 verb=(_VERB_FORMS, ["w", STRESS, "ai", "n", "d"])),       # noun 27 / verb 1
+    "estimate": _het(default="verb",
+                     verb=(_VERB_ALL, [STRESS, "e", "s", "t", "@", "m", "ei", "t"]),
+                     noun=(_NOUN_FORMS, [STRESS, "e", "s", "t", "@", "m", "@", "t"])),  # verb 10 / noun 5
+    # Already shipping the majority reading: fallback unchanged, POS branches added so the tagger
+    # has something to select once it lands. No behaviour change today.
+    "present": _het(default="noun",
+                    noun=(_NOUN_FORMS + ("ADJ",), ["p", "ɹ", STRESS, "e", "z", "@", "n", "t"]),
+                    verb=(_VERB_ALL, ["p", "ɹ", "@", "z", STRESS, "e", "n", "t"])),  # noun 66 / verb 16
+    "desert": _het(default="noun",
+                   noun=(_NOUN_FORMS, ["d", STRESS, "e", "z", "@r", "t"]),
+                   verb=(_VERB_ALL, ["d", "@", "z", STRESS, "@r", "t"])),   # noun 20 / verb 0
+    "refuse": _het(default="verb",
+                   verb=(_VERB_ALL, ["ɹ", "@", "f", "j", STRESS, "uu", "z"]),
+                   noun=(_NOUN_FORMS, [STRESS, "ɹ", "e", "f", "j", "uu", "s"])),  # verb 11 / noun 1
+}
+
+# Heteronyms POS CANNOT separate, recorded so nobody adds them above expecting a fix: both
+# readings carry the SAME tag, so telling them apart needs word sense, not grammar.
+#   lead (metal / to guide)   bow (ribbon / to bend)   tear (droplet / to rip)
+#   sow  (to plant / a pig)   row (a line / a quarrel) bass (fish / low register)
+# Out of scope for this mechanism and deliberately left alone.
+_HETERONYM_NOT_POS_SEPARABLE = frozenset({
+    "lead", "bow", "tear", "sow", "row", "bass", "wound",
+})
+
 _CY_PRON_OVERRIDE: Dict[str, List[str]] = {
     "mil": [STRESS, "m", "ii", "l"],   # was [STRESS, "m", "i", "l"]
     "fil": [STRESS, "v", "ii", "l"],   # soft-mutated, as in "dwy fil"
+
+    # --- BRAND NAMES -----------------------------------------------------------------
+    # bangordict.dict records these with Welsh phonology ("google" as g o-o g-l e), which
+    # is a defensible editorial choice for Welsh conversation and wrong for a screen reader
+    # reading an English interface. It only shows up on SHORT utterances: the sentence
+    # router needs about five English words before it routes English, and a button label is
+    # one to three, so "google" alone is Welsh while "Open the Google application now" is
+    # already correct today. Screen readers emit almost entirely short labels.
+    #
+    # NB the syllable boundary "|" in those dictionary readings is NOT the defect -- ordinary
+    # Welsh is full of it and sounds right. The defect is the PHONES: Welsh o/o/e where
+    # English needs uu/@. Owner-confirmed by ear, 2026-09-04.
+    #
+    # Phones below are the existing cmudict_native entries verbatim -- nothing invented.
+    "youtube":    ["j", STRESS, "uu", "t", "j", "uu", "b"],
+    "google":     ["g", STRESS, "uu", "g", "@", "l"],
+    "twitter":    ["t", "w", STRESS, "i", "t", "@r"],
+    "adobe":      ["@", "d", STRESS, "ou", "b", "ii"],
+    "photoshop":  ["f", STRESS, "ou", "t", "ou", "sh", "aa", "p"],
+    "powerpoint": ["p", STRESS, "au", "@r", "p", "oi", "n", "t"],
+    "ebay":       [STRESS, "ii", "b", "ei"],
+    "iphone":     [STRESS, "ai", "f", "ou", "n"],
+    "ipad":       [STRESS, "ai", "p", "æ", "d"],
+    "android":    [STRESS, "æ", "n", "d", "ɹ", "oi", "d"],
+
+    # Concatenated brands in NO dictionary, so they fell to Welsh letter-to-sound. Rendered
+    # as TWO WORDS (WORD_SEP, id 3) rather than one, because the owner tested the spaced
+    # forms by ear and preferred them -- these token lists are byte-identical to typing
+    # "one drive", "chrome book" and so on. WORD_SEP, not the syllable boundary: "|" is what
+    # makes bangordict's readings sound wrong, and is deliberately not used here.
+    "onedrive":   ["w", STRESS, "ʌ", "n", WORD_SEP, "d", "ɹ", STRESS, "ai", "v"],
+    "chromebook": ["k", "ɹ", STRESS, "ou", "m", WORD_SEP, "b", STRESS, "u", "k"],
+    "firestick":  ["f", STRESS, "ai", "@r", WORD_SEP, "s", "t", STRESS, "i", "k"],
+    "fitbit":     [STRESS, "f", "i", "t", WORD_SEP, "b", STRESS, "i", "t"],
+    "tiktok":     ["t", STRESS, "i", "k", WORD_SEP, "t", STRESS, "aa", "k"],
+    # "deliver" + "ww". Owner-chosen after testing: "deliver oo" gives Welsh ˈoo|o and
+    # "deliver uu" gives ˈyy|y, both worse. It does carry a /w/ onset, so this is
+    # "deliver-WOO" rather than "deliver-OO" -- accepted as the best this phoneset offers.
+    "deliveroo":  ["d", "i", "l", STRESS, "i", "v", "@r", WORD_SEP, STRESS, "w", "uu"],
+
+    # DELIBERATELY ABSENT: camera, signal, telegram. Mispronounced by the same mechanism,
+    # but each is an ordinary Welsh loanword as well as a brand, and an override applies
+    # everywhere -- fixing the English label would break Welsh prose. Owner confirmed these
+    # "all work fine" as they are. Fixable only with context, which is separate work.
 }
 
 
@@ -342,7 +497,13 @@ class BangorLexicon:
         # whose phones are not in the id map, is a silent no-op that would look like a fix.
         welsh = self.tables[0]
         for word, phones in _CY_PRON_OVERRIDE.items():
-            assert word in welsh, f"override for {word!r}, which is not in bangordict.dict"
+            # A word the dictionary lacks is normally a typo, but the concatenated brand
+            # names (onedrive, tiktok…) are absent BY DEFINITION -- being absent is exactly
+            # why they fell to Welsh letter-to-sound. Those are additions, not corrections,
+            # so they are listed explicitly and everything else still has to exist.
+            assert word in welsh or word in _CY_PRON_ADDITIONS, (
+                f"override for {word!r}, which is not in bangordict.dict; if that is "
+                f"intentional, add it to _CY_PRON_ADDITIONS")
             assert all(p in valid for p in phones), f"override for {word!r} has unknown phones"
             welsh[word] = list(phones)
             self.stats["overridden"] = self.stats.get("overridden", 0) + 1
@@ -378,8 +539,19 @@ class BangorG2P:
         self.normalizer = WelshNormalizer()
         self.english_mode = english_mode
         self._english: Optional[EnglishG2P] = None
+        self._pos: Dict[str, object] = {}
         self._ipa: Optional[Dict[str, str]] = None
         self._data_version = self._compute_data_version(raw)
+
+    def _pos_tagger(self, lang: str):
+        """The POS model for `lang`, or None if it is not installed.
+
+        None is a supported state: a distro without the models still phonemizes, taking
+        each heteronym's majority-reading fallback (74.1% correct, vs 38.7% before those
+        fallbacks were fixed). Cached per instance because loading walks a ~2 MB blob."""
+        if lang not in self._pos:
+            self._pos[lang] = pos_tagger.load(lang, _POS_DATA)
+        return self._pos[lang]
 
     @property
     def english(self) -> EnglishG2P:
@@ -580,11 +752,67 @@ class BangorG2P:
                     continue
                 yield ld, c, tr
 
+    def _known(self, word: str) -> bool:
+        """True if ANY table can pronounce `word` — Welsh, Welsh-accented, or English."""
+        return (self.lexicon.lookup(word) is not None
+                or self.english.lookup(word) is not None)
+
+    def _hyphen_parts(self, core: str) -> Optional[List[str]]:
+        """Parts of a hyphenated core that NO dictionary knows, or None to leave it alone.
+
+        Screen readers are full of hyphenated English compounds -- double-tap, drop-down,
+        read-only, sign-in, scroll-bar, check-box, log-out -- and none of them is in any
+        table. As one token they fall to Welsh letter-to-sound ("double-tap" ->
+        d ou b|'l e|t a p) AND they starve _sentence_lang of English evidence, so
+        neighbouring words that are also real Welsh words stay Welsh ("to" -> Welsh 'to',
+        a roof). Splitting fixes both at once, which is why typing a space instead of a
+        hyphen has always sounded right.
+
+        THE GUARD, and why hyphenated compounds were deliberately left intact before this:
+        a hyphenated form that IS in a table keeps winning, untouched. That protects all 511
+        hyphenated Welsh entries (gogledd-ddwyrain, pen-blwydd, e-bost, ar-lein) plus the
+        hyphenated English ones (wi-fi, built-in, e-mail) -- verified: splitting wi-fi would
+        give 'w i v i', so this ordering is load-bearing, not a formality.
+
+        Both parts must be independently pronounceable, or splitting buys nothing and we
+        keep today's behaviour. Single characters are excluded so a keyboard-echoed letter
+        run ("d-d-d") stays with _hyphen_letter_run, which _segment already handled.
+        """
+        if not core or "-" not in core:
+            return None
+        if self._known(core):          # a real hyphenated entry -- never split
+            return None
+        parts = [p for p in core.split("-") if p]
+        if len(parts) < 2 or any(len(p) < 2 for p in parts):
+            return None
+        if not all(self._known(p) for p in parts):
+            return None
+        return parts
+
+    def _split_unknown_hyphen_compounds(self, segments):
+        """Expand unknown hyphenated cores into their parts BEFORE language routing.
+
+        Done here rather than in _word_tokens on purpose: _sentence_lang runs on this word
+        list, so splitting later would fix the compound's own pronunciation but leave the
+        router still deciding from one unknown token.
+        """
+        out = []
+        for lead, core, trail in segments:
+            parts = self._hyphen_parts(core)
+            if parts is None:
+                out.append((lead, core, trail))
+                continue
+            last = len(parts) - 1
+            for i, part in enumerate(parts):
+                out.append((lead if i == 0 else "", part, trail if i == last else ""))
+        return out
+
     def phonemize(self, text: str, on_oov: str = "raise",
                   lang: Optional[str] = None) -> List[str]:
         if lang not in (None, "cy", "en"):
             raise ValueError(f"lang {lang!r} is not supported; use 'cy' or 'en'")
         segments = list(self._segment(text))
+        segments = self._split_unknown_hyphen_compounds(segments)
         words = [core for _lead, core, _trail in segments if core]  # == the removed _words(text)
         # lang=None keeps the automatic sentence-level routing; an explicit value is an
         # author override (SSML <lang xml:lang="...">) and wins outright.
@@ -595,11 +823,42 @@ class BangorG2P:
         lang = lang or self._sentence_lang(words)
         # a single isolated vowel keystroke (the whole utterance is one vowel letter)
         solo_vowel = len(words) == 1 and words[0] in _CY_VOWEL_SOLO
+
+        # POS TAGGING, deliberately gated. The tagger is consulted ONLY when the
+        # utterance actually contains a heteronym, which is the only thing that reads a
+        # tag today. Two reasons, and the second is the important one:
+        #   * cost -- most utterances contain no heteronym, and this skips ~19 blob
+        #     lookups per word for them;
+        #   * blast radius -- every utterance without a heteronym is provably unchanged
+        #     by this feature, in Python and in C, so the parity surface is exactly the
+        #     inputs the tagger can affect rather than all of them.
+        # A missing model, or a tag with no branch, falls through to the majority
+        # reading; nothing here can fail an utterance that used to work.
+        pos_tags: Optional[List[str]] = None
+        if any(w in _HETERONYM for w in words):
+            # ALWAYS the English tagger: every _HETERONYM entry is an English word, so the
+            # tag that selects its reading is an English tag whatever language the sentence
+            # routed as. This matters because short English sentences ("I have read it")
+            # route to Welsh -- the router wants ~5 English words -- and the Welsh tagger
+            # cannot tag English, so the reading fell to the majority fallback exactly where
+            # a screen reader most needs it. On a genuinely Welsh sentence with an embedded
+            # heteronym the English tagger sees unknown context and lands near its bias,
+            # which is no worse than the fallback it replaces.
+            tagger = self._pos_tagger("en")
+            if tagger is not None:
+                pos_tags = tagger.tag(words)
+
         tokens: List[str] = []
+        word_i = -1
         for lead, core, trail in segments:
             piece: List[str] = list(lead)
+            if core:
+                word_i += 1        # tracks `words`, which counted every non-empty core
             if core and any(c.isalpha() for c in core):
-                word_toks = self._word_tokens(core, on_oov, lang, solo_vowel=solo_vowel)
+                pos = (pos_tags[word_i]
+                       if pos_tags is not None and 0 <= word_i < len(pos_tags) else None)
+                word_toks = self._word_tokens(core, on_oov, lang, solo_vowel=solo_vowel,
+                                              pos=pos)
                 if word_toks:
                     piece.extend(word_toks)
             piece.extend(trail)
@@ -690,7 +949,8 @@ class BangorG2P:
         return "cy"
 
     def _word_tokens(self, word: str, on_oov: str, lang: str = "cy",
-                     solo_vowel: bool = False) -> Optional[List[str]]:
+                     solo_vowel: bool = False,
+                     pos: Optional[str] = None) -> Optional[List[str]]:
         # Isolated letters are spelled by name, not looked up: the lexicons resolve a
         # bare "b" to the naked stop /b/ (unpronounceable as an utterance) and have no
         # entry at all for ll/rh/ff/ng/th. A marked acronym gets ENGLISH letter names
@@ -709,6 +969,12 @@ class BangorG2P:
             return list(_CY_DIGRAPH_NAMES[word])
         if word in _CY_LETTER_NAMES and not (self.english_mode == "native" and lang == "en"):
             return list(_CY_LETTER_NAMES[word])
+        # Heteronyms, before either lexicon: both routes hold one reading and it is the wrong
+        # one for 9 of 15 words. pos is None until the tagger lands, which selects the
+        # majority-reading fallback -- see _HETERONYM.
+        if word in _HETERONYM:
+            branch = _HETERONYM[word]
+            return list(branch.get(pos) or branch[None])
         if self.english_mode == "native":
             welsh = self.lexicon.lookup_welsh(word)
             en_available = self.english.lookup(word) is not None
@@ -771,6 +1037,25 @@ class BangorG2P:
         for name in _DICT_ORDER:
             h.update(name.encode())
             h.update((self.lexicon.data_dir / name).read_bytes())
+        # The native English lexicon, hashed from 2026-09-04. It was OUTSIDE this hash
+        # while it determined the accent of every English word the voice speaks, so
+        # converting it from General American to Welsh English -- a change that needs a
+        # matching model -- moved data_version not at all. That is exactly the pairing
+        # failure this hash exists to prevent. Hashed unconditionally, not only under
+        # english_mode="native": data_version describes the DATA, and both modes are
+        # compared against one generated data_version.txt on the C side.
+        h.update(b"cmudict_native.dict")
+        h.update(_ENGLISH_LEXICON.read_bytes())
+        # The POS models, hashed from 2026-09-04. They decide which reading a heteronym
+        # gets, so they are emission-relevant data on exactly the same footing as the
+        # dictionaries. Hashed in a fixed order, and a MISSING model is hashed as absent
+        # rather than skipped: pos_tagger.load() returns None so the code degrades to the
+        # majority reading instead of crashing, but a distro that ships without the models
+        # is not running the same G2P and data_version must not claim otherwise.
+        for name in ("pos_cy.bin", "pos_en.bin"):
+            h.update(name.encode())
+            f = _POS_DATA / name
+            h.update(f.read_bytes() if f.exists() else b"<absent>")
         return h.hexdigest()[:16]
 
     def data_version(self) -> str:

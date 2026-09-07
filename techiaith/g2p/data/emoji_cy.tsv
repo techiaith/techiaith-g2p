@@ -1,11 +1,61 @@
+0023 20E3	gorchudd bysell #
+002A 20E3	gorchudd bysell *
+0030 20E3	gorchudd bysell 0
+0031 20E3	gorchudd bysell 1
+0032 20E3	gorchudd bysell 2
+0033 20E3	gorchudd bysell 3
+0034 20E3	gorchudd bysell 4
+0035 20E3	gorchudd bysell 5
+0036 20E3	gorchudd bysell 6
+0037 20E3	gorchudd bysell 7
+0038 20E3	gorchudd bysell 8
+0039 20E3	gorchudd bysell 9
+00A7	adran
 00A9	hawlfraint
 00AE	cofrestredig
+00BC	chwarter
+00BD	hanner
+00BE	tri chwarter
+2022	bwled
+2030	y fil
 203C	ebychnod dwbl
 2049	marc cwestiwn ag ebychnod
-2122	nod masnachu
+20A7	peseta Sbaen
+2116	rhif
+2122	nod masnach
 2139	gwybodaeth
+2150	un rhan o saith
+2151	un rhan o naw
+2152	un rhan o ddeg
+2153	traean
+2154	dwy ran o dair
+2155	un rhan o bump
+2156	dwy ran o bump
+2157	tair rhan o bump
+2158	pedair rhan o bump
+2159	un rhan o chwech
+215A	pum rhan o chwech
+215B	un rhan o wyth
+215C	tair rhan o wyth
+215D	pum rhan o wyth
+215E	saith rhan o wyth
+2190	saeth yn pwyntio i’r chwith
+2191	saeth yn pwyntio i fyny
+2192	saeth yn pwyntio i’r dde
+2193	saeth yn pwyntio i lawr
+2194	saeth chwith-dde
+2195	saeth i fyny-lawr
+2196	saeth i fyny-chwith
+2197	saeth i fyny-dde
+2198	saeth i lawr-dde
+2199	saeth i lawr-chwith
+21A9	saeth i’r dde yn troi i’r chwith
+21AA	saeth i’r chwith yn troi i’r dde
+2300	diamedr
 231A	oriawr
 231B	awrwydr
+2328	bysellfwrdd
+23CF	botwm allfwrw
 23E9	botwm blaenyrru cyflym
 23EA	botwm cildroi cyflym
 23EB	botwm i fyny cyflym
@@ -17,6 +67,10 @@
 23F1	stop wats
 23F2	cloc ag amserydd
 23F3	awrwydr gyda thywod yn llifo
+23F8	botwm saib
+23F9	botwm stop
+23FA	botwm recordio
+24C2	llythyren M mewn cylch
 25AA	sgwâr bach du
 25AB	sgwâr bach gwyn
 25B6	botwm chwarae
@@ -27,15 +81,22 @@
 25FE	sgwâr canolig-bach du
 2600	haul
 2601	cwmwl
-2602	ymbarel
+2602	ymbarél
 2603	dyn eira
 2604	comed
+2605	seren
+2606	seren wag
 260E	ffôn
 2611	blwch pleidlais gyda thic
-2614	ymbarel gyda glaw
+2614	ymbarél gyda glaw
 2615	diod boeth
 2618	samrog
 261D	mynegfys yn pwyntio i fyny
+261D 1F3FB	mynegfys yn pwyntio i fyny arlliw croen golau
+261D 1F3FC	mynegfys yn pwyntio i fyny arlliw croen canolig-golau
+261D 1F3FD	mynegfys yn pwyntio i fyny arlliw croen canolog
+261D 1F3FE	mynegfys yn pwyntio i fyny arlliw croen canolig-tywyll
+261D 1F3FF	mynegfys yn pwyntio i fyny arlliw croen tywyll
 2620	penglog ac esgyrn croes
 2622	ymbelydrol
 2623	bioberyg
@@ -57,7 +118,7 @@
 264E	y Fantol
 264F	y Sgorpion
 2650	y Saethydd
-2651	yr afr
+2651	yr Afr
 2652	y Dyfrwr
 2653	y Pysgod
 265F	gwerinwr gwyddbwyll
@@ -66,8 +127,9 @@
 2665	siwt calonnau
 2666	siwt diemwntau
 2668	tarddelli poeth
-266D	flat
-266F	sharp
+266D	meddalnod
+266E	nodyn naturiol
+266F	llonnod
 267B	symbol ailgylchu
 267E	anfeidredd
 267F	cadair olwyn
@@ -82,6 +144,7 @@
 269C	gellesgen
 26A0	rhybudd
 26A1	foltedd uchel
+26A7	symbol trawsryweddol
 26AA	cylch gwyn
 26AB	cylch du
 26B0	arch
@@ -99,7 +162,7 @@
 26E9	cysegrfa shinto
 26EA	eglwys
 26F0	mynydd
-26F1	ymbarel ar lawr
+26F1	ymbarél ar lawr
 26F2	ffynnon
 26F3	baner mewn twll
 26F4	fferi
@@ -107,6 +170,11 @@
 26F7	sgïwr
 26F8	sglefrio iâ
 26F9	person â phêl
+26F9 1F3FB	person â phêl arlliw croen golau
+26F9 1F3FC	person â phêl arlliw croen canolig-golau
+26F9 1F3FD	person â phêl arlliw croen canolog
+26F9 1F3FE	person â phêl arlliw croen canolig-tywyll
+26F9 1F3FF	person â phêl arlliw croen tywyll
 26FA	pabell
 26FD	pwmp tanwydd
 2702	siswrn
@@ -114,13 +182,36 @@
 2708	awyren
 2709	amlen
 270A	dwrn wedi codi
+270A 1F3FB	dwrn wedi codi arlliw croen golau
+270A 1F3FC	dwrn wedi codi arlliw croen canolig-golau
+270A 1F3FD	dwrn wedi codi arlliw croen canolog
+270A 1F3FE	dwrn wedi codi arlliw croen canolig-tywyll
+270A 1F3FF	dwrn wedi codi arlliw croen tywyll
 270B	llaw wedi codi
+270B 1F3FB	llaw wedi codi arlliw croen golau
+270B 1F3FC	llaw wedi codi arlliw croen canolig-golau
+270B 1F3FD	llaw wedi codi arlliw croen canolog
+270B 1F3FE	llaw wedi codi arlliw croen canolig-tywyll
+270B 1F3FF	llaw wedi codi arlliw croen tywyll
 270C	llaw fuddugol
+270C 1F3FB	llaw fuddugol arlliw croen golau
+270C 1F3FC	llaw fuddugol arlliw croen canolig-golau
+270C 1F3FD	llaw fuddugol arlliw croen canolog
+270C 1F3FE	llaw fuddugol arlliw croen canolig-tywyll
+270C 1F3FF	llaw fuddugol arlliw croen tywyll
 270D	dwylo yn ysgrifennu
+270D 1F3FB	dwylo yn ysgrifennu arlliw croen golau
+270D 1F3FC	dwylo yn ysgrifennu arlliw croen canolig-golau
+270D 1F3FD	dwylo yn ysgrifennu arlliw croen canolog
+270D 1F3FE	dwylo yn ysgrifennu arlliw croen canolig-tywyll
+270D 1F3FF	dwylo yn ysgrifennu arlliw croen tywyll
 270F	pensil
 2712	nib du
+2713	tic
 2714	marc tic trwm
-2716	lluosi x trwm
+2716	lluosi
+2717	croes
+2718	croes
 271D	croes ladin
 2721	seren Dafydd
 2728	gwreichion
@@ -136,25 +227,42 @@
 2757	ebychnod
 2763	ebychiad trwm galon
 2764	calon goch
-2795	arwydd adio trwm
-2796	arwydd tynnu trwm
-2797	arwydd rhannu trwm
+2795	adio
+2796	tynnu
+2797	rhannu
 27A1	saeth i’r dde
 27B0	dolen gyrliog
 27BF	dolen gyrliog ddwbl
+2934	saeth i’r dde yn troi i fyny
+2935	saeth i’r dde yn troi i lawr
 2B05	saeth i’r chwith
 2B06	saeth i fyny
 2B07	saeth i lawr
 2B1B	sgwâr mawr du
 2B1C	sgwâr mawr wyn
 2B50	seren ganolig wen
-2B55	cylch mawr trwm
+2B55	cylch coch gwag
 3030	llinell donnog
 303D	marc aryneilio rhannol
 3297	ideograff cyfarchion mewn cylch
 3299	ideograff cyfrinach mewn cylch
 1F004	draig goch mahjong
 1F0CF	cellweiriwr
+1F170	botwm A (grwp gwaed)
+1F171	botwm B (grwp gwaed)
+1F17E	botwm O (grwp gwaed)
+1F17F	botwm P
+1F18E	botwm AB (grwp gwaed)
+1F191	botwm CL
+1F192	botwm COOL
+1F193	botwm FREE
+1F194	botwm ID
+1F195	botwm NEW
+1F196	botwm NG
+1F197	botwm OK
+1F198	botwm SOS
+1F199	botwm UP!
+1F19A	botwm VS
 1F1E6 1F1E8	baner Ynys Ascension
 1F1E6 1F1E9	baner Andorra
 1F1E6 1F1EA	baner Emiradau Arabaidd Unedig
@@ -171,8 +279,8 @@
 1F1E6 1F1FA	baner Awstralia
 1F1E6 1F1FC	baner Aruba
 1F1E6 1F1FD	baner Ynysoedd Åland
-1F1E6 1F1FF	baner Azerbaijan
-1F1E7 1F1E6	baner Bosnia & Herzegovina
+1F1E6 1F1FF	baner Aserbaijan
+1F1E7 1F1E6	baner Bosnia a Herzegovina
 1F1E7 1F1E7	baner Barbados
 1F1E7 1F1E9	baner Bangladesh
 1F1E7 1F1EA	baner Gwlad Belg
@@ -206,6 +314,7 @@
 1F1E8 1F1F3	baner Tsieina
 1F1E8 1F1F4	baner Colombia
 1F1E8 1F1F5	baner Ynys Clipperton
+1F1E8 1F1F6	baner Sarc
 1F1E8 1F1F7	baner Costa Rica
 1F1E8 1F1FA	baner Ciwba
 1F1E8 1F1FB	baner Cabo Verde
@@ -245,16 +354,16 @@
 1F1EC 1F1EE	baner Gibraltar
 1F1EC 1F1F1	baner Yr Ynys Las
 1F1EC 1F1F2	baner Gambia
-1F1EC 1F1F3	baner Guinée
+1F1EC 1F1F3	baner Gini
 1F1EC 1F1F5	baner Guadeloupe
-1F1EC 1F1F6	baner Guinea Gyhydeddol
+1F1EC 1F1F6	baner Gini Gyhydeddol
 1F1EC 1F1F7	baner Gwlad Groeg
 1F1EC 1F1F8	baner De Georgia ac Ynysoedd Sandwich y De
 1F1EC 1F1F9	baner Guatemala
 1F1EC 1F1FA	baner Guam
 1F1EC 1F1FC	baner Guiné-Bissau
 1F1EC 1F1FE	baner Guyana
-1F1ED 1F1F0	baner Hong Kong RhGA Tsieina
+1F1ED 1F1F0	baner Hong Kong SAR Tsieina
 1F1ED 1F1F2	baner Ynys Heard ac Ynysoedd McDonald
 1F1ED 1F1F3	baner Honduras
 1F1ED 1F1F7	baner Croatia
@@ -281,11 +390,11 @@
 1F1F0 1F1EE	baner Kiribati
 1F1F0 1F1F2	baner Comoros
 1F1F0 1F1F3	baner Saint Kitts a Nevis
-1F1F0 1F1F5	baner Gogledd Korea
-1F1F0 1F1F7	baner De Korea
+1F1F0 1F1F5	baner Gogledd Corea
+1F1F0 1F1F7	baner De Corea
 1F1F0 1F1FC	baner Kuwait
 1F1F0 1F1FE	baner Ynysoedd Cayman
-1F1F0 1F1FF	baner Kazakstan
+1F1F0 1F1FF	baner Kazakhstan
 1F1F1 1F1E6	baner Laos
 1F1F1 1F1E7	baner Libanus
 1F1F1 1F1E8	baner Saint Lucia
@@ -293,7 +402,7 @@
 1F1F1 1F1F0	baner Sri Lanka
 1F1F1 1F1F7	baner Liberia
 1F1F1 1F1F8	baner Lesotho
-1F1F1 1F1F9	baner Lithuania
+1F1F1 1F1F9	baner Lithwania
 1F1F1 1F1FA	baner Lwcsembwrg
 1F1F1 1F1FB	baner Latfia
 1F1F1 1F1FE	baner Libya
@@ -304,11 +413,11 @@
 1F1F2 1F1EB	baner Saint Martin
 1F1F2 1F1EC	baner Madagascar
 1F1F2 1F1ED	baner Ynysoedd Marshall
-1F1F2 1F1F0	baner Macedonia
+1F1F2 1F1F0	baner Gogledd Macedonia
 1F1F2 1F1F1	baner Mali
 1F1F2 1F1F2	baner Myanmar (Burma)
 1F1F2 1F1F3	baner Mongolia
-1F1F2 1F1F4	baner Macau RhGA Tsieina
+1F1F2 1F1F4	baner Macau SAR Tsieina
 1F1F2 1F1F5	baner Ynysoedd Gogledd Mariana
 1F1F2 1F1F6	baner Martinique
 1F1F2 1F1F7	baner Mauritania
@@ -338,7 +447,7 @@
 1F1F5 1F1EB	baner Polynesia Ffrengig
 1F1F5 1F1EC	baner Papua Guinea Newydd
 1F1F5 1F1ED	baner Y Philipinau
-1F1F5 1F1F0	baner Pakistan
+1F1F5 1F1F0	baner Pacistan
 1F1F5 1F1F1	baner Gwlad Pwyl
 1F1F5 1F1F2	baner Saint-Pierre-et-Miquelon
 1F1F5 1F1F3	baner Ynysoedd Pitcairn
@@ -373,18 +482,18 @@
 1F1F8 1F1FB	baner El Salvador
 1F1F8 1F1FD	baner Sint Maarten
 1F1F8 1F1FE	baner Syria
-1F1F8 1F1FF	baner Gwlad Swazi
+1F1F8 1F1FF	baner Eswatini
 1F1F9 1F1E6	baner Tristan da Cunha
 1F1F9 1F1E8	baner Ynysoedd Turks a Caicos
-1F1F9 1F1E9	baner Tchad
+1F1F9 1F1E9	baner Tsiad
 1F1F9 1F1EB	baner Tiroedd Deheuol ac Antarctig Ffrainc
 1F1F9 1F1EC	baner Togo
 1F1F9 1F1ED	baner Gwlad Thai
-1F1F9 1F1EF	baner Tajikistan
+1F1F9 1F1EF	baner Tajicistan
 1F1F9 1F1F0	baner Tokelau
 1F1F9 1F1F1	baner Timor-Leste
-1F1F9 1F1F2	baner Turkmenistan
-1F1F9 1F1F3	baner Tunisia
+1F1F9 1F1F2	baner Tyrcmenistan
+1F1F9 1F1F3	baner Tiwnisia
 1F1F9 1F1F4	baner Tonga
 1F1F9 1F1F7	baner Twrci
 1F1F9 1F1F9	baner Trinidad a Tobago
@@ -394,7 +503,7 @@
 1F1FA 1F1E6	baner Wcráin
 1F1FA 1F1EC	baner Uganda
 1F1FA 1F1F2	baner Ynysoedd Pellennig UDA
-1F1FA 1F1F3	baner y Cenhedloedd Unedig
+1F1FA 1F1F3	baner Y Cenhedloedd Unedig
 1F1FA 1F1F8	baner Yr Unol Daleithiau
 1F1FA 1F1FE	baner Uruguay
 1F1FA 1F1FF	baner Uzbekistan
@@ -413,9 +522,24 @@
 1F1FF 1F1E6	baner De Affrica
 1F1FF 1F1F2	baner Zambia
 1F1FF 1F1FC	baner Zimbabwe
+1F201	katakana koko mewn sgwâr
+1F202	katakana sa mewn sgwâr
+1F21A	ideograff negyddiad mewn sgwâr
+1F22F	ideograff bys mewn sgwâr
+1F232	ideograff gwaharddiad mewn sgwâr
+1F233	ideograff gwag mewn sgwâr
+1F234	ideograff gyda’i gilydd mewn sgwâr
+1F235	ideograff llawnder mewn sgwâr
+1F236	ideograff bodoli mewn sgwâr
+1F237	ideograff lleuad mewn sgwâr
+1F238	ideograff cais mewn sgwâr
+1F239	ideograff rhannu mewn sgwâr
+1F23A	ideograff gweithredu mewn sgwâr
+1F250	ideograff mantais mewn cylch
+1F251	ideograff derbyn mewn cylch
 1F300	seiclon
 1F301	niwlog
-1F302	ymbarel ar gau
+1F302	ymbarél ar gau
 1F303	noson â sêr
 1F304	codiad haul dros fynyddoedd
 1F305	codiad haul
@@ -538,20 +662,25 @@
 1F37C	botel babi
 1F37D	fforc a chyllell gyda phlât
 1F37E	potel gyda chorcyn yn popian
-1F37F	pop gorn
+1F37F	popgorn
 1F380	rhuban
 1F381	anrheg wedi’i lapio
 1F382	cacen pen-blwydd
 1F383	jack-o-lantern
 1F384	coeden nadolig
 1F385	Siôn Corn
+1F385 1F3FB	Siôn Corn arlliw croen golau
+1F385 1F3FC	Siôn Corn arlliw croen canolig-golau
+1F385 1F3FD	Siôn Corn arlliw croen canolog
+1F385 1F3FE	Siôn Corn arlliw croen canolig-tywyll
+1F385 1F3FF	Siôn Corn arlliw croen tywyll
 1F386	tân gwyllt
 1F387	ffon wreichion
 1F388	balŵn
 1F389	popiwr parti
 1F38A	pelen gonffeti
 1F38B	coeden tanabata
-1F38C	baneri â chroesau
+1F38C	baneri wedi croesi
 1F38D	addurn pinwydden
 1F38E	doliau Japaneaidd
 1F38F	baner y carp
@@ -601,16 +730,51 @@
 1F3C0	pêl fasged
 1F3C1	baner frith
 1F3C2	eirafyrddiwr
+1F3C2 1F3FB	eirafyrddiwr arlliw croen golau
+1F3C2 1F3FC	eirafyrddiwr arlliw croen canolig-golau
+1F3C2 1F3FD	eirafyrddiwr arlliw croen canolog
+1F3C2 1F3FE	eirafyrddiwr arlliw croen canolig-tywyll
+1F3C2 1F3FF	eirafyrddiwr arlliw croen tywyll
 1F3C3	person yn rhedeg
+1F3C3 1F3FB	person yn rhedeg arlliw croen golau
+1F3C3 1F3FC	person yn rhedeg arlliw croen canolig-golau
+1F3C3 1F3FD	person yn rhedeg arlliw croen canolog
+1F3C3 1F3FE	person yn rhedeg arlliw croen canolig-tywyll
+1F3C3 1F3FF	person yn rhedeg arlliw croen tywyll
 1F3C4	person yn syrffio
+1F3C4 1F3FB	person yn syrffio arlliw croen golau
+1F3C4 1F3FC	person yn syrffio arlliw croen canolig-golau
+1F3C4 1F3FD	person yn syrffio arlliw croen canolog
+1F3C4 1F3FE	person yn syrffio arlliw croen canolig-tywyll
+1F3C4 1F3FF	person yn syrffio arlliw croen tywyll
 1F3C5	medal chwaraeon
 1F3C6	tlws
 1F3C7	rasio ceffylau
+1F3C7 1F3FB	rasio ceffylau arlliw croen golau
+1F3C7 1F3FC	rasio ceffylau arlliw croen canolig-golau
+1F3C7 1F3FD	rasio ceffylau arlliw croen canolog
+1F3C7 1F3FE	rasio ceffylau arlliw croen canolig-tywyll
+1F3C7 1F3FF	rasio ceffylau arlliw croen tywyll
 1F3C8	pêl droed Americanaidd
 1F3C9	pêl rygbi
 1F3CA	person yn nofio
+1F3CA 1F3FB	person yn nofio arlliw croen golau
+1F3CA 1F3FC	person yn nofio arlliw croen canolig-golau
+1F3CA 1F3FD	person yn nofio arlliw croen canolog
+1F3CA 1F3FE	person yn nofio arlliw croen canolig-tywyll
+1F3CA 1F3FF	person yn nofio arlliw croen tywyll
 1F3CB	person yn codi pwysau
+1F3CB 1F3FB	person yn codi pwysau arlliw croen golau
+1F3CB 1F3FC	person yn codi pwysau arlliw croen canolig-golau
+1F3CB 1F3FD	person yn codi pwysau arlliw croen canolog
+1F3CB 1F3FE	person yn codi pwysau arlliw croen canolig-tywyll
+1F3CB 1F3FF	person yn codi pwysau arlliw croen tywyll
 1F3CC	person yn chwarae golff
+1F3CC 1F3FB	person yn chwarae golff arlliw croen golau
+1F3CC 1F3FC	person yn chwarae golff arlliw croen canolig-golau
+1F3CC 1F3FD	person yn chwarae golff arlliw croen canolog
+1F3CC 1F3FE	person yn chwarae golff arlliw croen canolig-tywyll
+1F3CC 1F3FF	person yn chwarae golff arlliw croen tywyll
 1F3CD	beic modur
 1F3CE	car rasio
 1F3CF	criced
@@ -649,6 +813,9 @@
 1F3F0	castell
 1F3F3	chwifio baner wen
 1F3F4	chwifio baner ddu
+1F3F4 E0067 E0062 E0065 E006E E0067 E007F	baner Lloegr
+1F3F4 E0067 E0062 E0073 E0063 E0074 E007F	baner Yr Alban
+1F3F4 E0067 E0062 E0077 E006C E0073 E007F	baner Cymru
 1F3F5	rhosglwm
 1F3F7	label
 1F3F8	badminton
@@ -686,7 +853,7 @@
 1F418	eliffant
 1F419	octopws
 1F41A	cragen droellog
-1F41B	chwilen
+1F41B	pryf
 1F41C	morgrugyn
 1F41D	gwenynen
 1F41E	chwilen y wraig
@@ -715,9 +882,9 @@
 1F435	wyneb mwnci
 1F436	wyneb ci
 1F437	wyneb mochyn
-1F438	wyneb broga
+1F438	broga
 1F439	wyneb bochdew
-1F43A	wyneb blaidd
+1F43A	blaidd
 1F43B	wyneb arth
 1F43C	wyneb panda
 1F43D	trwyn mochyn
@@ -726,20 +893,85 @@
 1F440	llygaid
 1F441	llygad
 1F442	clust
+1F442 1F3FB	clust arlliw croen golau
+1F442 1F3FC	clust arlliw croen canolig-golau
+1F442 1F3FD	clust arlliw croen canolog
+1F442 1F3FE	clust arlliw croen canolig-tywyll
+1F442 1F3FF	clust arlliw croen tywyll
 1F443	trwyn
+1F443 1F3FB	trwyn arlliw croen golau
+1F443 1F3FC	trwyn arlliw croen canolig-golau
+1F443 1F3FD	trwyn arlliw croen canolog
+1F443 1F3FE	trwyn arlliw croen canolig-tywyll
+1F443 1F3FF	trwyn arlliw croen tywyll
 1F444	ceg
 1F445	tafod
 1F446	mynegfys yr wrthlaw yn pwyntio i fyny
+1F446 1F3FB	mynegfys yr wrthlaw yn pwyntio i fyny arlliw croen golau
+1F446 1F3FC	mynegfys yr wrthlaw yn pwyntio i fyny arlliw croen canolig-golau
+1F446 1F3FD	mynegfys yr wrthlaw yn pwyntio i fyny arlliw croen canolog
+1F446 1F3FE	mynegfys yr wrthlaw yn pwyntio i fyny arlliw croen canolig-tywyll
+1F446 1F3FF	mynegfys yr wrthlaw yn pwyntio i fyny arlliw croen tywyll
 1F447	mynegfys yr wrthlaw yn pwyntio i lawr
+1F447 1F3FB	mynegfys yr wrthlaw yn pwyntio i lawr arlliw croen golau
+1F447 1F3FC	mynegfys yr wrthlaw yn pwyntio i lawr arlliw croen canolig-golau
+1F447 1F3FD	mynegfys yr wrthlaw yn pwyntio i lawr arlliw croen canolog
+1F447 1F3FE	mynegfys yr wrthlaw yn pwyntio i lawr arlliw croen canolig-tywyll
+1F447 1F3FF	mynegfys yr wrthlaw yn pwyntio i lawr arlliw croen tywyll
 1F448	mynegfys yr wrthlaw yn pwyntio i’r chwith
+1F448 1F3FB	mynegfys yr wrthlaw yn pwyntio i’r chwith arlliw croen golau
+1F448 1F3FC	mynegfys yr wrthlaw yn pwyntio i’r chwith arlliw croen canolig-golau
+1F448 1F3FD	mynegfys yr wrthlaw yn pwyntio i’r chwith arlliw croen canolog
+1F448 1F3FE	mynegfys yr wrthlaw yn pwyntio i’r chwith arlliw croen canolig-tywyll
+1F448 1F3FF	mynegfys yr wrthlaw yn pwyntio i’r chwith arlliw croen tywyll
 1F449	mynegfys yr wrthlaw yn pwyntio i’r dde
+1F449 1F3FB	mynegfys yr wrthlaw yn pwyntio i’r dde arlliw croen golau
+1F449 1F3FC	mynegfys yr wrthlaw yn pwyntio i’r dde arlliw croen canolig-golau
+1F449 1F3FD	mynegfys yr wrthlaw yn pwyntio i’r dde arlliw croen canolog
+1F449 1F3FE	mynegfys yr wrthlaw yn pwyntio i’r dde arlliw croen canolig-tywyll
+1F449 1F3FF	mynegfys yr wrthlaw yn pwyntio i’r dde arlliw croen tywyll
 1F44A	dwrn yn agosáu
+1F44A 1F3FB	dwrn yn agosáu arlliw croen golau
+1F44A 1F3FC	dwrn yn agosáu arlliw croen canolig-golau
+1F44A 1F3FD	dwrn yn agosáu arlliw croen canolog
+1F44A 1F3FE	dwrn yn agosáu arlliw croen canolig-tywyll
+1F44A 1F3FF	dwrn yn agosáu arlliw croen tywyll
 1F44B	llaw yn chwifio
+1F44B 1F3FB	llaw yn chwifio arlliw croen golau
+1F44B 1F3FC	llaw yn chwifio arlliw croen canolig-golau
+1F44B 1F3FD	llaw yn chwifio arlliw croen canolog
+1F44B 1F3FE	llaw yn chwifio arlliw croen canolig-tywyll
+1F44B 1F3FF	llaw yn chwifio arlliw croen tywyll
 1F44C	llaw ocê
+1F44C 1F3FB	llaw ocê arlliw croen golau
+1F44C 1F3FC	llaw ocê arlliw croen canolig-golau
+1F44C 1F3FD	llaw ocê arlliw croen canolog
+1F44C 1F3FE	llaw ocê arlliw croen canolig-tywyll
+1F44C 1F3FF	llaw ocê arlliw croen tywyll
 1F44D	bys bawd i fyny
+1F44D 1F3FB	bys bawd i fyny arlliw croen golau
+1F44D 1F3FC	bys bawd i fyny arlliw croen canolig-golau
+1F44D 1F3FD	bys bawd i fyny arlliw croen canolog
+1F44D 1F3FE	bys bawd i fyny arlliw croen canolig-tywyll
+1F44D 1F3FF	bys bawd i fyny arlliw croen tywyll
 1F44E	bys bawd i lawr
+1F44E 1F3FB	bys bawd i lawr arlliw croen golau
+1F44E 1F3FC	bys bawd i lawr arlliw croen canolig-golau
+1F44E 1F3FD	bys bawd i lawr arlliw croen canolog
+1F44E 1F3FE	bys bawd i lawr arlliw croen canolig-tywyll
+1F44E 1F3FF	bys bawd i lawr arlliw croen tywyll
 1F44F	dwylo yn curo
+1F44F 1F3FB	dwylo yn curo arlliw croen golau
+1F44F 1F3FC	dwylo yn curo arlliw croen canolig-golau
+1F44F 1F3FD	dwylo yn curo arlliw croen canolog
+1F44F 1F3FE	dwylo yn curo arlliw croen canolig-tywyll
+1F44F 1F3FF	dwylo yn curo arlliw croen tywyll
 1F450	dwylo agored
+1F450 1F3FB	dwylo agored arlliw croen golau
+1F450 1F3FC	dwylo agored arlliw croen canolig-golau
+1F450 1F3FD	dwylo agored arlliw croen canolog
+1F450 1F3FE	dwylo agored arlliw croen canolig-tywyll
+1F450 1F3FF	dwylo agored arlliw croen tywyll
 1F451	coron
 1F452	het fenyw
 1F453	sbectol
@@ -759,42 +991,167 @@
 1F461	sandal menyw
 1F462	esgid fenyw
 1F463	olion traed
-1F464	bron mewn silwét
-1F465	bronnau mewn silwét
+1F464	penddelw mewn silwét
+1F465	penddelwau mewn silwét
 1F466	bachgen
+1F466 1F3FB	bachgen arlliw croen golau
+1F466 1F3FC	bachgen arlliw croen canolig-golau
+1F466 1F3FD	bachgen arlliw croen canolog
+1F466 1F3FE	bachgen arlliw croen canolig-tywyll
+1F466 1F3FF	bachgen arlliw croen tywyll
 1F467	merch
+1F467 1F3FB	merch arlliw croen golau
+1F467 1F3FC	merch arlliw croen canolig-golau
+1F467 1F3FD	merch arlliw croen canolog
+1F467 1F3FE	merch arlliw croen canolig-tywyll
+1F467 1F3FF	merch arlliw croen tywyll
 1F468	dyn
+1F468 1F3FB	dyn arlliw croen golau
+1F468 1F3FC	dyn arlliw croen canolig-golau
+1F468 1F3FD	dyn arlliw croen canolog
+1F468 1F3FE	dyn arlliw croen canolig-tywyll
+1F468 1F3FF	dyn arlliw croen tywyll
 1F469	menyw
+1F469 1F3FB	menyw arlliw croen golau
+1F469 1F3FC	menyw arlliw croen canolig-golau
+1F469 1F3FD	menyw arlliw croen canolog
+1F469 1F3FE	menyw arlliw croen canolig-tywyll
+1F469 1F3FF	menyw arlliw croen tywyll
 1F46A	teulu
 1F46B	dyn a menyw yn dal dwylo
+1F46B 1F3FB	dyn a menyw yn dal dwylo arlliw croen golau
+1F46B 1F3FC	dyn a menyw yn dal dwylo arlliw croen canolig-golau
+1F46B 1F3FD	dyn a menyw yn dal dwylo arlliw croen canolog
+1F46B 1F3FE	dyn a menyw yn dal dwylo arlliw croen canolig-tywyll
+1F46B 1F3FF	dyn a menyw yn dal dwylo arlliw croen tywyll
 1F46C	dau ddyn yn dal dwylo
+1F46C 1F3FB	dau ddyn yn dal dwylo arlliw croen golau
+1F46C 1F3FC	dau ddyn yn dal dwylo arlliw croen canolig-golau
+1F46C 1F3FD	dau ddyn yn dal dwylo arlliw croen canolog
+1F46C 1F3FE	dau ddyn yn dal dwylo arlliw croen canolig-tywyll
+1F46C 1F3FF	dau ddyn yn dal dwylo arlliw croen tywyll
 1F46D	dwy fenyw yn dal dwylo
+1F46D 1F3FB	dwy fenyw yn dal dwylo arlliw croen golau
+1F46D 1F3FC	dwy fenyw yn dal dwylo arlliw croen canolig-golau
+1F46D 1F3FD	dwy fenyw yn dal dwylo arlliw croen canolog
+1F46D 1F3FE	dwy fenyw yn dal dwylo arlliw croen canolig-tywyll
+1F46D 1F3FF	dwy fenyw yn dal dwylo arlliw croen tywyll
 1F46E	heddwas
+1F46E 1F3FB	heddwas arlliw croen golau
+1F46E 1F3FC	heddwas arlliw croen canolig-golau
+1F46E 1F3FD	heddwas arlliw croen canolog
+1F46E 1F3FE	heddwas arlliw croen canolig-tywyll
+1F46E 1F3FF	heddwas arlliw croen tywyll
 1F46F	pobl mewn parti
-1F470	priodferch â fêl
+1F46F 1F3FB	pobl mewn parti arlliw croen golau
+1F46F 1F3FC	pobl mewn parti arlliw croen canolig-golau
+1F46F 1F3FD	pobl mewn parti arlliw croen canolog
+1F46F 1F3FE	pobl mewn parti arlliw croen canolig-tywyll
+1F46F 1F3FF	pobl mewn parti arlliw croen tywyll
+1F470	person yn gwisgo llen
+1F470 1F3FB	person yn gwisgo llen arlliw croen golau
+1F470 1F3FC	person yn gwisgo llen arlliw croen canolig-golau
+1F470 1F3FD	person yn gwisgo llen arlliw croen canolog
+1F470 1F3FE	person yn gwisgo llen arlliw croen canolig-tywyll
+1F470 1F3FF	person yn gwisgo llen arlliw croen tywyll
 1F471	person â gwallt golau
+1F471 1F3FB	person â gwallt golau arlliw croen golau
+1F471 1F3FC	person â gwallt golau arlliw croen canolig-golau
+1F471 1F3FD	person â gwallt golau arlliw croen canolog
+1F471 1F3FE	person â gwallt golau arlliw croen canolig-tywyll
+1F471 1F3FF	person â gwallt golau arlliw croen tywyll
 1F472	dyn â chap Tsieineaidd
+1F472 1F3FB	dyn â chap Tsieineaidd arlliw croen golau
+1F472 1F3FC	dyn â chap Tsieineaidd arlliw croen canolig-golau
+1F472 1F3FD	dyn â chap Tsieineaidd arlliw croen canolog
+1F472 1F3FE	dyn â chap Tsieineaidd arlliw croen canolig-tywyll
+1F472 1F3FF	dyn â chap Tsieineaidd arlliw croen tywyll
 1F473	person yn gwisgo twrban
+1F473 1F3FB	person yn gwisgo twrban arlliw croen golau
+1F473 1F3FC	person yn gwisgo twrban arlliw croen canolig-golau
+1F473 1F3FD	person yn gwisgo twrban arlliw croen canolog
+1F473 1F3FE	person yn gwisgo twrban arlliw croen canolig-tywyll
+1F473 1F3FF	person yn gwisgo twrban arlliw croen tywyll
 1F474	hen ddyn
+1F474 1F3FB	hen ddyn arlliw croen golau
+1F474 1F3FC	hen ddyn arlliw croen canolig-golau
+1F474 1F3FD	hen ddyn arlliw croen canolog
+1F474 1F3FE	hen ddyn arlliw croen canolig-tywyll
+1F474 1F3FF	hen ddyn arlliw croen tywyll
 1F475	hen fenyw
+1F475 1F3FB	hen fenyw arlliw croen golau
+1F475 1F3FC	hen fenyw arlliw croen canolig-golau
+1F475 1F3FD	hen fenyw arlliw croen canolog
+1F475 1F3FE	hen fenyw arlliw croen canolig-tywyll
+1F475 1F3FF	hen fenyw arlliw croen tywyll
 1F476	babi
+1F476 1F3FB	babi arlliw croen golau
+1F476 1F3FC	babi arlliw croen canolig-golau
+1F476 1F3FD	babi arlliw croen canolog
+1F476 1F3FE	babi arlliw croen canolig-tywyll
+1F476 1F3FF	babi arlliw croen tywyll
 1F477	adeiladwr
+1F477 1F3FB	adeiladwr arlliw croen golau
+1F477 1F3FC	adeiladwr arlliw croen canolig-golau
+1F477 1F3FD	adeiladwr arlliw croen canolog
+1F477 1F3FE	adeiladwr arlliw croen canolig-tywyll
+1F477 1F3FF	adeiladwr arlliw croen tywyll
 1F478	tywysoges
+1F478 1F3FB	tywysoges arlliw croen golau
+1F478 1F3FC	tywysoges arlliw croen canolig-golau
+1F478 1F3FD	tywysoges arlliw croen canolog
+1F478 1F3FE	tywysoges arlliw croen canolig-tywyll
+1F478 1F3FF	tywysoges arlliw croen tywyll
 1F479	anghenfil
 1F47A	bwgan
 1F47B	ysbryd
 1F47C	babi angel
+1F47C 1F3FB	babi angel arlliw croen golau
+1F47C 1F3FC	babi angel arlliw croen canolig-golau
+1F47C 1F3FD	babi angel arlliw croen canolog
+1F47C 1F3FE	babi angel arlliw croen canolig-tywyll
+1F47C 1F3FF	babi angel arlliw croen tywyll
 1F47D	estron
 1F47E	anghenfil estron
 1F47F	wyneb dig â chyrn
 1F480	penglog
 1F481	person yn gwyro llaw
+1F481 1F3FB	person yn gwyro llaw arlliw croen golau
+1F481 1F3FC	person yn gwyro llaw arlliw croen canolig-golau
+1F481 1F3FD	person yn gwyro llaw arlliw croen canolog
+1F481 1F3FE	person yn gwyro llaw arlliw croen canolig-tywyll
+1F481 1F3FF	person yn gwyro llaw arlliw croen tywyll
 1F482	gwarchodfilwr
+1F482 1F3FB	gwarchodfilwr arlliw croen golau
+1F482 1F3FC	gwarchodfilwr arlliw croen canolig-golau
+1F482 1F3FD	gwarchodfilwr arlliw croen canolog
+1F482 1F3FE	gwarchodfilwr arlliw croen canolig-tywyll
+1F482 1F3FF	gwarchodfilwr arlliw croen tywyll
 1F483	menyw yn dawnsio
+1F483 1F3FB	menyw yn dawnsio arlliw croen golau
+1F483 1F3FC	menyw yn dawnsio arlliw croen canolig-golau
+1F483 1F3FD	menyw yn dawnsio arlliw croen canolog
+1F483 1F3FE	menyw yn dawnsio arlliw croen canolig-tywyll
+1F483 1F3FF	menyw yn dawnsio arlliw croen tywyll
 1F484	minlliw
 1F485	farnais ewinedd
+1F485 1F3FB	farnais ewinedd arlliw croen golau
+1F485 1F3FC	farnais ewinedd arlliw croen canolig-golau
+1F485 1F3FD	farnais ewinedd arlliw croen canolog
+1F485 1F3FE	farnais ewinedd arlliw croen canolig-tywyll
+1F485 1F3FF	farnais ewinedd arlliw croen tywyll
 1F486	person yn derbyn tyluniad
+1F486 1F3FB	person yn derbyn tyluniad arlliw croen golau
+1F486 1F3FC	person yn derbyn tyluniad arlliw croen canolig-golau
+1F486 1F3FD	person yn derbyn tyluniad arlliw croen canolog
+1F486 1F3FE	person yn derbyn tyluniad arlliw croen canolig-tywyll
+1F486 1F3FF	person yn derbyn tyluniad arlliw croen tywyll
 1F487	person yn cael ei wallt wedi’u torri
+1F487 1F3FB	person yn cael ei wallt wedi’u torri arlliw croen golau
+1F487 1F3FC	person yn cael ei wallt wedi’u torri arlliw croen canolig-golau
+1F487 1F3FD	person yn cael ei wallt wedi’u torri arlliw croen canolog
+1F487 1F3FE	person yn cael ei wallt wedi’u torri arlliw croen canolig-tywyll
+1F487 1F3FF	person yn cael ei wallt wedi’u torri arlliw croen tywyll
 1F488	polyn barbwr
 1F489	chwistrell
 1F48A	pilsen
@@ -803,8 +1160,18 @@
 1F48D	modrwy
 1F48E	gemfaen
 1F48F	cusan
+1F48F 1F3FB	cusan arlliw croen golau
+1F48F 1F3FC	cusan arlliw croen canolig-golau
+1F48F 1F3FD	cusan arlliw croen canolog
+1F48F 1F3FE	cusan arlliw croen canolig-tywyll
+1F48F 1F3FF	cusan arlliw croen tywyll
 1F490	tusw
 1F491	pâr a chalon
+1F491 1F3FB	pâr a chalon arlliw croen golau
+1F491 1F3FC	pâr a chalon arlliw croen canolig-golau
+1F491 1F3FD	pâr a chalon arlliw croen canolog
+1F491 1F3FE	pâr a chalon arlliw croen canolig-tywyll
+1F491 1F3FF	pâr a chalon arlliw croen tywyll
 1F492	priodas
 1F493	calon yn curo
 1F494	calon wedi torri
@@ -830,6 +1197,11 @@
 1F4A8	rhuthro
 1F4A9	pentwr o faw
 1F4AA	cyhyrau deuben wedi eu hystwytho
+1F4AA 1F3FB	cyhyrau deuben wedi eu hystwytho arlliw croen golau
+1F4AA 1F3FC	cyhyrau deuben wedi eu hystwytho arlliw croen canolig-golau
+1F4AA 1F3FD	cyhyrau deuben wedi eu hystwytho arlliw croen canolog
+1F4AA 1F3FE	cyhyrau deuben wedi eu hystwytho arlliw croen canolig-tywyll
+1F4AA 1F3FF	cyhyrau deuben wedi eu hystwytho arlliw croen tywyll
 1F4AB	penysgafn
 1F4AC	balŵn deialog
 1F4AD	cwmwl meddwl
@@ -957,7 +1329,7 @@
 1F528	morthwyl
 1F529	nyten a bollt
 1F52A	cyllell cegin
-1F52B	pistol
+1F52B	pistol dŵr
 1F52C	microsgop
 1F52D	telesgop
 1F52E	pêl grisial
@@ -1010,21 +1382,51 @@
 1F570	cloc silff ben tân
 1F573	twll
 1F574	dyn mewn gwisg fusnes yn ymddyrchafu
+1F574 1F3FB	dyn mewn gwisg fusnes yn ymddyrchafu arlliw croen golau
+1F574 1F3FC	dyn mewn gwisg fusnes yn ymddyrchafu arlliw croen canolig-golau
+1F574 1F3FD	dyn mewn gwisg fusnes yn ymddyrchafu arlliw croen canolog
+1F574 1F3FE	dyn mewn gwisg fusnes yn ymddyrchafu arlliw croen canolig-tywyll
+1F574 1F3FF	dyn mewn gwisg fusnes yn ymddyrchafu arlliw croen tywyll
 1F575	ditectif
+1F575 1F3FB	ditectif arlliw croen golau
+1F575 1F3FC	ditectif arlliw croen canolig-golau
+1F575 1F3FD	ditectif arlliw croen canolog
+1F575 1F3FE	ditectif arlliw croen canolig-tywyll
+1F575 1F3FF	ditectif arlliw croen tywyll
 1F576	sbectol haul
 1F577	pry copyn
 1F578	gwe pry cop
 1F579	ffon reoli
 1F57A	dyn yn dawnsio
+1F57A 1F3FB	dyn yn dawnsio arlliw croen golau
+1F57A 1F3FC	dyn yn dawnsio arlliw croen canolig-golau
+1F57A 1F3FD	dyn yn dawnsio arlliw croen canolog
+1F57A 1F3FE	dyn yn dawnsio arlliw croen canolig-tywyll
+1F57A 1F3FF	dyn yn dawnsio arlliw croen tywyll
 1F587	clipiau papur wedi’u cysylltu
 1F58A	beiro
 1F58B	ysgrifbin
 1F58C	brwsh paent
 1F58D	pensil lliw
 1F590	llaw wedi ei chodi â bysedd wedi eu lledu
+1F590 1F3FB	llaw wedi ei chodi â bysedd wedi eu lledu arlliw croen golau
+1F590 1F3FC	llaw wedi ei chodi â bysedd wedi eu lledu arlliw croen canolig-golau
+1F590 1F3FD	llaw wedi ei chodi â bysedd wedi eu lledu arlliw croen canolog
+1F590 1F3FE	llaw wedi ei chodi â bysedd wedi eu lledu arlliw croen canolig-tywyll
+1F590 1F3FF	llaw wedi ei chodi â bysedd wedi eu lledu arlliw croen tywyll
 1F595	bys canol
+1F595 1F3FB	bys canol arlliw croen golau
+1F595 1F3FC	bys canol arlliw croen canolig-golau
+1F595 1F3FD	bys canol arlliw croen canolog
+1F595 1F3FE	bys canol arlliw croen canolig-tywyll
+1F595 1F3FF	bys canol arlliw croen tywyll
 1F596	saliwt fulcanaidd
-1F5A4	calon du
+1F596 1F3FB	saliwt fulcanaidd arlliw croen golau
+1F596 1F3FC	saliwt fulcanaidd arlliw croen canolig-golau
+1F596 1F3FD	saliwt fulcanaidd arlliw croen canolog
+1F596 1F3FE	saliwt fulcanaidd arlliw croen canolig-tywyll
+1F596 1F3FF	saliwt fulcanaidd arlliw croen tywyll
+1F5A4	calon ddu
 1F5A5	cyfrifiadur
 1F5A8	argraffydd
 1F5B1	llygoden gyfrifiadurol
@@ -1041,12 +1443,12 @@
 1F5DE	papur newydd wedi’i rolio
 1F5E1	dagr
 1F5E3	pen yn siarad
-1F5E8	swigen yn siarad i’r chwith
+1F5E8	swigen siarad i’r chwith
 1F5EF	swigen ddig i’r dde
 1F5F3	blwch pleidlais gyda phleidlais
 1F5FA	map o’r byd
 1F5FB	mynydd Fuji
-1F5FC	tŵr tokyo
+1F5FC	tŵr Tokyo
 1F5FD	Cerflun Rhyddid
 1F5FE	map o Japan
 1F5FF	moai
@@ -1055,7 +1457,7 @@
 1F602	wyneb â dagrau hapusrwydd
 1F603	wyneb yn gwenu â cheg agored a llygaid mawr
 1F604	wyneb yn gwenu â cheg agored a gwên yn y llygaid
-1F605	wyneb yn gwenu â cheg agored a chwys o ofid
+1F605	wyneb yn gwenu â cheg agored a chwys
 1F606	wyneb yn gwenu â cheg agored a llygaid ynghau
 1F607	wyneb yn gwenu ag eurgylch
 1F608	wyneb yn gwenu â chyrn
@@ -1103,13 +1505,13 @@
 1F632	wyneb wedi rhyfeddu
 1F633	wyneb yn gwrido
 1F634	wyneb yn cysgu
-1F635	wyneb penysgafn
+1F635	wyneb wedi llorio
 1F636	wyneb heb geg
 1F637	wyneb â mwgwd meddygol
 1F638	wyneb cath yn gwenu â cheg agored a gwên yn y llygaid
 1F639	wyneb cath â dagrau o hapusrwydd
 1F63A	wyneb cath yn gwenu â cheg agored
-1F63B	wyneb cath yn gwenu â chalonnau yn y llygaid
+1F63B	cath yn gwenu â chalonnau yn y llygaid
 1F63C	wyneb cath â gwên ar gam
 1F63D	wyneb cath yn cusanu â llygaid ynghau
 1F63E	wyneb cath yn pwdu
@@ -1120,16 +1522,56 @@
 1F643	wyneb â’i ben i waered
 1F644	wyneb â llygaid yn rholio
 1F645	person yn ystumio nad yw’n iawn
+1F645 1F3FB	person yn ystumio nad yw’n iawn arlliw croen golau
+1F645 1F3FC	person yn ystumio nad yw’n iawn arlliw croen canolig-golau
+1F645 1F3FD	person yn ystumio nad yw’n iawn arlliw croen canolog
+1F645 1F3FE	person yn ystumio nad yw’n iawn arlliw croen canolig-tywyll
+1F645 1F3FF	person yn ystumio nad yw’n iawn arlliw croen tywyll
 1F646	person yn ystumio iawn
+1F646 1F3FB	person yn ystumio iawn arlliw croen golau
+1F646 1F3FC	person yn ystumio iawn arlliw croen canolig-golau
+1F646 1F3FD	person yn ystumio iawn arlliw croen canolog
+1F646 1F3FE	person yn ystumio iawn arlliw croen canolig-tywyll
+1F646 1F3FF	person yn ystumio iawn arlliw croen tywyll
 1F647	person yn ymgrymu
-1F648	gweld dim drwg
+1F647 1F3FB	person yn ymgrymu arlliw croen golau
+1F647 1F3FC	person yn ymgrymu arlliw croen canolig-golau
+1F647 1F3FD	person yn ymgrymu arlliw croen canolog
+1F647 1F3FE	person yn ymgrymu arlliw croen canolig-tywyll
+1F647 1F3FF	person yn ymgrymu arlliw croen tywyll
+1F648	mwnci gweld dim drwg
 1F649	clywed dim drwg
 1F64A	siarad dim drwg
 1F64B	person yn codi llaw
+1F64B 1F3FB	person yn codi llaw arlliw croen golau
+1F64B 1F3FC	person yn codi llaw arlliw croen canolig-golau
+1F64B 1F3FD	person yn codi llaw arlliw croen canolog
+1F64B 1F3FE	person yn codi llaw arlliw croen canolig-tywyll
+1F64B 1F3FF	person yn codi llaw arlliw croen tywyll
 1F64C	person yn codi dwylo
+1F64C 1F3FB	person yn codi dwylo arlliw croen golau
+1F64C 1F3FC	person yn codi dwylo arlliw croen canolig-golau
+1F64C 1F3FD	person yn codi dwylo arlliw croen canolog
+1F64C 1F3FE	person yn codi dwylo arlliw croen canolig-tywyll
+1F64C 1F3FF	person yn codi dwylo arlliw croen tywyll
 1F64D	person yn gwgu
+1F64D 1F3FB	person yn gwgu arlliw croen golau
+1F64D 1F3FC	person yn gwgu arlliw croen canolig-golau
+1F64D 1F3FD	person yn gwgu arlliw croen canolog
+1F64D 1F3FE	person yn gwgu arlliw croen canolig-tywyll
+1F64D 1F3FF	person yn gwgu arlliw croen tywyll
 1F64E	person yn pwdu
+1F64E 1F3FB	person yn pwdu arlliw croen golau
+1F64E 1F3FC	person yn pwdu arlliw croen canolig-golau
+1F64E 1F3FD	person yn pwdu arlliw croen canolog
+1F64E 1F3FE	person yn pwdu arlliw croen canolig-tywyll
+1F64E 1F3FF	person yn pwdu arlliw croen tywyll
 1F64F	dwylo wedi plygu
+1F64F 1F3FB	dwylo wedi plygu arlliw croen golau
+1F64F 1F3FC	dwylo wedi plygu arlliw croen canolig-golau
+1F64F 1F3FD	dwylo wedi plygu arlliw croen canolog
+1F64F 1F3FE	dwylo wedi plygu arlliw croen canolig-tywyll
+1F64F 1F3FF	dwylo wedi plygu arlliw croen tywyll
 1F680	roced
 1F681	hofrennydd
 1F682	locomotif
@@ -1166,6 +1608,11 @@
 1F6A1	tramffordd awyrol
 1F6A2	llong
 1F6A3	person yn rhwyfo cwch
+1F6A3 1F3FB	person yn rhwyfo cwch arlliw croen golau
+1F6A3 1F3FC	person yn rhwyfo cwch arlliw croen canolig-golau
+1F6A3 1F3FD	person yn rhwyfo cwch arlliw croen canolog
+1F6A3 1F3FE	person yn rhwyfo cwch arlliw croen canolig-tywyll
+1F6A3 1F3FF	person yn rhwyfo cwch arlliw croen tywyll
 1F6A4	cwch gwib
 1F6A5	golau traffig llorweddol
 1F6A6	golau traffig fertigol
@@ -1179,12 +1626,27 @@
 1F6AE	arwydd sbwriel mewn bin
 1F6AF	dim sbwriel
 1F6B0	dŵr yfed
-1F6B1	dwr na ellir ei foteli
+1F6B1	dŵr na ellir ei yfed
 1F6B2	beic
 1F6B3	dim beiciau
 1F6B4	person yn beicio
+1F6B4 1F3FB	person yn beicio arlliw croen golau
+1F6B4 1F3FC	person yn beicio arlliw croen canolig-golau
+1F6B4 1F3FD	person yn beicio arlliw croen canolog
+1F6B4 1F3FE	person yn beicio arlliw croen canolig-tywyll
+1F6B4 1F3FF	person yn beicio arlliw croen tywyll
 1F6B5	person yn beicio mynydd
+1F6B5 1F3FB	person yn beicio mynydd arlliw croen golau
+1F6B5 1F3FC	person yn beicio mynydd arlliw croen canolig-golau
+1F6B5 1F3FD	person yn beicio mynydd arlliw croen canolog
+1F6B5 1F3FE	person yn beicio mynydd arlliw croen canolig-tywyll
+1F6B5 1F3FF	person yn beicio mynydd arlliw croen tywyll
 1F6B6	person yn cerdded
+1F6B6 1F3FB	person yn cerdded arlliw croen golau
+1F6B6 1F3FC	person yn cerdded arlliw croen canolig-golau
+1F6B6 1F3FD	person yn cerdded arlliw croen canolog
+1F6B6 1F3FE	person yn cerdded arlliw croen canolig-tywyll
+1F6B6 1F3FF	person yn cerdded arlliw croen tywyll
 1F6B7	dim cerddwyr
 1F6B8	plant yn croesi
 1F6B9	ystafell ymolchi i ddynion
@@ -1195,6 +1657,11 @@
 1F6BE	tŷ bach
 1F6BF	cawod
 1F6C0	person mewn bath
+1F6C0 1F3FB	person mewn bath arlliw croen golau
+1F6C0 1F3FC	person mewn bath arlliw croen canolig-golau
+1F6C0 1F3FD	person mewn bath arlliw croen canolog
+1F6C0 1F3FE	person mewn bath arlliw croen canolig-tywyll
+1F6C0 1F3FF	person mewn bath arlliw croen tywyll
 1F6C1	twba bath
 1F6C2	arolygaeth pasbort
 1F6C3	tollau
@@ -1202,12 +1669,25 @@
 1F6C5	bagiau wedi’u gadael
 1F6CB	soffa a lamp
 1F6CC	person mewn gwely
+1F6CC 1F3FB	person mewn gwely arlliw croen golau
+1F6CC 1F3FC	person mewn gwely arlliw croen canolig-golau
+1F6CC 1F3FD	person mewn gwely arlliw croen canolog
+1F6CC 1F3FE	person mewn gwely arlliw croen canolig-tywyll
+1F6CC 1F3FF	person mewn gwely arlliw croen tywyll
 1F6CD	bagiau siopa
 1F6CE	porthor
 1F6CF	gwely
 1F6D0	man addoli
 1F6D1	arwydd stop
 1F6D2	troli siopa
+1F6D5	teml hindwaidd
+1F6D6	cwt
+1F6D7	lifft
+1F6D8	tirlithriad
+1F6DC	diwifr
+1F6DD	sleid maes chwarae
+1F6DE	olwyn
+1F6DF	bwi cylch
 1F6E0	morthwyl a sbaner
 1F6E1	tarian
 1F6E2	drwm olew
@@ -1225,6 +1705,36 @@
 1F6F7	sled
 1F6F8	soser hedegog
 1F6F9	sgrialfwrdd
+1F6FA	ricshio â pheiriant
+1F6FB	lori pickup
+1F6FC	esgid sglefrio
+1F7E0	cylch oren
+1F7E1	cylch melyn
+1F7E2	cylch gwyrdd
+1F7E3	cylch piws
+1F7E4	cylch brown
+1F7E5	sgwâr coch
+1F7E6	sgwâr glas
+1F7E7	sgwâr oren
+1F7E8	sgwâr melyn
+1F7E9	sgwâr gwyrdd
+1F7EA	sgwâr piws
+1F7EB	sgwâr brown
+1F7F0	arwydd hafal trwm
+1F90C	bysedd wedi’u pinsio
+1F90C 1F3FB	bysedd wedi’u pinsio arlliw croen golau
+1F90C 1F3FC	bysedd wedi’u pinsio arlliw croen canolig-golau
+1F90C 1F3FD	bysedd wedi’u pinsio arlliw croen canolog
+1F90C 1F3FE	bysedd wedi’u pinsio arlliw croen canolig-tywyll
+1F90C 1F3FF	bysedd wedi’u pinsio arlliw croen tywyll
+1F90D	calon wen
+1F90E	calon frown
+1F90F	bysedd yn pinshio
+1F90F 1F3FB	bysedd yn pinshio arlliw croen golau
+1F90F 1F3FC	bysedd yn pinshio arlliw croen canolig-golau
+1F90F 1F3FD	bysedd yn pinshio arlliw croen canolog
+1F90F 1F3FE	bysedd yn pinshio arlliw croen canolig-tywyll
+1F90F 1F3FF	bysedd yn pinshio arlliw croen tywyll
 1F910	wyneb â sip dros y geg
 1F911	wyneb symbol arian
 1F912	wyneb â thermomedr
@@ -1234,13 +1744,53 @@
 1F916	wyneb robot
 1F917	wyneb yn rhoi cwtsh
 1F918	arwydd y cyrn
+1F918 1F3FB	arwydd y cyrn arlliw croen golau
+1F918 1F3FC	arwydd y cyrn arlliw croen canolig-golau
+1F918 1F3FD	arwydd y cyrn arlliw croen canolog
+1F918 1F3FE	arwydd y cyrn arlliw croen canolig-tywyll
+1F918 1F3FF	arwydd y cyrn arlliw croen tywyll
 1F919	llaw ffonia fi
+1F919 1F3FB	llaw ffonia fi arlliw croen golau
+1F919 1F3FC	llaw ffonia fi arlliw croen canolig-golau
+1F919 1F3FD	llaw ffonia fi arlliw croen canolog
+1F919 1F3FE	llaw ffonia fi arlliw croen canolig-tywyll
+1F919 1F3FF	llaw ffonia fi arlliw croen tywyll
 1F91A	cefn llaw wedi’i chodi
+1F91A 1F3FB	cefn llaw wedi’i chodi arlliw croen golau
+1F91A 1F3FC	cefn llaw wedi’i chodi arlliw croen canolig-golau
+1F91A 1F3FD	cefn llaw wedi’i chodi arlliw croen canolog
+1F91A 1F3FE	cefn llaw wedi’i chodi arlliw croen canolig-tywyll
+1F91A 1F3FF	cefn llaw wedi’i chodi arlliw croen tywyll
 1F91B	dwrn tua’r chwith
+1F91B 1F3FB	dwrn tua’r chwith arlliw croen golau
+1F91B 1F3FC	dwrn tua’r chwith arlliw croen canolig-golau
+1F91B 1F3FD	dwrn tua’r chwith arlliw croen canolog
+1F91B 1F3FE	dwrn tua’r chwith arlliw croen canolig-tywyll
+1F91B 1F3FF	dwrn tua’r chwith arlliw croen tywyll
 1F91C	dwrn tua’r dde
+1F91C 1F3FB	dwrn tua’r dde arlliw croen golau
+1F91C 1F3FC	dwrn tua’r dde arlliw croen canolig-golau
+1F91C 1F3FD	dwrn tua’r dde arlliw croen canolog
+1F91C 1F3FE	dwrn tua’r dde arlliw croen canolig-tywyll
+1F91C 1F3FF	dwrn tua’r dde arlliw croen tywyll
 1F91D	ysgwyd dwylo
+1F91D 1F3FB	ysgwyd dwylo arlliw croen golau
+1F91D 1F3FC	ysgwyd dwylo arlliw croen canolig-golau
+1F91D 1F3FD	ysgwyd dwylo arlliw croen canolog
+1F91D 1F3FE	ysgwyd dwylo arlliw croen canolig-tywyll
+1F91D 1F3FF	ysgwyd dwylo arlliw croen tywyll
 1F91E	bysedd wedi’u croesi
+1F91E 1F3FB	bysedd wedi’u croesi arlliw croen golau
+1F91E 1F3FC	bysedd wedi’u croesi arlliw croen canolig-golau
+1F91E 1F3FD	bysedd wedi’u croesi arlliw croen canolog
+1F91E 1F3FE	bysedd wedi’u croesi arlliw croen canolig-tywyll
+1F91E 1F3FF	bysedd wedi’u croesi arlliw croen tywyll
 1F91F	arwydd caru ti
+1F91F 1F3FB	arwydd caru ti arlliw croen golau
+1F91F 1F3FC	arwydd caru ti arlliw croen canolig-golau
+1F91F 1F3FD	arwydd caru ti arlliw croen canolog
+1F91F 1F3FE	arwydd caru ti arlliw croen canolig-tywyll
+1F91F 1F3FF	arwydd caru ti arlliw croen tywyll
 1F920	wyneb het cowboi
 1F921	wyneb clown
 1F922	wyneb chwydlyd
@@ -1248,6 +1798,11 @@
 1F924	wyneb glafoerio
 1F925	wyneb celwydd
 1F926	cledr i’r wyneb
+1F926 1F3FB	cledr i’r wyneb arlliw croen golau
+1F926 1F3FC	cledr i’r wyneb arlliw croen canolig-golau
+1F926 1F3FD	cledr i’r wyneb arlliw croen canolog
+1F926 1F3FE	cledr i’r wyneb arlliw croen canolig-tywyll
+1F926 1F3FF	cledr i’r wyneb arlliw croen tywyll
 1F927	wyneb tisian
 1F928	wyneb gydag ael wedi codi
 1F929	wyneb â ser yn y llygaid
@@ -1258,19 +1813,85 @@
 1F92E	wyneb yn chwydu
 1F92F	pen yn ffrwydro
 1F930	menyw feichiog
+1F930 1F3FB	menyw feichiog arlliw croen golau
+1F930 1F3FC	menyw feichiog arlliw croen canolig-golau
+1F930 1F3FD	menyw feichiog arlliw croen canolog
+1F930 1F3FE	menyw feichiog arlliw croen canolig-tywyll
+1F930 1F3FF	menyw feichiog arlliw croen tywyll
 1F931	bwydo o’r fron
+1F931 1F3FB	bwydo o’r fron arlliw croen golau
+1F931 1F3FC	bwydo o’r fron arlliw croen canolig-golau
+1F931 1F3FD	bwydo o’r fron arlliw croen canolog
+1F931 1F3FE	bwydo o’r fron arlliw croen canolig-tywyll
+1F931 1F3FF	bwydo o’r fron arlliw croen tywyll
 1F932	cledrau dwylo yn yr awyr gyda’u gilydd
+1F932 1F3FB	cledrau dwylo yn yr awyr gyda’u gilydd arlliw croen golau
+1F932 1F3FC	cledrau dwylo yn yr awyr gyda’u gilydd arlliw croen canolig-golau
+1F932 1F3FD	cledrau dwylo yn yr awyr gyda’u gilydd arlliw croen canolog
+1F932 1F3FE	cledrau dwylo yn yr awyr gyda’u gilydd arlliw croen canolig-tywyll
+1F932 1F3FF	cledrau dwylo yn yr awyr gyda’u gilydd arlliw croen tywyll
 1F933	hunlun
+1F933 1F3FB	hunlun arlliw croen golau
+1F933 1F3FC	hunlun arlliw croen canolig-golau
+1F933 1F3FD	hunlun arlliw croen canolog
+1F933 1F3FE	hunlun arlliw croen canolig-tywyll
+1F933 1F3FF	hunlun arlliw croen tywyll
 1F934	tywysog
-1F935	dyn mewn tycs
+1F934 1F3FB	tywysog arlliw croen golau
+1F934 1F3FC	tywysog arlliw croen canolig-golau
+1F934 1F3FD	tywysog arlliw croen canolog
+1F934 1F3FE	tywysog arlliw croen canolig-tywyll
+1F934 1F3FF	tywysog arlliw croen tywyll
+1F935	person mewn siaced ginio
+1F935 1F3FB	person mewn siaced ginio arlliw croen golau
+1F935 1F3FC	person mewn siaced ginio arlliw croen canolig-golau
+1F935 1F3FD	person mewn siaced ginio arlliw croen canolog
+1F935 1F3FE	person mewn siaced ginio arlliw croen canolig-tywyll
+1F935 1F3FF	person mewn siaced ginio arlliw croen tywyll
 1F936	Siân Corn
+1F936 1F3FB	Siân Corn arlliw croen golau
+1F936 1F3FC	Siân Corn arlliw croen canolig-golau
+1F936 1F3FD	Siân Corn arlliw croen canolog
+1F936 1F3FE	Siân Corn arlliw croen canolig-tywyll
+1F936 1F3FF	Siân Corn arlliw croen tywyll
 1F937	codi gwar
+1F937 1F3FB	codi gwar arlliw croen golau
+1F937 1F3FC	codi gwar arlliw croen canolig-golau
+1F937 1F3FD	codi gwar arlliw croen canolog
+1F937 1F3FE	codi gwar arlliw croen canolig-tywyll
+1F937 1F3FF	codi gwar arlliw croen tywyll
 1F938	olwyn droi
+1F938 1F3FB	olwyn droi arlliw croen golau
+1F938 1F3FC	olwyn droi arlliw croen canolig-golau
+1F938 1F3FD	olwyn droi arlliw croen canolog
+1F938 1F3FE	olwyn droi arlliw croen canolig-tywyll
+1F938 1F3FF	olwyn droi arlliw croen tywyll
 1F939	jyglo
+1F939 1F3FB	jyglo arlliw croen golau
+1F939 1F3FC	jyglo arlliw croen canolig-golau
+1F939 1F3FD	jyglo arlliw croen canolog
+1F939 1F3FE	jyglo arlliw croen canolig-tywyll
+1F939 1F3FF	jyglo arlliw croen tywyll
 1F93A	ffensiwr
 1F93C	taflwyr codwm
+1F93C 1F3FB	taflwyr codwm arlliw croen golau
+1F93C 1F3FC	taflwyr codwm arlliw croen canolig-golau
+1F93C 1F3FD	taflwyr codwm arlliw croen canolog
+1F93C 1F3FE	taflwyr codwm arlliw croen canolig-tywyll
+1F93C 1F3FF	taflwyr codwm arlliw croen tywyll
 1F93D	polo dŵr
+1F93D 1F3FB	polo dŵr arlliw croen golau
+1F93D 1F3FC	polo dŵr arlliw croen canolig-golau
+1F93D 1F3FD	polo dŵr arlliw croen canolog
+1F93D 1F3FE	polo dŵr arlliw croen canolig-tywyll
+1F93D 1F3FF	polo dŵr arlliw croen tywyll
 1F93E	pêl-law
+1F93E 1F3FB	pêl-law arlliw croen golau
+1F93E 1F3FC	pêl-law arlliw croen canolig-golau
+1F93E 1F3FD	pêl-law arlliw croen canolog
+1F93E 1F3FE	pêl-law arlliw croen canolig-tywyll
+1F93E 1F3FF	pêl-law arlliw croen tywyll
+1F93F	masg deifio
 1F940	blodyn wedi gwiwo
 1F941	drwm
 1F942	gwydrau yn tincian
@@ -1283,6 +1904,7 @@
 1F94A	maneg bocsio
 1F94B	gwisg y crefftau ymladd
 1F94C	carreg cyrlio
+1F94D	lacrós
 1F94E	pêl feddal
 1F94F	disg hedfan
 1F950	croissant
@@ -1318,11 +1940,22 @@
 1F96E	cacen lleuad
 1F96F	bagel
 1F970	wyneb yn gwenu â thair calon
+1F971	wyneb yn dylyfu gên
+1F972	wyneb yn gwenu gyda deugryn
 1F973	wyneb yn partïo
 1F974	wyneb meddw
 1F975	wyneb poeth
 1F976	wyneb oer
+1F977	ninja
+1F977 1F3FB	ninja arlliw croen golau
+1F977 1F3FC	ninja arlliw croen canolig-golau
+1F977 1F3FD	ninja arlliw croen canolog
+1F977 1F3FE	ninja arlliw croen canolig-tywyll
+1F977 1F3FF	ninja arlliw croen tywyll
+1F978	wyneb mewn cuddwisg
+1F979	wyneb yn dal dagrau yn ôl
 1F97A	wyneb yn pledio
+1F97B	sari
 1F97C	cot lab
 1F97D	gogls
 1F97E	esgid gerdded
@@ -1337,7 +1970,7 @@
 1F987	ystlum
 1F988	siarc
 1F989	tylluan
-1F98A	wyneb llwynog
+1F98A	llwynog
 1F98B	pili-pala
 1F98C	carw
 1F98D	gorila
@@ -1362,33 +1995,170 @@
 1F9A0	microb
 1F9A1	mochyn daear
 1F9A2	alarch
+1F9A3	mamoth
+1F9A4	dodo
+1F9A5	diogyn
+1F9A6	dyfrgi
+1F9A7	orangwtan
+1F9A8	drewgi
+1F9A9	fflamingo
+1F9AA	wystrys
+1F9AB	afanc
+1F9AC	bual
+1F9AD	morlo
+1F9AE	ci tywys
+1F9AF	ffon wen
 1F9B0	gwallt coch
 1F9B1	gwallt cyrliog
 1F9B2	moel
 1F9B3	gwallt gwyn
 1F9B4	asgwrn
 1F9B5	coes
+1F9B5 1F3FB	coes arlliw croen golau
+1F9B5 1F3FC	coes arlliw croen canolig-golau
+1F9B5 1F3FD	coes arlliw croen canolog
+1F9B5 1F3FE	coes arlliw croen canolig-tywyll
+1F9B5 1F3FF	coes arlliw croen tywyll
 1F9B6	troed
+1F9B6 1F3FB	troed arlliw croen golau
+1F9B6 1F3FC	troed arlliw croen canolig-golau
+1F9B6 1F3FD	troed arlliw croen canolog
+1F9B6 1F3FE	troed arlliw croen canolig-tywyll
+1F9B6 1F3FF	troed arlliw croen tywyll
 1F9B7	dant
 1F9B8	archarwr
+1F9B8 1F3FB	archarwr arlliw croen golau
+1F9B8 1F3FC	archarwr arlliw croen canolig-golau
+1F9B8 1F3FD	archarwr arlliw croen canolog
+1F9B8 1F3FE	archarwr arlliw croen canolig-tywyll
+1F9B8 1F3FF	archarwr arlliw croen tywyll
 1F9B9	archleidr
+1F9B9 1F3FB	archleidr arlliw croen golau
+1F9B9 1F3FC	archleidr arlliw croen canolig-golau
+1F9B9 1F3FD	archleidr arlliw croen canolog
+1F9B9 1F3FE	archleidr arlliw croen canolig-tywyll
+1F9B9 1F3FF	archleidr arlliw croen tywyll
+1F9BA	siaced ddiogelwch
+1F9BB	clust gyda chymorth clyw
+1F9BB 1F3FB	clust gyda chymorth clyw arlliw croen golau
+1F9BB 1F3FC	clust gyda chymorth clyw arlliw croen canolig-golau
+1F9BB 1F3FD	clust gyda chymorth clyw arlliw croen canolog
+1F9BB 1F3FE	clust gyda chymorth clyw arlliw croen canolig-tywyll
+1F9BB 1F3FF	clust gyda chymorth clyw arlliw croen tywyll
+1F9BC	cadair olwyn â pheiriant
+1F9BD	cadair olwyn heb beiriant
+1F9BE	braich fecanyddol
+1F9BF	coes fecanyddol
 1F9C0	darn o gaws
 1F9C1	cacen cwpan
 1F9C2	halen
+1F9C3	blwch diodydd
+1F9C4	garlleg
+1F9C5	winwns
+1F9C6	ffalaffel
+1F9C7	woffl
+1F9C8	menyn
+1F9C9	maté
+1F9CA	ciwb iâ
+1F9CB	te swigod
+1F9CC	ellyll
+1F9CD	person yn sefyll
+1F9CD 1F3FB	person yn sefyll arlliw croen golau
+1F9CD 1F3FC	person yn sefyll arlliw croen canolig-golau
+1F9CD 1F3FD	person yn sefyll arlliw croen canolog
+1F9CD 1F3FE	person yn sefyll arlliw croen canolig-tywyll
+1F9CD 1F3FF	person yn sefyll arlliw croen tywyll
+1F9CE	person yn penlinio
+1F9CE 1F3FB	person yn penlinio arlliw croen golau
+1F9CE 1F3FC	person yn penlinio arlliw croen canolig-golau
+1F9CE 1F3FD	person yn penlinio arlliw croen canolog
+1F9CE 1F3FE	person yn penlinio arlliw croen canolig-tywyll
+1F9CE 1F3FF	person yn penlinio arlliw croen tywyll
+1F9CF	person byddar
+1F9CF 1F3FB	person byddar arlliw croen golau
+1F9CF 1F3FC	person byddar arlliw croen canolig-golau
+1F9CF 1F3FD	person byddar arlliw croen canolog
+1F9CF 1F3FE	person byddar arlliw croen canolig-tywyll
+1F9CF 1F3FF	person byddar arlliw croen tywyll
 1F9D0	wyneb gyda monocl
-1F9D1	oedolyn
+1F9D1	person
+1F9D1 1F3FB	person arlliw croen golau
+1F9D1 1F3FC	person arlliw croen canolig-golau
+1F9D1 1F3FD	person arlliw croen canolog
+1F9D1 1F3FE	person arlliw croen canolig-tywyll
+1F9D1 1F3FF	person arlliw croen tywyll
 1F9D2	plentyn
+1F9D2 1F3FB	plentyn arlliw croen golau
+1F9D2 1F3FC	plentyn arlliw croen canolig-golau
+1F9D2 1F3FD	plentyn arlliw croen canolog
+1F9D2 1F3FE	plentyn arlliw croen canolig-tywyll
+1F9D2 1F3FF	plentyn arlliw croen tywyll
 1F9D3	oedolyn oedranus
-1F9D4	person barfog
+1F9D3 1F3FB	oedolyn oedranus arlliw croen golau
+1F9D3 1F3FC	oedolyn oedranus arlliw croen canolig-golau
+1F9D3 1F3FD	oedolyn oedranus arlliw croen canolog
+1F9D3 1F3FE	oedolyn oedranus arlliw croen canolig-tywyll
+1F9D3 1F3FF	oedolyn oedranus arlliw croen tywyll
+1F9D4	person barf
+1F9D4 1F3FB	person arlliw croen golau, barf
+1F9D4 1F3FC	person arlliw croen canolig-golau, barf
+1F9D4 1F3FD	person arlliw croen canolog, barf
+1F9D4 1F3FE	person arlliw croen canolig-tywyll, barf
+1F9D4 1F3FF	person arlliw croen tywyll, barf
 1F9D5	menyw â phensgarff
+1F9D5 1F3FB	menyw â phensgarff arlliw croen golau
+1F9D5 1F3FC	menyw â phensgarff arlliw croen canolig-golau
+1F9D5 1F3FD	menyw â phensgarff arlliw croen canolog
+1F9D5 1F3FE	menyw â phensgarff arlliw croen canolig-tywyll
+1F9D5 1F3FF	menyw â phensgarff arlliw croen tywyll
 1F9D6	person mewn ystafell llawn stêm
+1F9D6 1F3FB	person mewn ystafell llawn stêm arlliw croen golau
+1F9D6 1F3FC	person mewn ystafell llawn stêm arlliw croen canolig-golau
+1F9D6 1F3FD	person mewn ystafell llawn stêm arlliw croen canolog
+1F9D6 1F3FE	person mewn ystafell llawn stêm arlliw croen canolig-tywyll
+1F9D6 1F3FF	person mewn ystafell llawn stêm arlliw croen tywyll
 1F9D7	person yn dringo
+1F9D7 1F3FB	person yn dringo arlliw croen golau
+1F9D7 1F3FC	person yn dringo arlliw croen canolig-golau
+1F9D7 1F3FD	person yn dringo arlliw croen canolog
+1F9D7 1F3FE	person yn dringo arlliw croen canolig-tywyll
+1F9D7 1F3FF	person yn dringo arlliw croen tywyll
 1F9D8	person mewn ystum lingroes
+1F9D8 1F3FB	person mewn ystum lingroes arlliw croen golau
+1F9D8 1F3FC	person mewn ystum lingroes arlliw croen canolig-golau
+1F9D8 1F3FD	person mewn ystum lingroes arlliw croen canolog
+1F9D8 1F3FE	person mewn ystum lingroes arlliw croen canolig-tywyll
+1F9D8 1F3FF	person mewn ystum lingroes arlliw croen tywyll
 1F9D9	dewin
+1F9D9 1F3FB	dewin arlliw croen golau
+1F9D9 1F3FC	dewin arlliw croen canolig-golau
+1F9D9 1F3FD	dewin arlliw croen canolog
+1F9D9 1F3FE	dewin arlliw croen canolig-tywyll
+1F9D9 1F3FF	dewin arlliw croen tywyll
 1F9DA	tylwyth teg
+1F9DA 1F3FB	tylwyth teg arlliw croen golau
+1F9DA 1F3FC	tylwyth teg arlliw croen canolig-golau
+1F9DA 1F3FD	tylwyth teg arlliw croen canolog
+1F9DA 1F3FE	tylwyth teg arlliw croen canolig-tywyll
+1F9DA 1F3FF	tylwyth teg arlliw croen tywyll
 1F9DB	fampir
+1F9DB 1F3FB	fampir arlliw croen golau
+1F9DB 1F3FC	fampir arlliw croen canolig-golau
+1F9DB 1F3FD	fampir arlliw croen canolog
+1F9DB 1F3FE	fampir arlliw croen canolig-tywyll
+1F9DB 1F3FF	fampir arlliw croen tywyll
 1F9DC	môrberson
+1F9DC 1F3FB	môrberson arlliw croen golau
+1F9DC 1F3FC	môrberson arlliw croen canolig-golau
+1F9DC 1F3FD	môrberson arlliw croen canolog
+1F9DC 1F3FE	môrberson arlliw croen canolig-tywyll
+1F9DC 1F3FF	môrberson arlliw croen tywyll
 1F9DD	coblyn
+1F9DD 1F3FB	coblyn arlliw croen golau
+1F9DD 1F3FC	coblyn arlliw croen canolig-golau
+1F9DD 1F3FD	coblyn arlliw croen canolog
+1F9DD 1F3FE	coblyn arlliw croen canolig-tywyll
+1F9DD 1F3FF	coblyn arlliw croen tywyll
 1F9DE	genie
 1F9DF	sombi
 1F9E0	ymennydd
@@ -1406,6 +2176,7 @@
 1F9EC	dna
 1F9ED	cwmpawd
 1F9EE	abacws
+1F9EF	diffoddydd tân
 1F9F0	blwch offer
 1F9F1	bricsen
 1F9F2	magnet
@@ -1422,6 +2193,183 @@
 1F9FD	sbwng
 1F9FE	derbynneb
 1F9FF	amwled nazar
-1F3F4 E0067 E0062 E0077 E006C E0073 E007F	baner Cymru
-1F3F4 E0067 E0062 E0073 E0063 E0074 E007F	baner yr Alban
-1F3F4 E0067 E0062 E0065 E006E E0067 E007F	baner Lloegr
+1FA70	esgidiau bale
+1FA71	siwt nofio
+1FA72	trôns
+1FA73	siorts
+1FA74	sandal thong
+1FA75	calon las golau
+1FA76	calon lwyd
+1FA77	calon binc
+1FA78	diferyn o waed
+1FA79	bandej glynu
+1FA7A	stethosgop
+1FA7B	pelydr-x
+1FA7C	bagl
+1FA80	io-io
+1FA81	barcud
+1FA82	parasiwt
+1FA83	bwmerang
+1FA84	ffon hud
+1FA85	piñata
+1FA86	doliau sy’n nythu
+1FA87	maracas
+1FA88	ffliwt
+1FA89	telyn
+1FA8A	trombôn
+1FA8E	cist drysor
+1FA8F	rhaw
+1FA90	planed cylchog
+1FA91	cadair
+1FA92	rasel
+1FA93	bwyell
+1FA94	lamp diya
+1FA95	banjo
+1FA96	helmed filitaraidd
+1FA97	acordion
+1FA98	drwm hir
+1FA99	darn arian
+1FA9A	llif gwaith coed
+1FA9B	sgriwdreifar
+1FA9C	ysgol ddringo
+1FA9D	bachyn
+1FA9E	drych
+1FA9F	ffenestr
+1FAA0	offeryn sugno
+1FAA1	nodwydd wnïo
+1FAA2	cwlwm
+1FAA3	bwced
+1FAA4	trap llygod
+1FAA5	brwsh dannedd
+1FAA6	carreg fedd
+1FAA7	placard
+1FAA8	carreg
+1FAA9	pêl ddrych
+1FAAA	cerdyn adnabod
+1FAAB	batri isel
+1FAAC	hamsa
+1FAAD	ffan llaw plyg
+1FAAE	pig gwallt
+1FAAF	khanda
+1FAB0	pry
+1FAB1	mwydyn
+1FAB2	chwilen
+1FAB3	chwilen ddu
+1FAB4	planhigyn mewn pot
+1FAB5	pren
+1FAB6	pluen
+1FAB7	lotws
+1FAB8	cwrel
+1FAB9	nyth gwag
+1FABA	nythu gydag wyau
+1FABB	hiasinth
+1FABC	slefren fôr
+1FABD	adain
+1FABE	coeden heb ddail
+1FABF	gwydd
+1FAC0	Y galon
+1FAC1	Yr ysgyfaint
+1FAC2	pobl yn cofleidio
+1FAC3	dyn beichiog
+1FAC3 1F3FB	dyn beichiog arlliw croen golau
+1FAC3 1F3FC	dyn beichiog arlliw croen canolig-golau
+1FAC3 1F3FD	dyn beichiog arlliw croen canolog
+1FAC3 1F3FE	dyn beichiog arlliw croen canolig-tywyll
+1FAC3 1F3FF	dyn beichiog arlliw croen tywyll
+1FAC4	person beichiog
+1FAC4 1F3FB	person beichiog arlliw croen golau
+1FAC4 1F3FC	person beichiog arlliw croen canolig-golau
+1FAC4 1F3FD	person beichiog arlliw croen canolog
+1FAC4 1F3FE	person beichiog arlliw croen canolig-tywyll
+1FAC4 1F3FF	person beichiog arlliw croen tywyll
+1FAC5	person â choron
+1FAC5 1F3FB	person â choron arlliw croen golau
+1FAC5 1F3FC	person â choron arlliw croen canolig-golau
+1FAC5 1F3FD	person â choron arlliw croen canolog
+1FAC5 1F3FE	person â choron arlliw croen canolig-tywyll
+1FAC5 1F3FF	person â choron arlliw croen tywyll
+1FAC6	ôl bys
+1FAC8	creadur blewog
+1FACD	orca
+1FACE	elc
+1FACF	asyn
+1FAD0	llus
+1FAD1	pupryn
+1FAD2	olewydd
+1FAD3	Bara fflat
+1FAD4	tamale
+1FAD5	fondue
+1FAD6	tebot
+1FAD7	arllwys hylif
+1FAD8	ffa
+1FAD9	jar
+1FADA	gwraidd sinsir
+1FADB	pod pys
+1FADC	gwreiddlysieuyn
+1FADF	slempio
+1FAE0	wyneb toddi
+1FAE1	wyneb saliwt
+1FAE2	wyneb gyda llygaid agored a llaw dros geg
+1FAE3	wyneb gyda llygad sy’n sbïo
+1FAE4	wyneb â cheg letraws
+1FAE5	wyneb llinell dotiog
+1FAE6	brathu gwefus
+1FAE7	swigod
+1FAE8	wyneb sydd ysgwyd
+1FAE9	wyneb gyda bagiau dan y llygaid
+1FAEA	wyneb wedi ystumio
+1FAEF	cwmwl ymladd
+1FAF0	llaw gyda bys mynegai a bawd wedi’u croesi
+1FAF0 1F3FB	llaw gyda bys mynegai a bawd wedi’u croesi arlliw croen golau
+1FAF0 1F3FC	llaw gyda bys mynegai a bawd wedi’u croesi arlliw croen canolig-golau
+1FAF0 1F3FD	llaw gyda bys mynegai a bawd wedi’u croesi arlliw croen canolog
+1FAF0 1F3FE	llaw gyda bys mynegai a bawd wedi’u croesi arlliw croen canolig-tywyll
+1FAF0 1F3FF	llaw gyda bys mynegai a bawd wedi’u croesi arlliw croen tywyll
+1FAF1	llaw i’r dde
+1FAF1 1F3FB	llaw i’r dde arlliw croen golau
+1FAF1 1F3FC	llaw i’r dde arlliw croen canolig-golau
+1FAF1 1F3FD	llaw i’r dde arlliw croen canolog
+1FAF1 1F3FE	llaw i’r dde arlliw croen canolig-tywyll
+1FAF1 1F3FF	llaw i’r dde arlliw croen tywyll
+1FAF2	llaw i’r chwith
+1FAF2 1F3FB	llaw i’r chwith arlliw croen golau
+1FAF2 1F3FC	llaw i’r chwith arlliw croen canolig-golau
+1FAF2 1F3FD	llaw i’r chwith arlliw croen canolog
+1FAF2 1F3FE	llaw i’r chwith arlliw croen canolig-tywyll
+1FAF2 1F3FF	llaw i’r chwith arlliw croen tywyll
+1FAF3	llaw palmwydd i lawr
+1FAF3 1F3FB	llaw palmwydd i lawr arlliw croen golau
+1FAF3 1F3FC	llaw palmwydd i lawr arlliw croen canolig-golau
+1FAF3 1F3FD	llaw palmwydd i lawr arlliw croen canolog
+1FAF3 1F3FE	llaw palmwydd i lawr arlliw croen canolig-tywyll
+1FAF3 1F3FF	llaw palmwydd i lawr arlliw croen tywyll
+1FAF4	llaw palmwydd i fyny
+1FAF4 1F3FB	llaw palmwydd i fyny arlliw croen golau
+1FAF4 1F3FC	llaw palmwydd i fyny arlliw croen canolig-golau
+1FAF4 1F3FD	llaw palmwydd i fyny arlliw croen canolog
+1FAF4 1F3FE	llaw palmwydd i fyny arlliw croen canolig-tywyll
+1FAF4 1F3FF	llaw palmwydd i fyny arlliw croen tywyll
+1FAF5	bys mynegai yn pwyntio at y gwyliwr
+1FAF5 1F3FB	bys mynegai yn pwyntio at y gwyliwr arlliw croen golau
+1FAF5 1F3FC	bys mynegai yn pwyntio at y gwyliwr arlliw croen canolig-golau
+1FAF5 1F3FD	bys mynegai yn pwyntio at y gwyliwr arlliw croen canolog
+1FAF5 1F3FE	bys mynegai yn pwyntio at y gwyliwr arlliw croen canolig-tywyll
+1FAF5 1F3FF	bys mynegai yn pwyntio at y gwyliwr arlliw croen tywyll
+1FAF6	dwylo calon
+1FAF6 1F3FB	dwylo calon arlliw croen golau
+1FAF6 1F3FC	dwylo calon arlliw croen canolig-golau
+1FAF6 1F3FD	dwylo calon arlliw croen canolog
+1FAF6 1F3FE	dwylo calon arlliw croen canolig-tywyll
+1FAF6 1F3FF	dwylo calon arlliw croen tywyll
+1FAF7	llaw yn gwthio i’r chwith
+1FAF7 1F3FB	llaw yn gwthio i’r chwith arlliw croen golau
+1FAF7 1F3FC	llaw yn gwthio i’r chwith arlliw croen canolig-golau
+1FAF7 1F3FD	llaw yn gwthio i’r chwith arlliw croen canolog
+1FAF7 1F3FE	llaw yn gwthio i’r chwith arlliw croen canolig-tywyll
+1FAF7 1F3FF	llaw yn gwthio i’r chwith arlliw croen tywyll
+1FAF8	llaw yn gwthio i’r dde
+1FAF8 1F3FB	llaw yn gwthio i’r dde arlliw croen golau
+1FAF8 1F3FC	llaw yn gwthio i’r dde arlliw croen canolig-golau
+1FAF8 1F3FD	llaw yn gwthio i’r dde arlliw croen canolog
+1FAF8 1F3FE	llaw yn gwthio i’r dde arlliw croen canolig-tywyll
+1FAF8 1F3FF	llaw yn gwthio i’r dde arlliw croen tywyll

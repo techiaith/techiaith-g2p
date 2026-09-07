@@ -1181,16 +1181,31 @@ _DEGREE = [
 # Emoji were DROPPED silently: "Da iawn 👍" read "da iawn" and the emoji contributed nothing.
 # Owner 2026-07-28: they should be read.
 #
-# THE NAMES COME FROM THE piper-cy VOICE, like the phone-number rule. espeak-ng's cy voice
-# already carries a full Welsh emoji set (CLDR-derived), and "espeak-ng -v cy -q -X" prints the
-# replacement as WORDS ("Replace: ❤   calon goch"), so the table is extracted rather than
-# translated -- 1424 entries of existing, idiomatic Welsh: "wyneb â dagrau hapusrwydd",
-# "cacen pen-blwydd", "penglog ac esgyrn croes", "enfys".
+# THE NAMES COME FROM UNICODE CLDR, and the emoji set from Unicode emoji-test.txt. Both are
+# permissively licensed (CLDR is Unicode-3.0), and scripts/gen_emoji_cy.py rebuilds the table
+# from the vendored copies in data/upstream/. See that directory's README for the licence trail.
 #
-# The sweep was deliberately restricted to the genuine emoji blocks. A first pass over a wider
-# range pulled in espeak's ordinary symbol dictionary, which is not emoji and is partly
-# ENGLISH -- "+" -> "plus", "₨" -> "rupee" -- and would have regressed the "plws" decision
-# made hours earlier. The extractor asserts zero English-word leakage.
+# THIS REPLACED A GPL-DERIVED TABLE. Until 2026-09-02 the names were extracted from espeak-ng's
+# cy voice via "espeak-ng -v cy -q -X", which made 1424 of 1427 rows a derivative of a GPLv3
+# work -- compiled into every shipped artifact across all five distros, against this project's
+# own no-GPL rule. Regenerating from CLDR removed that exposure and was a strict improvement:
+# nothing lost its reading, coverage roughly doubled (1427 -> 2994, gaining skin-tone and ZWJ
+# sequences), and 53 names got better -- espeak had leaked untranslated English ("flat",
+# "sharp") and used non-Welsh spellings ("baner Bosnia & Herzegovina", "baner Gogledd Korea")
+# where CLDR has "fflat", "baner Bosnia a Herzegovina", "baner Gogledd Corea".
+#
+# WHERE CLDR NEEDED CORRECTING -- THE MUSICAL ACCIDENTALS. CLDR reaches for the everyday sense
+# of the English word, and the espeak table before it leaked untranslated English, so all three
+# were wrong or missing. Correct terms supplied by the owner 2026-09-02 and held in
+# gen_emoji_cy.OVERRIDES / ADDITIONS so regeneration cannot silently revert them:
+#   U+266F ♯  "llonnod"        (CLDR: "miniog" = sharp-EDGED; espeak: "sharp")
+#   U+266D ♭  "meddalnod"      (CLDR: "fflat" = a flat surface; espeak: "flat")
+#   U+266E ♮  "nodyn naturiol" (CLDR: no Welsh name at all; espeak: none -- read as nothing)
+#
+# The set is restricted to what emoji-test.txt marks fully-qualified or component, which keeps
+# ordinary punctuation out. That restriction is load-bearing: CLDR annotates non-emoji
+# characters too ("{" -> "braced agor cyrliog"), and sweeping those in would make the
+# normalizer read braces aloud and regress the "plws" decision for "+".
 #
 # NOT hashed into data_version: that covers only the four files in _DICT_ORDER, which live in
 # data/geiriadur-ynganu-bangor/. This table is beside them, not among them, so it needs no
@@ -1231,11 +1246,13 @@ _EMOJI = _load_emoji(_EMOJI_TSV)
 _EMOJI_SKIP = "\ufe0f\u200d\ufe0e"
 _EMOJI_SKIP_MAP = {ord(c): None for c in _EMOJI_SKIP}
 # U+E0020-U+E007F, the TAG block. Used to build the national-flag sequences
-# ("🏴" + "gbwls" + cancel = the Welsh flag). espeak does NOT know these -- it falls back to
-# the bare "🏴", "chwifio baner ddu", and even leaks an English "black flag" -- so the three
-# UK national flags are the ONLY hand-written entries in an otherwise extracted table:
-#   baner Cymru, baner yr Alban, baner Lloegr.
-# For a Welsh TTS, the Welsh flag reading "waving black flag" was the wrong default.
+# ("🏴" + "gbwls" + cancel = the Welsh flag).
+# HISTORY: this table used to be extracted from espeak-ng's cy voice, which is GPLv3 -- and
+# espeak did not know the TAG sequences, so baner Cymru / yr Alban / Lloegr were the only
+# hand-written rows in it. Both problems are gone: the table is now generated from Unicode
+# emoji-test.txt plus CLDR cy annotations (both permissive) by scripts/gen_emoji_cy.py, and
+# CLDR names all three UK flags itself. Nothing here derives from espeak-ng any more.
+# See techiaith/g2p/data/upstream/README.md for the licence trail.
 _TAG_CHARS = re.compile("[\U000e0020-\U000e007f]")
 # Longest first, so a two-codepoint flag is matched before either half of it.
 _EMOJI_RE = re.compile("|".join(re.escape(k) for k in
@@ -1454,12 +1471,25 @@ def _clock_marker_token(tok: str, text: str, start: int) -> bool:
 # no other headword can ever be queried. Digit-bearing tokens (S4C, A55) never reach the
 # gate: they are codes, unpronounceable as words, and stay with the speller.
 _VOCAB_DICTS = ("bangordict.dict", "bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict")
+# The gate distinguishes WHERE a headword comes from. The English/foreign tables (xx, en, cmudict)
+# hold entries whose pronunciation IS the acronym's spoken form -- "bbc" is b-ii-b-ii-s-ii,
+# "usa" is j-uu-e-s-ei -- so an all-caps token they know reads correctly at any length. The
+# native Welsh table (bangordict.dict) holds Welsh WORDS, and a short all-caps token that only
+# it knows is almost always an English acronym colliding with one: "DWP" is not the Welsh
+# adjective dwp ("thick"), "NHS" is not a Welsh word. Native-only headwords therefore gate only
+# from _CY_SHOUT_MIN_LEN letters, where an all-caps token is a shouted word ("ADRODDIAD",
+# "CROESO") rather than an acronym. Below that they spell, as techiaith-g2p 1.0.1 (the deployed
+# API) spells everything. Both sides mirror this: cy_normalize.c keeps two pools.
+_VOCAB_DICTS_EN = ("bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict")
+_VOCAB_DICTS_CY = ("bangordict.dict",)
+_CY_SHOUT_MIN_LEN = 5
 _VOCAB_HEADWORD = re.compile(r"[A-Za-z]{2,}(?=[ \t\r]|$)")
-_ACRO_VOCAB: "set[str] | None" = None
+_ACRO_VOCAB: "tuple[set[str], set[str]] | None" = None
 
 
-def _acronym_vocab() -> "set[str]":
-    """Lazy-loaded headword set from the packaged pronunciation dictionaries.
+def _acronym_vocab() -> "tuple[set[str], set[str]]":
+    """Lazy-loaded (english_or_foreign_headwords, native_welsh_headwords) from the packaged
+    pronunciation dictionaries.
 
     Loaded here rather than shared with BangorLexicon because the normalizer is
     standalone (no id map, no phone validation): membership means "the dictionaries
@@ -1467,14 +1497,25 @@ def _acronym_vocab() -> "set[str]":
     global _ACRO_VOCAB
     if _ACRO_VOCAB is None:
         base = Path(__file__).parent / "data" / "geiriadur-ynganu-bangor"
-        vocab = set()
-        for name in _VOCAB_DICTS:
-            for line in (base / name).read_text(encoding="utf-8").splitlines():
-                hw = _VOCAB_HEADWORD.match(line)
-                if hw:
-                    vocab.add(hw.group(0).lower())
-        _ACRO_VOCAB = vocab
+        def load(names):
+            vocab = set()
+            for name in names:
+                for line in (base / name).read_text(encoding="utf-8").splitlines():
+                    hw = _VOCAB_HEADWORD.match(line)
+                    if hw:
+                        vocab.add(hw.group(0).lower())
+            return vocab
+        _ACRO_VOCAB = (load(_VOCAB_DICTS_EN), load(_VOCAB_DICTS_CY))
     return _ACRO_VOCAB
+
+
+def _acronym_reads_as_word(tok: str) -> bool:
+    """The vocabulary gate. See _VOCAB_DICTS_EN / _VOCAB_DICTS_CY for the reasoning."""
+    low = tok.lower()
+    en, cy = _acronym_vocab()
+    if low in en:
+        return True
+    return low in cy and len(tok) >= _CY_SHOUT_MIN_LEN
 
 
 def _spell_acronym(m: re.Match) -> str:
@@ -1485,7 +1526,7 @@ def _spell_acronym(m: re.Match) -> str:
         return tok                           # "£5M" belongs to _CURRENCY, not here
     if _clock_marker_token(tok, m.string, m.start()):
         return tok                           # "7PM" belongs to the time passes, not here
-    if not any(c.isdigit() for c in tok) and tok.lower() in _acronym_vocab():
+    if not any(c.isdigit() for c in tok) and _acronym_reads_as_word(tok):
         return tok.lower()                   # a known word merely capitalised: read it
     caps = sum(c.isupper() for c in tok)
     # An acronym needs >=2 caps (BBC, HMS) — or one cap plus a digit, which covers

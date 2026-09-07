@@ -3,19 +3,24 @@ CC ?= cc
 CFLAGS ?= -O2 -std=gnu11 -Wall -Wextra
 CORE ?= ..
 
-OBJ = cy_phonemize.o cy_normalize.o cy_english.o
+OBJ = cy_phonemize.o cy_normalize.o cy_english.o cy_pos.o
 
 libcy_phonemize.a: $(OBJ)
 	ar rcs $@ $^
 
 # shared library for FFI bindings (ctypes / JNI / Dart FFI / P-Invoke)
-libcy_phonemize.so: cy_phonemize.c cy_normalize.c cy_english.c cy_phonemize.h cy_english.h
-	$(CC) $(CFLAGS) -fPIC -shared cy_phonemize.c cy_normalize.c cy_english.c -o $@
+# cy_emoji_data.h is GENERATED (scripts/gen_emoji_cy.py -> scripts/emit_c_data.py) and is
+# included by cy_normalize.c. It was missing from these prerequisites, so regenerating the
+# emoji table left a stale .so behind and `make` reported "up to date" -- the exact stale-.so
+# trap the comment below already warns about. Found 2026-09-02 regenerating the table off
+# espeak-ng; do not drop it again.
+libcy_phonemize.so: cy_phonemize.c cy_normalize.c cy_english.c cy_pos.c cy_phonemize.h cy_english.h cy_pos.h cy_emoji_data.h
+	$(CC) $(CFLAGS) -fPIC -shared cy_phonemize.c cy_normalize.c cy_english.c cy_pos.c -o $@
 
 cy_phonemize.o: cy_phonemize.c cy_phonemize.h cy_english.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-cy_normalize.o: cy_normalize.c cy_phonemize.h
+cy_normalize.o: cy_normalize.c cy_phonemize.h cy_emoji_data.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 cy_english.o: cy_english.c cy_english.h

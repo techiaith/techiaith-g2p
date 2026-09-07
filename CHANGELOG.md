@@ -2,6 +2,47 @@
 
 All notable changes to `techiaith-g2p` are documented in this file.
 
+## [1.2.0] — 2026-09-07
+
+`data_version` **moves**: `b1edc63e35bb7a6f` → `e015a51f4373ef2b`. Every consumer — the API's
+`techiaith-g2p` pin, the HF model config's `phonemizer.data_version`, and each app distro's
+bundled config — must move together; `models/piper/bangor.py` and the apps hard-fail on
+mismatch by design.
+
+### Added
+- **Heteronyms are resolved by part of speech.** `read`, `use`, `close`, `live`, `record`,
+  `object`, `present`, `separate`, `wind`, `estimate`, `desert`, `refuse` each carried one
+  fixed reading; scored against MASC gold POS over 933 real instances, 9 of 15 shipped the
+  minority reading (`live` was right 3.6% of the time). An averaged-perceptron tagger
+  (integer weights, byte-identical Python/C) now picks the reading: 38.7% → 88.1% correct,
+  with the majority reading as fallback when no model is installed. English tagger data is
+  MASC 3.0.0 (CC BY 3.0 US, attributed in NOTICE); Welsh is `brawddegau-tagiedig` (CC0).
+  Models ship as `data/pos/pos_{cy,en}.bin` (5.4 MB); the tagger runs only when an utterance
+  contains a heteronym, so every other utterance is provably unchanged.
+- **Brand and product names read as English** where `bangordict.dict` had Welsh-phonology
+  readings: YouTube, Google, Twitter, Adobe, Photoshop, PowerPoint, eBay, iPhone, iPad,
+  Android, plus OneDrive, Chromebook, Firestick, Fitbit, TikTok, Deliveroo as two-word forms.
+  Phones are the existing `cmudict_native` entries verbatim.
+- **Hyphenated compounds unknown to the dictionaries split into their parts** ("double-tap",
+  "read-only"), instead of falling to letter-to-sound as one nonword.
+- **Emoji names come from Unicode CLDR `cy` annotations**, not espeak-ng (GPL). 1,427 → 2,375
+  entries, zero readings lost; corrections and additions in `scripts/gen_emoji_cy.py`.
+
+### Changed
+- **Acronym vocabulary gate no longer captures short English acronyms that collide with
+  Welsh words.** 1.1.0's gate read `DWP` as the Welsh adjective *dwp* and `NHS` as a Welsh
+  headword. Headwords from the English/foreign tables still read as words at any length
+  (`BBC`, `USA`, `OK`, `NATO`); native-Welsh-only headwords read as words only from five
+  letters (`ADRODDIAD`, `CROESO`), and spell below that, as 1.0.1 did.
+- `cmudict_native.dict` and `pos_{cy,en}.bin` are hashed into `data_version`.
+- `diff_fuzz_c_parity.py` samples across whole dictionary files (it read only the
+  alphabetical head — 21% of `bangordict.dict`, 0% of `cmudict.dict`) and pins heteronyms.
+
+### Not changed, deliberately
+- The English lexicon. A rule-based "Welsh English" re-derivation was measured against
+  Bangor's own 119,305 English transcriptions (agreement 82% → 63%) and against the deployed
+  API by ear, and withdrawn. The model was trained with these labels; accent is a retrain.
+
 ## [1.1.0] — 2026-08-27
 
 Normaliser and tokeniser fixes for the confidently-wrong readings surfaced by the

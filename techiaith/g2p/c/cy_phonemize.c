@@ -3,6 +3,7 @@
  * [BOS]+[PAD,id]*+[PAD,EOS] interleaving. C99, no dependencies. */
 #include "cy_phonemize.h"
 #include "cy_english.h"
+#include "cy_pos.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -121,6 +122,8 @@ struct CyPhonemizer {
     WNode *eng[1 << WBITS];    /* native English lexicon (CMUdict) */
     int stress_id, syll_id;
     int english_mode;          /* 0 = accented, 1 = native */
+    CyPos *pos_cy;             /* POS taggers; NULL when the model is not installed, */
+    CyPos *pos_en;             /* which is supported -- heteronyms take the fallback. */
     int nfold;
     int fold_from[32];
     int32_t fold_to[32][8];
@@ -326,6 +329,10 @@ static int english_lts_ids(const CyPhonemizer *p, const char *word, int32_t *out
     return k;
 }
 
+/* Defined next to word_ids, which is its only other caller; declared here because
+ * cyp_create fills the table once the id map is loaded. */
+static void het_load(CyPhonemizer *p);
+
 CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
     CyPhonemizer *p = (CyPhonemizer *)calloc(1, sizeof(CyPhonemizer));
     if (!p) return NULL;
@@ -402,9 +409,46 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
      * Inserted BEFORE the dictionaries so wmap_put's keep-first rule makes the override win
      * with no node mutation. Python instead replaces the entry in tables[0]; the result is
      * identical because its lookup() consults that table first. */
-    static const struct { const char *word; const char *fields[5]; } PRON_OVERRIDE[] = {
+    /* fields[] was [5] (4 phones + NULL) and had to grow: photoshop/powerpoint need 8,
+     * and the two-word brand entries need 10. Mirrors bangor_g2p._CY_PRON_OVERRIDE
+     * exactly -- the differential fuzz fails if these two tables ever drift apart. */
+    static const struct { const char *word; const char *fields[16]; } PRON_OVERRIDE[] = {
         {"mil", {"'m", "ii", "l", NULL}},   /* was 'm i l */
         {"fil", {"'v", "ii", "l", NULL}},   /* soft-mutated, as in "dwy fil" */
+
+        /* BRAND NAMES. bangordict.dict records these with Welsh phonology, which is a
+         * defensible editorial choice for Welsh conversation and wrong for a screen reader
+         * on an English interface. Only breaks on SHORT utterances -- the sentence router
+         * needs ~5 English words, a button label is 1-3. The "|" in those dictionary
+         * readings is NOT the defect (ordinary Welsh is full of it); the PHONES are.
+         * Values below are the existing cmudict_native entries verbatim. */
+        {"youtube",    {"j", "'uu", "t", "j", "uu", "b", NULL}},
+        {"google",     {"g", "'uu", "g", "@", "l", NULL}},
+        {"twitter",    {"t", "w", "'i", "t", "@r", NULL}},
+        {"adobe",      {"@", "d", "'ou", "b", "ii", NULL}},
+        {"photoshop",  {"f", "'ou", "t", "ou", "sh", "aa", "p", NULL}},
+        {"powerpoint", {"p", "'au", "@r", "p", "oi", "n", "t", NULL}},
+        {"ebay",       {"'ii", "b", "ei", NULL}},
+        {"iphone",     {"'ai", "f", "ou", "n", NULL}},
+        {"ipad",       {"'ai", "p", "æ", "d", NULL}},
+        {"android",    {"'æ", "n", "d", "ɹ", "oi", "d", NULL}},
+
+        /* Concatenated brands in NO dictionary. Emitted as TWO WORDS (" ", the word
+         * boundary) because the owner tested the spaced forms by ear and preferred them --
+         * byte-identical to typing "one drive". Deliberately " " and never "-": the
+         * syllable boundary is what makes bangordict's readings sound wrong. */
+        {"onedrive",   {"w", "'ʌ", "n", " ", "d", "ɹ", "'ai", "v", NULL}},
+        {"chromebook", {"k", "ɹ", "'ou", "m", " ", "b", "'u", "k", NULL}},
+        {"firestick",  {"f", "'ai", "@r", " ", "s", "t", "'i", "k", NULL}},
+        {"fitbit",     {"'f", "i", "t", " ", "b", "'i", "t", NULL}},
+        {"tiktok",     {"t", "'i", "k", " ", "t", "'aa", "k", NULL}},
+        /* "deliver" + "ww": "deliver oo" gives Welsh 'oo|o and "uu" gives 'yy|y, both
+         * worse. Carries a /w/ onset, so "deliver-WOO" -- best this phoneset offers. */
+        {"deliveroo",  {"d", "i", "l", "'i", "v", "@r", " ", "'w", "uu", NULL}},
+
+        /* NOT HERE, deliberately: camera, signal, telegram. Same mechanism, but each is an
+         * ordinary Welsh loanword as well as a brand, so an override would break Welsh
+         * prose to fix an English label. Owner confirmed they sound fine as they are. */
         {NULL, {NULL}},
     };
     for (int i = 0; PRON_OVERRIDE[i].word; i++) {
@@ -416,6 +460,10 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
         wmap_put(p->word, PRON_OVERRIDE[i].word, oids, k);
         wmap_put(p->welsh, PRON_OVERRIDE[i].word, oids, k);
     }
+
+    /* Heteronym phone ids are precomputed in het_load() below, called from here so the
+     * id map and emit_phone_field are both ready. */
+    het_load(p);
 
     /* dictionaries — priority order cy -> xx -> en -> cmudict (keep-first wins) */
     const char *dicts[] = {"bangordict.dict", "bangordict.xx.dict",
@@ -429,6 +477,12 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
         snprintf(path, sizeof(path), "%s/data/geiriadur-ynganu-bangor/%s", core_dir, dicts[i]);
         load_dict(p, path, p->welsh);
     }
+    /* POS models. Absent is fine: het_lookup() then takes each heteronym's fallback,
+     * which is the majority-reading behaviour measured at 74.1% correct. */
+    snprintf(path, sizeof(path), "%s/data/pos", core_dir);
+    p->pos_cy = cy_pos_load(path, "cy");
+    p->pos_en = cy_pos_load(path, "en");
+
     /* native English lexicon + fold map */
     snprintf(path, sizeof(path), "%s/data/english/cmudict_native.dict", core_dir);
     load_native_english(p, path, p->eng);
@@ -452,6 +506,7 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
 }
 
 void cyp_destroy(CyPhonemizer *p) {
+    if (p) { cy_pos_free(p->pos_cy); cy_pos_free(p->pos_en); p->pos_cy = p->pos_en = NULL; }
     if (!p) return;
     for (int i = 0; i < (1 << TBITS); i++) {
         for (TNode *n = p->tok[i]; n;) { TNode *x = n->next; free(n->sym); free(n); n = x; }
@@ -787,6 +842,60 @@ static int hyphen_letter_run(const char *core) {
     return parts >= 2;                      /* a '-' guarantees this; kept explicit */
 }
 
+/* --- unknown hyphenated compounds (mirrors bangor_g2p._hyphen_parts) -------------------
+ * Screen readers are full of hyphenated English compounds -- double-tap, drop-down,
+ * read-only, sign-in, scroll-bar, check-box, log-out -- and none is in any table. As one
+ * token they fall to Welsh letter-to-sound AND starve the sentence router of English
+ * evidence, so neighbouring words that are also real Welsh words stay Welsh ("to" -> the
+ * Welsh 'to', a roof). Splitting fixes both.
+ *
+ * THE GUARD: a hyphenated form that IS in a table is never split, which keeps all 511
+ * hyphenated Welsh entries (gogledd-ddwyrain, pen-blwydd, e-bost) and the hyphenated
+ * English ones (wi-fi, built-in, e-mail) exactly as they were -- splitting "wi-fi" would
+ * give "w i v i", so the ordering is load-bearing. Both parts must be independently
+ * known, or splitting buys nothing. Parts shorter than 2 chars are excluded so a
+ * keyboard-echoed letter run stays with hyphen_letter_run above. */
+static int known_word(CyPhonemizer *p, const char *w) {
+    return wmap_lookup(p->word, w) != NULL || wmap_lookup(p->eng, w) != NULL;
+}
+
+/* UTF-8 CHARACTERS in the first `nbytes` bytes, not bytes. Python's guard counts
+ * characters, and Welsh is full of two-byte letters (ŵ ê î ô û ŷ â), so measuring bytes
+ * here made "sg-ŵ" and "ê-wyth" pass a guard Python rejects -- the differential fuzz
+ * caught it at 9/20000 inputs. Continuation bytes are 10xxxxxx and are not counted. */
+static size_t u8len(const char *s, size_t nbytes) {
+    size_t n = 0;
+    for (size_t i = 0; i < nbytes; i++)
+        if (((unsigned char)s[i] & 0xC0) != 0x80) n++;
+    return n;
+}
+
+static int hyphen_compound(CyPhonemizer *p, const char *core) {
+    char buf[256];
+    if (!strchr(core, '-')) return 0;
+    if (known_word(p, core)) return 0;          /* a real hyphenated entry -- never split */
+    if (strlen(core) >= sizeof buf) return 0;
+    int parts = 0;
+    const char *q = core;
+    for (;;) {
+        const char *m = strchr(q, '-');
+        size_t len = m ? (size_t)(m - q) : strlen(q);
+        /* Empty parts are SKIPPED, not rejected: Python builds its list with
+         * `[p for p in core.split("-") if p]`, so a leading/trailing/doubled hyphen
+         * ("di-dau-") drops the empty string and still splits. Bailing here instead
+         * diverged on exactly that shape -- caught by the differential fuzz. */
+        if (len) {
+            if (len >= sizeof buf || u8len(q, len) < 2) return 0;
+            memcpy(buf, q, len); buf[len] = 0;
+            if (!known_word(p, buf)) return 0;
+            parts++;
+        }
+        if (!m) break;
+        q = m + 1;
+    }
+    return parts >= 2;
+}
+
 /* ---- ACRONYM_JOIN (U+00B7) handling — mirrors bangor_g2p ---- */
 #define AJOIN "\xC2\xB7"          /* U+00B7 MIDDLE DOT, welsh_normalize.ACRONYM_JOIN */
 
@@ -807,10 +916,114 @@ static int core_is_acronym(const CyPhonemizer *p, const char *s) {
     }
 }
 
+/* HETERONYMS -- mirrors bangor_g2p._HETERONYM, where the reasoning and the MASC
+ * measurements live. One spelling, two pronunciations chosen by GRAMMAR; no lexicon here
+ * can express that, so this is consulted in word_ids() BEFORE any of them, at exactly the
+ * point Python consults _HETERONYM.
+ *
+ * Rows are (word, tag, phones). The tag==NULL row is the POS-BLIND FALLBACK -- the word's
+ * majority reading in MASC -- and is used when there is no tagger, no model, or no branch
+ * for the tag that came back. Python is `branch.get(pos) or branch[None]`; this is the same
+ * two-step, and diff_fuzz_c_parity fails if the tables drift apart.
+ *
+ * An earlier version inserted only the fallbacks into p->word/p->eng at load time and
+ * replaced them in p->welsh. That could not express a per-occurrence choice, so it is gone:
+ * the selection is now made per word, with context, on both sides. */
+static const struct { const char *word; const char *tag; const char *fields[16]; }
+HETERONYM[] = {
+        {"close",    NULL,     {"k", "l", "'ou", "z", NULL}},
+        {"close",    "ADJ",    {"k", "l", "'ou", "s", NULL}},
+        {"close",    "ADV",    {"k", "l", "'ou", "s", NULL}},
+        {"close",    "VERB",   {"k", "l", "'ou", "z", NULL}},
+        {"close",    "VPAST",  {"k", "l", "'ou", "z", NULL}},
+        {"desert",   NULL,     {"d", "'e", "z", "@r", "t", NULL}},
+        {"desert",   "NOUN",   {"d", "'e", "z", "@r", "t", NULL}},
+        {"desert",   "VERB",   {"d", "@", "z", "'@r", "t", NULL}},
+        {"desert",   "VPAST",  {"d", "@", "z", "'@r", "t", NULL}},
+        {"estimate", NULL,     {"'e", "s", "t", "@", "m", "ei", "t", NULL}},
+        {"estimate", "NOUN",   {"'e", "s", "t", "@", "m", "@", "t", NULL}},
+        {"estimate", "VERB",   {"'e", "s", "t", "@", "m", "ei", "t", NULL}},
+        {"estimate", "VPAST",  {"'e", "s", "t", "@", "m", "ei", "t", NULL}},
+        {"live",     NULL,     {"l", "'i", "v", NULL}},
+        {"live",     "ADJ",    {"l", "'ai", "v", NULL}},
+        {"live",     "VERB",   {"l", "'i", "v", NULL}},
+        {"object",   NULL,     {"@", "b", "jh", "'e", "k", "t", NULL}},
+        {"object",   "NOUN",   {"'aa", "b", "jh", "e", "k", "t", NULL}},
+        {"object",   "VERB",   {"@", "b", "jh", "'e", "k", "t", NULL}},
+        {"object",   "VPAST",  {"@", "b", "jh", "'e", "k", "t", NULL}},
+        {"present",  NULL,     {"p", "ɹ", "'e", "z", "@", "n", "t", NULL}},
+        {"present",  "ADJ",    {"p", "ɹ", "'e", "z", "@", "n", "t", NULL}},
+        {"present",  "NOUN",   {"p", "ɹ", "'e", "z", "@", "n", "t", NULL}},
+        {"present",  "VERB",   {"p", "ɹ", "@", "z", "'e", "n", "t", NULL}},
+        {"present",  "VPAST",  {"p", "ɹ", "@", "z", "'e", "n", "t", NULL}},
+        {"read",     NULL,     {"ɹ", "'ii", "d", NULL}},
+        {"read",     "VERB",   {"ɹ", "'ii", "d", NULL}},
+        {"read",     "VPAST",  {"ɹ", "'e", "d", NULL}},
+        {"record",   NULL,     {"'ɹ", "e", "k", "@r", "d", NULL}},
+        {"record",   "NOUN",   {"'ɹ", "e", "k", "@r", "d", NULL}},
+        {"record",   "VERB",   {"ɹ", "@", "k", "'oo", "ɹ", "d", NULL}},
+        {"record",   "VPAST",  {"ɹ", "@", "k", "'oo", "ɹ", "d", NULL}},
+        {"refuse",   NULL,     {"ɹ", "@", "f", "j", "'uu", "z", NULL}},
+        {"refuse",   "NOUN",   {"'ɹ", "e", "f", "j", "uu", "s", NULL}},
+        {"refuse",   "VERB",   {"ɹ", "@", "f", "j", "'uu", "z", NULL}},
+        {"refuse",   "VPAST",  {"ɹ", "@", "f", "j", "'uu", "z", NULL}},
+        {"separate", NULL,     {"s", "'e", "p", "@r", "@", "t", NULL}},
+        {"separate", "ADJ",    {"s", "'e", "p", "@r", "@", "t", NULL}},
+        {"separate", "VERB",   {"s", "'e", "p", "@r", "ei", "t", NULL}},
+        {"separate", "VPAST",  {"s", "'e", "p", "@r", "ei", "t", NULL}},
+        {"use",      NULL,     {"j", "'uu", "z", NULL}},
+        {"use",      "NOUN",   {"j", "'uu", "s", NULL}},
+        {"use",      "VERB",   {"j", "'uu", "z", NULL}},
+        {"use",      "VPAST",  {"j", "'uu", "z", NULL}},
+        {"wind",     NULL,     {"w", "'i", "n", "d", NULL}},
+        {"wind",     "NOUN",   {"w", "'i", "n", "d", NULL}},
+        {"wind",     "VERB",   {"w", "'ai", "n", "d", NULL}},
+        {NULL, NULL, {NULL}},
+};
+#define MAX_HET 128
+static int32_t HET_IDS[MAX_HET][16];
+static int     HET_N[MAX_HET];
+static int     HET_ROWS;
+
+static void het_load(CyPhonemizer *p) {
+    HET_ROWS = 0;
+    for (int i = 0; HETERONYM[i].word && i < MAX_HET; i++) {
+        int32_t ids[16];
+        int k = 0, bad = 0;
+        for (int t = 0; HETERONYM[i].fields[t]; t++)
+            if (emit_phone_field(p, HETERONYM[i].fields[t], ids, &k) < 0) { bad = 1; break; }
+        HET_N[i] = (bad || k == 0) ? 0 : k;      /* 0 = unusable, skipped at lookup */
+        if (!bad && k > 0) memcpy(HET_IDS[i], ids, sizeof(int32_t) * (size_t)k);
+        HET_ROWS = i + 1;
+    }
+}
+
+/* -1 if `s` is not a heteronym. Otherwise the tagged branch for `pos` if there is one,
+ * else the fallback -- the same precedence as Python's branch.get(pos) or branch[None]. */
+static int het_lookup(const char *s, const char *pos, int32_t *out, int max) {
+    int fb = -1;
+    for (int i = 0; i < HET_ROWS; i++) {
+        if (strcmp(HETERONYM[i].word, s) != 0) continue;
+        if (HETERONYM[i].tag == NULL) { fb = i; continue; }
+        if (pos && strcmp(HETERONYM[i].tag, pos) == 0 && HET_N[i] > 0) {
+            int n = HET_N[i] < max ? HET_N[i] : max;
+            memcpy(out, HET_IDS[i], sizeof(int32_t) * (size_t)n);
+            return n;
+        }
+    }
+    if (fb >= 0 && HET_N[fb] > 0) {
+        int n = HET_N[fb] < max ? HET_N[fb] : max;
+        memcpy(out, HET_IDS[fb], sizeof(int32_t) * (size_t)n);
+        return n;
+    }
+    return -1;
+}
+
 /* One word -> phone ids: the Welsh letter-name intercept plus the lexicon/LTS routing,
  * i.e. bangor_g2p._word_tokens minus the acronym and solo-vowel intercepts, which the
  * caller decides because they need sentence context. Returns the id count. */
-static int word_ids(CyPhonemizer *p, const char *s, int lang_en, int32_t *out, int max) {
+static int word_ids(CyPhonemizer *p, const char *s, int lang_en, const char *pos,
+                    int32_t *out, int max) {
     int li = -1;
     if (s[0] && (!s[1] || !s[2])) {   /* 1- or 2-byte core only */
         for (int t = 0; t < NLNAMES; t++)
@@ -823,6 +1036,13 @@ static int word_ids(CyPhonemizer *p, const char *s, int lang_en, int32_t *out, i
         int n = p->lname_n[li] < max ? p->lname_n[li] : max;
         memcpy(out, p->lname_ids[li], sizeof(int32_t) * (size_t)n);
         return n;
+    }
+    /* Heteronyms, before either lexicon -- Python's _HETERONYM check sits in exactly this
+     * position in _word_tokens, after the letter names and ahead of the english_mode
+     * branches. `pos` is NULL unless the caller ran the tagger. */
+    {
+        int hn = het_lookup(s, pos, out, max);
+        if (hn > 0) return hn;
     }
     if (p->english_mode) {            /* native: sentence-aware Welsh/English routing */
         const WNode *wh = wmap_lookup(p->welsh, s);
@@ -886,6 +1106,14 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
      * token when there is exactly one and it survived; -1 when the only core was a
      * dropped letterless token, which is never a vowel key. */
     int n_cores = 0, only_core_ti = -1;
+    /* Python's `words` list verbatim, for the POS tagger: it must be the SAME sequence
+     * Python builds, or a tag lands on the wrong word. Recorded at every site that
+     * increments n_cores -- including the letterless core C drops but Python keeps,
+     * which has no Tok and so would otherwise shift every later index by one.
+     * tok_widx maps a Tok back to its position in that list. */
+    static const char *wordlist[16384];
+    static int tok_widx[16384];
+    int n_wordlist = 0;
     const int comma_id = tok_lookup(p, ",");
     char *save = NULL;
     for (char *w = strtok_r(buf, " \t\r\n", &save); w; w = strtok_r(NULL, " \t\r\n", &save)) {
@@ -946,7 +1174,10 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
              * segment in its list, so "b - c" is not a run there either) */
             if (ncur == 0 && nsub == 0 && !has_letter(rest)) {
                 gap = 1;
-                if (*rest) { n_cores++; only_core_ti = -1; }  /* a core Python counts, we drop */
+                if (*rest) {                      /* a core Python counts, we drop */
+                    n_cores++; only_core_ti = -1;
+                    if (n_wordlist < 16384) wordlist[n_wordlist++] = rest;
+                }
             } else if (hyphen_letter_run(rest)) {
                 /* Keyboard echo, not a compound: re-yield each unit as its own word with
                  * a comma pause between them, so the shape is byte-identical to typing
@@ -962,9 +1193,34 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
                     gap = 0;
                     if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
                     n_cores++; only_core_ti = nt;
+                    if (n_wordlist < 16384) { tok_widx[nt] = n_wordlist; wordlist[n_wordlist++] = u.core; }
                     toks[nt++] = u;
                     if (!m) break;
                     q = m + 1;
+                }
+            } else if (hyphen_compound(p, rest)) {
+                /* Re-yield each part as its own WORD (no comma, unlike the letter-run
+                 * branch above): the word separator comes from normal token joining, so
+                 * the shape is byte-identical to typing a space instead of the hyphen.
+                 * Leading punctuation belongs to the first part, trailing to the last. */
+                char *pieces[32]; int npieces = 0;
+                for (char *q = rest; ; ) {
+                    char *m = strchr(q, '-');
+                    if (m) *m = 0;
+                    if (*q && npieces < 32) pieces[npieces++] = q;   /* skip empties */
+                    if (!m) break;
+                    q = m + 1;
+                }
+                for (int i = 0; i < npieces; i++) {
+                    Tok u; u.nlead = 0; u.ntrail = 0; u.core = pieces[i]; u.gap_before = gap;
+                    if (i == 0) for (int z = 0; z < ncur; z++) u.lead[u.nlead++] = cur_lead[z];
+                    if (i == npieces - 1)
+                        for (int z = 0; z < nsub; z++) u.trail[u.ntrail++] = sub_trail[z];
+                    gap = 0;
+                    if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
+                    n_cores++; only_core_ti = nt;
+                    if (n_wordlist < 16384) { tok_widx[nt] = n_wordlist; wordlist[n_wordlist++] = u.core; }
+                    toks[nt++] = u;
                 }
             } else {
                 if (nt >= (int)(sizeof(toks) / sizeof(toks[0]))) return -1;
@@ -972,7 +1228,10 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
                 for (int z = 0; z < ncur; z++) u.lead[u.nlead++] = cur_lead[z];
                 for (int z = 0; z < nsub; z++) u.trail[u.ntrail++] = sub_trail[z];
                 u.gap_before = gap; gap = 0;
-                if (*u.core) { n_cores++; only_core_ti = nt; }
+                if (*u.core) {
+                    n_cores++; only_core_ti = nt;
+                    if (n_wordlist < 16384) { tok_widx[nt] = n_wordlist; wordlist[n_wordlist++] = u.core; }
+                }
                 toks[nt++] = u;
             }
             if (!run) break;
@@ -1019,6 +1278,31 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
 
     int fn = 0, nwords = 0;
     const int CAP = cap;
+    /* POS TAGGING, gated exactly as bangor_g2p.phonemize gates it: only run when the
+     * utterance actually contains a heteronym, because that is the only thing that reads
+     * a tag. Beyond the cost saving, this bounds the blast radius -- every utterance
+     * without a heteronym is provably unchanged by the tagger, on both sides, so the
+     * parity surface is the inputs it can affect rather than all of them. */
+    static const char *pos_tags[16384];
+    int have_pos = 0;
+    {
+        int any_het = 0;
+        for (int i = 0; i < n_wordlist && !any_het; i++)
+            for (int k = 0; k < HET_ROWS; k++)
+                if (strcmp(HETERONYM[k].word, wordlist[i]) == 0) { any_het = 1; break; }
+        if (any_het) {
+            /* ALWAYS the English tagger -- every HETERONYM row is an English word, so its
+             * reading is chosen by an English tag whatever the sentence routed as. Short
+             * English sentences route to Welsh (the router wants ~5 English words) and the
+             * Welsh tagger cannot tag English. Mirrors bangor_g2p.phonemize. */
+            const CyPos *tagger = p->pos_en;
+            (void)lang_en;
+            if (tagger && n_wordlist > 0 &&
+                cy_pos_tag(tagger, wordlist, n_wordlist, pos_tags) == 0)
+                have_pos = 1;
+        }
+    }
+
     for (int ti = 0; ti < nt; ti++) {
         const char *s = toks[ti].core;
         const int32_t *wids = NULL; int wn = 0; int32_t wbuf[2048];
@@ -1068,7 +1352,11 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
                         if (len > sizeof(part) - 1) len = sizeof(part) - 1;
                         memcpy(part, q, len); part[len] = 0;
                         int32_t pb[2048];
-                        int pn = word_ids(p, part, lang_en, pb, 2048);
+                        /* An acronym part is not the tagged word: Python tags `words`,
+                         * and an acronym is one entry there however many parts it emits.
+                         * Passing the whole token's tag to a part would key a heteronym
+                         * branch off a different word. NULL = take the fallback. */
+                        int pn = word_ids(p, part, lang_en, NULL, pb, 2048);
                         if (pn > 0) {
                             if (n > 0 && n < 2048) wbuf[n++] = SPACE;
                             for (int k2 = 0; k2 < pn && n < 2048; k2++) wbuf[n++] = pb[k2];
@@ -1079,7 +1367,9 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
                 }
                 wids = wbuf; wn = n;
             } else {
-                wn = word_ids(p, s, lang_en, wbuf, 2048); wids = wbuf;
+                const char *tpos = (have_pos && tok_widx[ti] < n_wordlist)
+                                 ? pos_tags[tok_widx[ti]] : NULL;
+                wn = word_ids(p, s, lang_en, tpos, wbuf, 2048); wids = wbuf;
             }
             if (wn < 0) wn = 0;
         }
@@ -1299,7 +1589,8 @@ int cyp_letter_tokens(CyPhonemizer *p, const char *word, int32_t *out, int max_o
                  * that re-derives solo_vowel from this single character, which is
                  * indistinguishable from an isolated keystroke. lang is hardcoded Welsh
                  * there too, hence lang_en = 0. */
-                pn = word_ids(p, one, 0, piece, (int)(sizeof(piece) / sizeof(piece[0])));
+                pn = word_ids(p, one, 0, NULL, piece,
+                              (int)(sizeof(piece) / sizeof(piece[0])));
                 if (pn < 0) pn = 0;
             }
             i = j;

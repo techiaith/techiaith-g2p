@@ -1146,7 +1146,10 @@ def test_mil_and_fil_take_the_long_vowel_everywhere_they_appear():
     assert g.phonemize("mil", on_oov="lts") == ["ˈ", "m", "ii", "l"]
     assert g.phonemize("fil", on_oov="lts") == ["ˈ", "v", "ii", "l"]
     # It must be a real override, not a no-op that happens to agree with the dictionary.
-    assert g.lexicon.stats.get("overridden") == 2
+    # Counted against the table rather than a literal: brand-name entries were added
+    # 2026-09-04, and a hardcoded number turns every future addition into a failure here,
+    # which says nothing about mil/fil.
+    assert g.lexicon.stats.get("overridden") == len(_CY_PRON_OVERRIDE)
 
     N = WelshNormalizer()
 
@@ -1174,17 +1177,50 @@ def test_mil_and_fil_take_the_long_vowel_everywhere_they_appear():
     assert g.phonemize("miloedd", on_oov="lts") == ["ˈ", "m", "i", "|", "l", "oy", "dh"]
     assert g.phonemize("cil", on_oov="lts") == ["ˈ", "k", "i", "l"]
     assert g.phonemize("hil", on_oov="lts") == ["ˈ", "hh", "i", "l"]
-    assert set(_CY_PRON_OVERRIDE) == {"mil", "fil"}, (
-        "the override grew beyond the two forms the owner scoped and the ear confirmed")
+    # This guard exists so nobody adds a pronunciation without the owner hearing it. Keep it
+    # that way: widen the set ONLY alongside a recorded sign-off. The vowel-length pair is
+    # separated from the brand names so a regression in one cannot be masked by the other.
+    _VOWEL_LENGTH = {"mil", "fil"}
+    # Brand names, owner-approved by ear 2026-09-04 (see docs/brand-pronunciation-overrides.md).
+    # bangordict.dict records these with Welsh phonology, which is right for Welsh speech and
+    # wrong for a screen reader on an English UI, where labels are too short for the sentence
+    # router to reach its ~5-English-word threshold.
+    _BRANDS = {
+        "youtube", "google", "twitter", "adobe", "photoshop", "powerpoint", "ebay",
+        "iphone", "ipad", "android",
+        # concatenated, in no dictionary, emitted as two words
+        "onedrive", "chromebook", "firestick", "fitbit", "tiktok", "deliveroo",
+    }
+    assert set(_CY_PRON_OVERRIDE) == _VOWEL_LENGTH | _BRANDS, (
+        "the override table changed without a recorded sign-off; if that is intended, update "
+        "this set AND docs/brand-pronunciation-overrides.md")
+    # camera/signal/telegram are mispronounced by the same mechanism but are ordinary Welsh
+    # loanwords too, so an override would break Welsh prose. Owner ruled them out; assert it.
+    assert not ({"camera", "signal", "telegram"} & set(_CY_PRON_OVERRIDE)), (
+        "camera/signal/telegram must NOT be overridden -- they are real Welsh words")
 
     # THE POINT OF PUTTING THE FIX IN CODE. data_version hashes the emission policy, the id
-    # map and the dictionary BYTES -- not this table. Editing bangordict.dict would change
-    # it, and the API's models/piper/bangor.py hard-fails when it disagrees with the model
-    # config, so the container would refuse to start until the HF config moved in lockstep.
-    assert g.data_version() == "b1edc63e35bb7a6f", (
-        "data_version moved: the override has leaked into the hashed dictionary files, and "
-        "the API will hard-fail at startup until the model config's phonemizer block is "
-        "bumped to match")
+    # map, the dictionary BYTES and (since 2026-09-04) the native English lexicon -- but
+    # never this table. Editing bangordict.dict would change it, and the API's
+    # models/piper/bangor.py hard-fails when it disagrees with the model config, so the
+    # container would refuse to start until the HF config moved in lockstep.
+    #
+    # The pin moved once, deliberately, on 2026-09-07: b1edc63e35bb7a6f -> e015a51f4373ef2b.
+    # _EMISSION_POLICY went v3 -> v4 (pos=on: heteronyms resolved from a POS tag, so one
+    # spelling can emit different phones in different sentences), and two data files entered
+    # the hash -- pos_{cy,en}.bin, which choose those readings, and cmudict_native.dict, which
+    # had been OUTSIDE the hash while determining how every English word is pronounced. The
+    # lexicon itself is unchanged: a same-week attempt to re-derive it as "Welsh English" was
+    # measured 19 points further from Bangor's own transcriptions and audibly worse than the
+    # deployed API, and was withdrawn before release.
+    #
+    # If this assertion fires again, it is a regression unless you meant it: an override
+    # leaking into the hashed dictionary files, or a hashed data file regenerated without the
+    # model configs (HF, API, every distro) being bumped in the same move.
+    assert g.data_version() == "e015a51f4373ef2b", (
+        "data_version moved: either the override has leaked into the hashed dictionary "
+        "files, or the hashed English lexicon changed without a deliberate bump. The API "
+        "will hard-fail at startup until the model config's phonemizer block matches")
 
 
 def test_c_agrees_with_python_on_the_long_mil():
@@ -1500,7 +1536,7 @@ def test_characters_that_used_to_glue_words_into_nonwords():
         assert norm(t) == N.normalize(t), f"C/Python disagree on {t!r}"
 
 
-def test_emoji_are_read_with_welsh_names_from_espeak():
+def test_emoji_are_read_with_welsh_names_from_cldr():
     """Emoji were DROPPED: "Da iawn 👍" read "da iawn" and the emoji contributed nothing.
 
     Owner 2026-07-28: they should be read. The names come from the piper-cy voice, the same

@@ -17,13 +17,22 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO / "bindings" / "python"))
 
-from techiaith.g2p.bangor_g2p import BangorG2P
+from techiaith.g2p.bangor_g2p import BangorG2P, _HETERONYM
 from cy_phonemize import CyPhonemizer  # noqa: E402
 
 _DATA = _REPO / "techiaith" / "g2p" / "data" / "geiriadur-ynganu-bangor"
 
 
-def _dict_words(path: Path, limit: int) -> list[str]:
+def _dict_words(path: Path, limit: int, rng: random.Random | None = None) -> list[str]:
+    """Sample `limit` headwords from ACROSS the file.
+
+    This used to `break` at `limit`, which meant every run tested the same alphabetical head
+    and nothing else: 21% of bangordict.dict, 15% of bangordict.en.dict, 0% of cmudict.dict.
+    Words in the tail were never parity-tested at all -- "use" is line 19,577 of 20,622 in
+    bangordict.en.dict, so it had never once been compared between Python and C. A divergence
+    anywhere past the cut was invisible, which is the opposite of what this harness claims.
+    Read the whole file, then sample.
+    """
     words: list[str] = []
     if not path.exists():
         return words
@@ -34,9 +43,9 @@ def _dict_words(path: Path, limit: int) -> list[str]:
         w = line.split()[0].split("(")[0]
         if w:
             words.append(w)
-        if len(words) >= limit:
-            break
-    return words
+    if rng is not None and len(words) > limit:
+        return rng.sample(words, limit)
+    return words[:limit]
 
 
 def build_corpus(n: int, seed: int = 1234) -> list[str]:
@@ -44,11 +53,22 @@ def build_corpus(n: int, seed: int = 1234) -> list[str]:
     corpus: list[str] = []
 
     # 1. Real dictionary words (in-vocab) — Welsh, English-in-dict, names.
-    cy = _dict_words(_DATA / "bangordict.dict", 6000)
-    xx = _dict_words(_DATA / "bangordict.xx.dict", 3000)
-    en = _dict_words(_DATA / "bangordict.en.dict", 3000)
-    for pool in (cy, xx, en):
+    cy = _dict_words(_DATA / "bangordict.dict", 6000, rng)
+    xx = _dict_words(_DATA / "bangordict.xx.dict", 3000, rng)
+    en = _dict_words(_DATA / "bangordict.en.dict", 3000, rng)
+    # cmudict.dict was never sampled at all despite being the largest table (119,305 lines) and
+    # the source of every English reading in a Welsh-context sentence.
+    cmu = _dict_words(_DATA / "cmudict.dict", 3000, rng)
+    for pool in (cy, xx, en, cmu):
         corpus.extend(rng.sample(pool, min(len(pool), n // 6)))
+
+    # Heteronyms are the whole point of _HETERONYM and none of them appeared in this corpus, so
+    # the parity guarantee was vacuous exactly where behaviour had just changed. Pin them in
+    # explicitly -- bare, and in a frame, since the two take different lexicon routes.
+    for w in sorted(_HETERONYM):
+        corpus.append(w)
+        corpus.append(f"I will {w} it")
+        corpus.append(f"the {w} was here")
 
     # 2. Multi-word sentences (mutations, clitics, spacing) from dict words.
     allw = cy + xx + en
