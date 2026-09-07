@@ -196,6 +196,45 @@ def build_corpus(n: int, seed: int = 1234) -> list[str]:
         k = rng.randint(1, 40)
         corpus.append("".join(rng.choice(alpha) for _ in range(k)))
 
+    # 5. Number LANGUAGE (2026-09-07). English screen-reader strings and Welsh sentences
+    # carrying the same constructs, so the detection (_number_lang / number_lang), the
+    # English verbaliser (english_numbers.py / the en_* mirrors in cy_normalize.c) and the
+    # unchanged Welsh path in the presence of English loans are all exercised together.
+    months_en = ["January", "February", "March", "April", "May", "June", "July", "August",
+                 "September", "October", "November", "December"]
+    months_cy = ["Ionawr", "Chwefror", "Mawrth", "Ebrill", "Mai", "Mehefin", "Gorffennaf",
+                 "Awst", "Medi", "Hydref", "Tachwedd", "Rhagfyr"]
+    romans = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XIV", "XXI", "XL"]
+    en_frames = [
+        "Home screen {a} of {b}", "Page {a} of {b}", "Tab {a} of {b}", "Showing {a} of {b} items",
+        "You have {a} new messages", "Battery at {a}%", "Meeting at {t} on {d} {M} {y}",
+        "Costs £{a}.{p:02d}", "Call {ph} now", "Read {a} of {b}", "In {y} and {y2}",
+        "Chapter {r}", "Henry {r}", "{a}km run", "{d}st of {M}", "{a} + {b} = {c}", "It is {t}",
+        "{a}/{b} of the way", "Dr {W} and Mr {W}", "The {a}th item", "{a}", "{a} {W}",
+        "{W} {a}", "{W} {a} {W}", "Over {a}% of the {W}", "{h}pm on the {d}th",
+    ]
+    cy_frames = [
+        "Tudalen {a} o {b}", "Mae {a} o'r plant yn yr ysgol", "Am {t} y bore", "Rhif {a}",
+        "Cost: £{a}.{p:02d}", "Ffoniwch {ph} nawr", "Pennod {r}", "Harri {r}", "{a}km o ffordd",
+        "{d} {Mcy} {y}", "{a} + {b} = {c}", "Mae'r cyfarfod am {t} ar {d} {Mcy}",
+        "Dr {W} a Mr {W}", "y {a}fed eitem", "{a} o {b}", "Mae {a} {W} yma", "Rydym yn {W} {a}",
+        "Bank of {W} {a}", "The {W} {a}",
+    ]
+    pool_w = allw if allw else ["x"]
+    for _ in range(n // 8):
+        h = rng.randint(0, 23)
+        fill = dict(
+            a=rng.choice([rng.randint(0, 12), rng.randint(0, 99), rng.randint(100, 9999)]),
+            b=rng.randint(1, 40), c=rng.randint(0, 200), p=rng.randint(0, 99),
+            t=rng.choice([f"{h}:{rng.randint(0, 59):02d}", f"{h % 12 or 12}pm", f"{h % 12 or 12}.30am"]),
+            h=h % 12 or 12, d=rng.randint(1, 31), M=rng.choice(months_en), Mcy=rng.choice(months_cy),
+            y=rng.randint(1000, 2099), y2=rng.randint(1900, 2030),
+            ph=rng.choice([f"0{rng.randint(1000, 9999)} {rng.randint(100000, 999999)}",
+                           f"0{rng.randint(300, 999)} {rng.randint(100, 999)} {rng.randint(1000, 9999)}"]),
+            r=rng.choice(romans), W=rng.choice(pool_w),
+        )
+        corpus.append(rng.choice(en_frames).format(**fill))
+        corpus.append(rng.choice(cy_frames).format(**fill))
     rng.shuffle(corpus)
     return corpus[:n] if n < len(corpus) else corpus
 

@@ -50,6 +50,24 @@ WORD_SEP = " "
 # are trained, verified live on the deployed model -- docs/PARITY.md section 4), so
 # _EMISSION_POLICY is deliberately NOT bumped and data_version must not move.
 _PUNCT = ".,;:!?()\"…—"
+# Alphabetic runs for _number_lang: str.isalpha() as a class -- letters only, so no digit
+# or apostrophe can be part of a token. Mirrored in C by cyp__cp_is_alpha over code points.
+_ALPHA_RUN = re.compile(r"[^\W\d_]+")
+# English function words that are not Welsh words, as English evidence for _number_lang.
+# Dictionary exclusivity alone cannot see them: bangordict.dict carries "of", "the", "for",
+# "it", "not" as English loans with Welsh phonology ("of" -> oo|v), so they read as SHARED
+# and a screen-reader string like "Tab 1 of 4" has no evidence at all. The list is the
+# high-frequency English closed class MINUS every word that is also a Welsh word: "at" (to),
+# "is" (below), "to" (roof), "was" (servant), "her" (challenge), "be" (beth), "can" (cant),
+# "had" (seed), "call" (wise), "an", "all" and "or" are deliberately absent; the tagger's
+# Welsh training features (pos_cy.bin, brawddegau-tagiedig) confirmed which of the
+# candidates occur in Welsh text (2026-09-07). Same list, same order, in cy_phonemize.c.
+# This feeds the NUMBER language only; the phone routing (_sentence_lang) is unchanged.
+_EN_FUNCTION_WORDS = frozenset("""
+    the of and in on for it not with from by this that these those your you its are were
+    been have has will would could should my our their we they he she his what which when
+    where why any some also then there here more most than who how but
+""".split())
 # An interior run of _PUNCT members, for _segment's split. The capturing group keeps
 # the runs in re.split's output so they can be re-attached as lead/trail punctuation.
 _INTERIOR_PUNCT = re.compile("([" + re.escape(_PUNCT) + "]+)")
@@ -700,8 +718,44 @@ class BangorG2P:
             out.extend(piece)
         return out
 
-    def normalize(self, text: str) -> str:
-        return self.normalizer.normalize(text)
+    def normalize(self, text: str, lang: Optional[str] = None) -> str:
+        """Normalise text, verbalising numbers in the utterance's language.
+
+        `lang` is an explicit override ("cy"/"en": SSML <lang>, a client's requested voice
+        language). When None, the NUMBER language is detected from the letters of the raw
+        text -- see _number_lang -- so "Home screen 1 of 3" says "one of three" and
+        "Mae 25 o gathod" says "pump ar hugain". This used to be impossible: normalize ran
+        before any language decision and expanded every digit in Welsh, and the Welsh
+        number words then pushed the sentence router further toward Welsh. Detection here
+        is a *number* decision only; phoneme routing in phonemize keeps its own, stricter
+        rule, so the deployed voice's sound on shared words does not move."""
+        return self.normalizer.normalize(text, lang=lang or self._number_lang(text))
+
+    def _number_lang(self, text: str) -> str:
+        """Language for digit verbalisation, from the alphabetic words of the RAW text.
+
+        Same dictionary-exclusivity evidence as _sentence_lang, lower bar: one English-only
+        word and no Welsh-only word is enough ("Page 3", "Tab 1 of 4"), because the cost of
+        the two errors is asymmetric -- an English "three" inside Welsh is intelligible, a
+        Welsh "tri" inside an English interface is not. With no evidence either way (a bare
+        "1 2 3") the voice's own language, Welsh, is the default; a client that knows better
+        passes lang explicitly.
+
+        Tokenisation is deliberately primitive so C can match it exactly: maximal runs of
+        alphabetic code points (str.isalpha), lowercased with the same str.lower the C port
+        mirrors. Tokens containing digits never exist by construction."""
+        en_only = cy_only = 0
+        for w in _ALPHA_RUN.findall(text.lower()):
+            if w in _EN_FUNCTION_WORDS:          # loanword entries in the Welsh table
+                en_only += 1                     # must not hide "of" / "the" / "for"
+                continue
+            in_welsh = self.lexicon.lookup_welsh(w) is not None
+            in_english = self.english.lookup(w) is not None
+            if in_english and not in_welsh:
+                en_only += 1
+            elif in_welsh and not in_english:
+                cy_only += 1
+        return "en" if en_only > cy_only else "cy"
 
     # --- normalization (minimal for P1; P2 adds the full verbaliser) ---
     def _segment(self, text: str):
@@ -1027,7 +1081,7 @@ class BangorG2P:
     def text_to_ids(self, text: str, on_oov: str = "lts",
                     lang: Optional[str] = None) -> List[int]:
         return self.phonemes_to_ids(
-            self.phonemize(self.normalize(text), on_oov=on_oov, lang=lang))
+            self.phonemize(self.normalize(text, lang=lang), on_oov=on_oov, lang=lang))
 
     # --- integrity ---
     def _compute_data_version(self, id_map_raw: str) -> str:

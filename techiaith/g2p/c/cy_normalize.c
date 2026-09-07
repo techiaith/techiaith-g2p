@@ -215,6 +215,188 @@ void cyp_num_to_welsh(long n, char *out, int max) {
     if (!out[0]) strcpy(out, "sero");
 }
 
+/* ================= English (British) number words =====================================
+ * Mirrors techiaith/g2p/english_numbers.py byte for byte -- the conventions, the owner
+ * decision (2026-09-07) and the worked examples live there. Selected per utterance by g_en,
+ * which cyp_normalize_lang sets from the caller's language and clears on exit: with g_en
+ * at 0 every pass in this file is exactly the Welsh code it was, so the Welsh golden corpus
+ * is the proof that nothing moved. The English golden corpus (normalize_golden_en.tsv)
+ * proves these against the Python module. */
+static int g_en = 0;
+static const char *EN_ONES[20] = {"zero", "one", "two", "three", "four", "five", "six",
+    "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+    "sixteen", "seventeen", "eighteen", "nineteen"};
+static const char *EN_TENS[10] = {"", "", "twenty", "thirty", "forty", "fifty", "sixty",
+    "seventy", "eighty", "ninety"};
+static const char *EN_MONTHS[12] = {"january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december"};
+/* Same key order as UNITS_SPOKEN below: pass_unit indexes both with the one u. */
+static const struct { const char *sym, *one, *many; } EN_UNITS[] = {
+    {"km", "kilometre", "kilometres"}, {"kg", "kilogram", "kilograms"},
+    {"cm", "centimetre", "centimetres"}, {"mm", "millimetre", "millimetres"},
+    {"m", "metre", "metres"}, {"g", "gram", "grams"}, {"l", "litre", "litres"},
+    {NULL, NULL, NULL}};
+/* english_numbers.ROMAN_STRUCTURAL: a Roman numeral after these is a count ("chapter
+ * four"), anywhere else a regnal ordinal ("henry the eighth"). Checked in ADDITION to the
+ * Welsh ROMAN_STRUCTURAL list, as _roman_repl_en does. */
+static const char *ROMAN_STRUCTURAL_EN[] = {"chapter", "part", "section", "volume", "book",
+    "act", "scene", "page", "article", "phase", "stage", "level", "class", "type", "grade",
+    "world", "war", "mark", "version", NULL};
+static const struct { const char *card, *ord; } EN_ORD_IRREGULAR[] = {
+    {"one", "first"}, {"two", "second"}, {"three", "third"}, {"five", "fifth"},
+    {"eight", "eighth"}, {"nine", "ninth"}, {"twelve", "twelfth"}, {NULL, NULL}};
+#define EN_AM "a\xC2\xB7m"     /* letters through ACRONYM_JOIN (U+00B7): the G2P names them */
+#define EN_PM "p\xC2\xB7m"
+
+static void en_below_thousand(char *b, int n) {         /* english_numbers._below_thousand */
+    if (n < 20) { app(b, EN_ONES[n]); return; }
+    if (n < 100) { app(b, EN_TENS[n / 10]); if (n % 10) app(b, EN_ONES[n % 10]); return; }
+    app(b, EN_ONES[n / 100]); app(b, "hundred");
+    if (n % 100) { app(b, "and"); en_below_thousand(b, n % 100); }
+}
+/* english_numbers.spell_digits: each digit its own word, anything else in the run dropped */
+static void en_spell(char *b, const char *s, int len) {
+    for (int k = 0; k < len; k++)
+        if (s[k] >= '0' && s[k] <= '9') app(b, EN_ONES[s[k] - '0']);
+}
+static void en_cardinal(char *out, long n) {            /* english_numbers.cardinal */
+    out[0] = 0;
+    if (n < 0) { char t[512]; en_cardinal(t, -n); app(out, "minus"); app(out, t); return; }
+    if (n == 0) { strcpy(out, "zero"); return; }
+    if (n > 999999999999L) {                            /* past the scale words: digitwise */
+        char d[32]; snprintf(d, sizeof d, "%ld", n); en_spell(out, d, (int)strlen(d)); return;
+    }
+    int parts = 0; long g;
+    g = n / 1000000000L; n %= 1000000000L;
+    if (g) { en_below_thousand(out, (int)g); app(out, "billion"); parts++; }
+    g = n / 1000000L; n %= 1000000L;
+    if (g) { en_below_thousand(out, (int)g); app(out, "million"); parts++; }
+    g = n / 1000L; n %= 1000L;
+    if (g) { en_below_thousand(out, (int)g); app(out, "thousand"); parts++; }
+    /* "one thousand AND five" but "one thousand two hundred and thirty four": the
+     * remainder takes a leading "and" only when it has no hundreds of its own. */
+    if (n) { if (parts && n < 100) app(out, "and"); en_below_thousand(out, (int)n); }
+}
+/* cardinal of a digit run as int(raw.replace(",", "")) sees it: commas and other
+ * non-digits skipped, leading zeros dropped, and more than 12 significant digits is
+ * beyond cardinal()'s scale words, so those read digit by digit -- computed from the
+ * text, never through a long, so no run can overflow. */
+static void en_num_run(char *out, const char *s, int len) {
+    out[0] = 0;
+    int first = -1, nd = 0;
+    for (int i = 0; i < len; i++) {
+        if (s[i] < '0' || s[i] > '9') continue;
+        if (nd == 0 && s[i] == '0') continue;
+        if (first < 0) first = i;
+        nd++;
+    }
+    if (nd == 0) { strcpy(out, "zero"); return; }
+    if (nd > 12) { en_spell(out, s + first, len - first); return; }
+    long n = 0;
+    for (int i = first; i < len; i++) if (s[i] >= '0' && s[i] <= '9') n = n * 10 + (s[i] - '0');
+    en_cardinal(out, n);
+}
+static void en_ordinalize(char *b) {                    /* english_numbers.ordinal, on words */
+    char *last = strrchr(b, ' '); last = last ? last + 1 : b;
+    for (int k = 0; EN_ORD_IRREGULAR[k].card; k++)
+        if (!strcmp(last, EN_ORD_IRREGULAR[k].card)) { strcpy(last, EN_ORD_IRREGULAR[k].ord); return; }
+    size_t L = strlen(last);
+    if (L >= 2 && last[L - 2] == 't' && last[L - 1] == 'y') { strcpy(last + L - 1, "ieth"); return; }
+    strcat(last, "th");                                 /* four -> fourth, hundred -> hundredth */
+}
+static void en_ordinal(char *out, long n) { en_cardinal(out, n); en_ordinalize(out); }
+static void en_ordinal_run(char *out, const char *s, int len) { en_num_run(out, s, len); en_ordinalize(out); }
+static void en_year(char *out, long y) {                /* english_numbers.year */
+    out[0] = 0;
+    if (y >= 2000 && y <= 2099) {
+        int r = (int)(y - 2000);
+        if (r == 0) { strcpy(out, "two thousand"); return; }
+        if (r < 10) { app(out, "two thousand and"); app(out, EN_ONES[r]); return; }
+        app(out, "twenty"); en_below_thousand(out, r); return;
+    }
+    if (y >= 1100 && y <= 1999) {
+        int hh = (int)(y / 100), tt = (int)(y % 100);
+        en_below_thousand(out, hh);
+        if (tt == 0) { app(out, "hundred"); return; }
+        if (tt < 10) { app(out, "oh"); app(out, EN_ONES[tt]); return; }
+        en_below_thousand(out, tt); return;
+    }
+    en_cardinal(out, y);
+}
+static void en_date(char *b, int d, int m, long y) {    /* english_numbers.date; y < 0: none */
+    char ob[64]; en_ordinal(ob, d);
+    b[0] = 0; app(b, "the"); app(b, ob); app(b, "of"); app(b, EN_MONTHS[m - 1]);
+    if (y >= 0) { char yb[512]; en_year(yb, y); app(b, yb); }
+}
+static void en_time(char *b, int h, int mm, const char *mk, int mlen) {   /* english_numbers.time */
+    char hb[64]; en_cardinal(hb, h);
+    b[0] = 0; app(b, hb);
+    if (mm == 0) app(b, "o'clock");
+    else if (mm < 10) { app(b, "oh"); app(b, EN_ONES[mm]); }
+    else en_below_thousand(b, mm);
+    if (mlen > 0) {                                     /* marker.lower().replace(".", "") */
+        char k[8]; int kn = 0;
+        for (int t = 0; t < mlen && kn < 6; t++)
+            if (mk[t] != '.') k[kn++] = (char)tolower((unsigned char)mk[t]);
+        k[kn] = 0;
+        app(b, (!strcmp(k, "am") || !strcmp(k, "yb")) ? EN_AM : EN_PM);
+    }
+}
+/* int() of a fraction operand, saturating to -1 above 20 (the largest denominator
+ * english_numbers.fraction names). Python's exact ints give None in every saturated
+ * case: a saturated denominator is > 20, a saturated numerator is >= any named one. */
+static int en_small(const char *s, int len) {
+    long v = 0;
+    for (int i = 0; i < len; i++) { v = v * 10 + (s[i] - '0'); if (v > 20) return -1; }
+    return (int)v;
+}
+static const char *en_fraction(int num, int den, char *buf) {   /* english_numbers.fraction */
+    if (den <= 0 || num < 0 || num >= den) return NULL;
+    buf[0] = 0;
+    if (den == 2) { if (num == 1) return "one half"; en_cardinal(buf, num); app(buf, "halves"); return buf; }
+    if (den == 4) {
+        if (num == 1) return "one quarter";
+        if (num == 3) return "three quarters";
+        en_cardinal(buf, num); app(buf, "quarters"); return buf;
+    }
+    en_cardinal(buf, num);
+    char ob[64]; en_ordinal(ob, den); app(buf, ob);
+    if (num != 1) strcat(buf, "s");
+    return buf;
+}
+static void en_pence(char *b, long p) {                 /* english_numbers.pence */
+    if (p == 1) { strcpy(b, "one penny"); return; }
+    en_cardinal(b, p); app(b, "pence");
+}
+static void en_pence_run(char *b, const char *s, int len) {
+    en_num_run(b, s, len);
+    if (!strcmp(b, "one")) strcpy(b, "one penny"); else app(b, "pence");
+}
+/* english_numbers.pounds(amount, pence_part or None) from the matched digits: the amount
+ * run (commas allowed) and the optional 1-2 pence digits (pl == 0: none). */
+static void en_pounds(char *b, const char *digs, int nd, const char *pdigs, int pl) {
+    int pv = 0; for (int t = 0; t < pl; t++) pv = pv * 10 + (pdigs[t] - '0');
+    int zero = 1; for (int t = 0; t < nd; t++) if (digs[t] >= '1' && digs[t] <= '9') zero = 0;
+    if (zero && pv > 0) { en_pence(b, pv); return; }    /* GBP 0.50 -> "fifty pence" */
+    en_num_run(b, digs, nd);
+    app(b, !strcmp(b, "one") ? "pound" : "pounds");
+    if (pv > 0) { char cb[64]; en_cardinal(cb, pv); app(b, cb); }
+}
+static void en_roman(char *nb, long v, int structural) {   /* english_numbers.roman */
+    if (structural || v > 31) { en_cardinal(nb, v); return; }
+    char ob[64]; en_ordinal(ob, v);
+    nb[0] = 0; app(nb, "the"); app(nb, ob);
+}
+/* welsh_normalize._integer_repl_en: a bare four-digit 1100-2099 with no thousands comma
+ * is a year ("in 2026" -> twenty twenty six); everything else a cardinal. */
+static void en_integer_run(char *out, const char *s, int len) {
+    if (len == 4 && !memchr(s, ',', 4)) {
+        long n = 0; for (int t = 0; t < 4; t++) n = n * 10 + (s[t] - '0');
+        if (n >= 1100 && n <= 2099) { en_year(out, n); return; }
+    }
+    en_num_run(out, s, len);
+}
+
 /* ---------------- normalize ---------------- */
 /* Word char for boundary tests. Python's re \b runs on Unicode: ASCII alnum/_ plus
  * Unicode *letters* (â ê … Ŵ) are \w, but symbols/punctuation (— … £ ’ · ° × ÷) are
@@ -404,6 +586,14 @@ static const Abbrev ABBREV[] = {
     {"Dr", 0, 1, 1, "doctor"},
     {"Mrs", 0, 1, 1, "musus"},
     {"Mr", 0, 1, 1, "mistar"},
+    {"Ms", 0, 1, 1, "ms"},
+    {NULL, 0, 0, 0, NULL}};
+/* welsh_normalize._ABBREV_EN: the English utterance keeps only the title abbreviations,
+ * with English readings; "e.e."/"h.y."/"ayyb" are Welsh constructions. */
+static const Abbrev ABBREV_EN[] = {
+    {"Dr", 0, 1, 1, "doctor"},
+    {"Mrs", 0, 1, 1, "missus"},
+    {"Mr", 0, 1, 1, "mister"},
     {"Ms", 0, 1, 1, "ms"},
     {NULL, 0, 0, 0, NULL}};
 
@@ -648,8 +838,13 @@ static void pass_percent(const char *in, char *out) {
             int ws = j;   /* \s* is Unicode (re_space_len), not ASCII -- the sweep */
             for (int sl; (sl = re_space_len(in, ws)); ) ws += sl;
             if (in[ws] == '%') {
-                o += num_words_run_commas(in + i, j - i, out + o);
-                strcpy(out + o, " y cant"); o += 7;
+                if (g_en) {
+                    en_num_run(out + o, in + i, j - i); o += (int)strlen(out + o);
+                    strcpy(out + o, " percent"); o += 8;
+                } else {
+                    o += num_words_run_commas(in + i, j - i, out + o);
+                    strcpy(out + o, " y cant"); o += 7;
+                }
                 /* "50%x" -> "... y cant x": the "%" sits between the digits and the
                  * letter, so the digit/letter splitter never sees a boundary here.
                  * Mirrors _percent_repl's _sep_if_latin_tail. */
@@ -686,10 +881,16 @@ static void pass_decimal(const char *in, char *out) {
                  * none of it.
                  * num_words_run_commas is the same register (decimal, since the vigesimal
                  * revert) with neither the out-of-bounds nor the long overflow. */
-                o += num_words_run_commas(in + i, a - i, out + o);
-                strcpy(out + o, " pwynt"); o += 6;
+                if (g_en) {
+                    en_num_run(out + o, in + i, a - i); o += (int)strlen(out + o);
+                    strcpy(out + o, " point"); o += 6;
+                } else {
+                    o += num_words_run_commas(in + i, a - i, out + o);
+                    strcpy(out + o, " pwynt"); o += 6;
+                }
                 for (int d = a + 1; d < b; d++) {
-                    const char *db = in[d] == '0' ? "sero" : UNITS[in[d] - '0'];
+                    const char *db = g_en ? EN_ONES[in[d] - '0']
+                                   : in[d] == '0' ? "sero" : UNITS[in[d] - '0'];
                     out[o++] = ' '; strcpy(out + o, db); o += (int)strlen(db);
                 }
                 i = b;
@@ -853,7 +1054,7 @@ static int spell_digits(char *out, int o, int max, const char *s, int i, int len
         if (isdigit((unsigned char)s[k])) {
             if (!first) { o = put_n(out, o, max, " ", 1); if (o < 0) return -1; }
             first = 0;
-            const char *w = DIGIT_NAMES[s[k] - '0'];
+            const char *w = g_en ? EN_ONES[s[k] - '0'] : DIGIT_NAMES[s[k] - '0'];
             o = put_n(out, o, max, w, (int)strlen(w));
             if (o < 0) return -1;
         }
@@ -939,9 +1140,10 @@ static void pass_math_deg(const char *in, char *out) {
             int j = i;   /* every \s* here is Unicode (re_space_len) -- the sweep */
             for (int sl; (sl = re_space_len(in, j)); ) j += sl;
             int oplen = 0; const char *word = NULL;
-            if (in[j] == '+') { oplen = 1; word = "plws"; }
-            else if (in[j] == 'x' || in[j] == 'X') { oplen = 1; word = "lluosi"; }
-            else if ((unsigned char)in[j] == 0xC3 && (unsigned char)in[j + 1] == 0x97) { oplen = 2; word = "lluosi"; }  /* U+00D7 */
+            const char *w_plus = g_en ? "plus" : "plws", *w_times = g_en ? "times" : "lluosi";
+            if (in[j] == '+') { oplen = 1; word = w_plus; }
+            else if (in[j] == 'x' || in[j] == 'X') { oplen = 1; word = w_times; }
+            else if ((unsigned char)in[j] == 0xC3 && (unsigned char)in[j + 1] == 0x97) { oplen = 2; word = w_times; }  /* U+00D7 */
             if (word) {
                 int k = j + oplen;
                 for (int sl; (sl = re_space_len(in, k)); ) k += sl;
@@ -956,12 +1158,12 @@ static void pass_math_deg(const char *in, char *out) {
                 int k = j + 2;
                 for (int sl; (sl = re_space_len(in, k)); ) k += sl;
                 if ((in[k] == 'C' || in[k] == 'c') && !word_after(in, k + 1)) {
-                    o += sprintf(out + o, " gradd celsiws"); i = k + 1; continue;
+                    o += sprintf(out + o, "%s", g_en ? " degrees celsius" : " gradd celsiws"); i = k + 1; continue;
                 }
                 if ((in[k] == 'F' || in[k] == 'f') && !word_after(in, k + 1)) {
-                    o += sprintf(out + o, " gradd fahrenheit"); i = k + 1; continue;
+                    o += sprintf(out + o, "%s", g_en ? " degrees fahrenheit" : " gradd fahrenheit"); i = k + 1; continue;
                 }
-                o += sprintf(out + o, " gradd"); i = j + 2; continue;
+                o += sprintf(out + o, "%s", g_en ? " degrees" : " gradd"); i = j + 2; continue;
             }
         }
         out[o++] = in[i++];
@@ -1114,6 +1316,9 @@ static int roman_prev_is_structural(const char *s, int i) {
     w[len] = 0;
     for (int k = 0; ROMAN_STRUCTURAL[k]; k++)
         if (!strcmp(ROMAN_STRUCTURAL[k], w)) return 1;
+    if (g_en)   /* _roman_repl_en tests the UNION of the Welsh and English lists */
+        for (int k = 0; ROMAN_STRUCTURAL_EN[k]; k++)
+            if (!strcmp(ROMAN_STRUCTURAL_EN[k], w)) return 1;
     return 0;
 }
 
@@ -1138,7 +1343,9 @@ static void pass_roman(const char *in, char *out) {
                      * the exception is the structural nouns -- that vocabulary is small and nearly
                      * closed, where the set of names is not. Mirrors welsh_normalize's
                      * _ROMAN_STRUCTURAL, which carries the full reasoning. */
-                    if (roman_prev_is_structural(in, i) || v > 31 || v < 1) {
+                    if (g_en) {
+                        en_roman(nb, v, roman_prev_is_structural(in, i));
+                    } else if (roman_prev_is_structural(in, i) || v > 31 || v < 1) {
                         cyp_num_to_welsh(v, nb, sizeof(nb));
                     } else {
                         const char *ordw = ORD[v][0];
@@ -1259,7 +1466,8 @@ static void pass_integer(const char *in, char *out) {
         if (isdigit((unsigned char)in[i])) {
             int j = i;
             while (isdigit((unsigned char)in[j]) || in[j] == ',') j++;
-            o += num_words_run_commas(in + i, j - i, out + o);
+            if (g_en) { en_integer_run(out + o, in + i, j - i); o += (int)strlen(out + o); }
+            else o += num_words_run_commas(in + i, j - i, out + o);
             i = j;
             continue;
         }
@@ -1282,7 +1490,7 @@ static void pass_amp(const char *in, char *out) {
             /* [A-Za-z] or accented À-ÿ (0xC3 0x80..0xBF leading byte) */
             int is_letter = isalpha(nxt) || nxt == 0xC3;
             if (is_letter) {
-                const char *conj = amp_is_vowel(nxt) ? "ac" : "a";
+                const char *conj = g_en ? "and" : amp_is_vowel(nxt) ? "ac" : "a";
                 strcpy(out + o, conj); o += (int)strlen(conj);
                 out[o++] = ' ';
                 i = j;
@@ -1516,7 +1724,8 @@ static void pass_date_num(const char *in, char *out) {
                         int d = atoin(in + ds, dl), m = atoin(in + ms, ml);
                         long y = atoin(in + ys, yl);
                         if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
-                            char db[512]; date_words(db, d, m, y);
+                            char db[512];
+                            if (g_en) en_date(db, d, m, y); else date_words(db, d, m, y);
                             strcpy(out + o, db); o += (int)strlen(db); i = j; continue;
                         }
                     }
@@ -1537,6 +1746,15 @@ static int match_month(const char *s, int *mnum) {  /* longest month name at s (
     }
     return 0;
 }
+static int match_month_en(const char *s, int *mnum) {   /* _DATE_MONTH_EN's alternation */
+    for (int m = 0; m < 12; m++) {
+        int L = (int)strlen(EN_MONTHS[m]);
+        if (strncasecmp(s, EN_MONTHS[m], L) == 0 && !(word_after(s, L))) {
+            *mnum = m + 1; return L;
+        }
+    }
+    return 0;
+}
 
 static void pass_date_month(const char *in, char *out) {
     int i = 0, o = 0;
@@ -1550,7 +1768,7 @@ static void pass_date_month(const char *in, char *out) {
             if (dl >= 1 && dl <= 2 && re_space_len(in, j)) {
                 int ws = j; for (int sl; (sl = re_space_len(in, ws)); ) ws += sl;
                 int mnum;
-                int ml = match_month(in + ws, &mnum);
+                int ml = g_en ? match_month_en(in + ws, &mnum) : match_month(in + ws, &mnum);
                 if (ml) {
                     int k = ws + ml;
                     long y = -1;
@@ -1562,7 +1780,8 @@ static void pass_date_month(const char *in, char *out) {
                     }
                     int d = atoin(in + ds, dl);
                     if (d >= 1 && d <= 31) {
-                        char db[512]; date_words(db, d, mnum, y);
+                        char db[512];
+                        if (g_en) en_date(db, d, mnum, y); else date_words(db, d, mnum, y);
                         strcpy(out + o, db); o += (int)strlen(db); i = save; continue;
                     }
                 }
@@ -1582,7 +1801,15 @@ static void pass_ordinal(const char *in, char *out) {
             int j = i;
             while (isdigit((unsigned char)in[j])) j++;
             int n = atoin(in + i, j - i);
-            if (n >= 1 && n <= 31) {
+            if (g_en) {
+                /* _ORDINAL_RE_EN: \b([0-9]+)(st|nd|rd|th)\b, case-insensitive, any size */
+                static const char *EN_SUF[] = {"st", "nd", "rd", "th", NULL};
+                for (int t = 0; EN_SUF[t]; t++)
+                    if (strncasecmp(in + j, EN_SUF[t], 2) == 0 && !(word_after(in, j + 2))) {
+                        en_ordinal_run(out + o, in + i, j - i); o += (int)strlen(out + o);
+                        i = j + 2; goto next;
+                    }
+            } else if (n >= 1 && n <= 31) {
                 for (int t = 0; ORD_SUF[t]; t++) {
                     int L = (int)strlen(ORD_SUF[t]);
                     if (strncmp(in + j, ORD_SUF[t], L) == 0 &&
@@ -1745,8 +1972,10 @@ static void pass_fraction(const char *in, char *out, int max) {
                  * digit-digit is never a boundary. */
                 if (!word_after(in, b)) {
                     char fb[FRACTION_BUF];
-                    const char *rep = fraction_words(small_value(in + i, a - i),
-                                                     small_value(in + a + 1, b - a - 1), fb);
+                    const char *rep = g_en
+                        ? en_fraction(en_small(in + i, a - i), en_small(in + a + 1, b - a - 1), fb)
+                        : fraction_words(small_value(in + i, a - i),
+                                         small_value(in + a + 1, b - a - 1), fb);
                     /* Either way re.sub CONSUMES the span, so the scan resumes after
                      * it. When _fraction_repl declines the match it returns it unchanged,
                      * and re-scanning inside would find a second, spurious fraction: in
@@ -1831,12 +2060,13 @@ static void pass_unit(const char *in, char *out, int max) {
                     char ib[64]; int ni = 0;
                     for (int t = i; t < dot && ni < 60; t++) if (in[t] != ',') ib[ni++] = in[t];
                     ib[ni] = 0;
-                    char cb[512]; cyp__num_words_for_run(ib, ni, cb);
-                    app(wb, cb); app(wb, "pwynt");
+                    char cb[512];
+                    if (g_en) en_num_run(cb, ib, ni); else cyp__num_words_for_run(ib, ni, cb);
+                    app(wb, cb); app(wb, g_en ? "point" : "pwynt");
                     for (int t = dot + 1; t < a; t++)
-                        app(wb, in[t] == '0' ? "sero" : UNITS[in[t] - '0']);
-                    reduce_connected(wb);
-                    const char *noun_d = UNITS_SPOKEN[u].plain;
+                        app(wb, g_en ? EN_ONES[in[t] - '0'] : in[t] == '0' ? "sero" : UNITS[in[t] - '0']);
+                    if (!g_en) reduce_connected(wb);
+                    const char *noun_d = g_en ? EN_UNITS[u].many : UNITS_SPOKEN[u].plain;
                     int wl = (int)strlen(wb), ul2 = (int)strlen(noun_d);
                     if (o + wl + 1 + ul2 + 1 >= max) break;
                     memcpy(out + o, wb, (size_t)wl); o += wl;
@@ -1849,12 +2079,17 @@ static void pass_unit(const char *in, char *out, int max) {
                 /* >18 digits verbalise digit-by-digit at up to 7 bytes each ("chwech "),
                  * so this must hold the whole digs[] run, not just a cardinal. */
                 char nb[sizeof(digs) * 7 + 8];
-                const char *numeral;
-                if (n >= 1 && n <= 10) numeral = MASC_BEFORE_NOUN[n];
-                else { cyp__num_words_for_run(digs, nd, nb); reduce_cant(nb); numeral = nb; }
-                const char *noun = (n == 2) ? UNITS_SPOKEN[u].soft
-                                 : (n == 3 || n == 6) ? UNITS_SPOKEN[u].asp
-                                 : UNITS_SPOKEN[u].plain;
+                const char *numeral, *noun;
+                if (g_en) {                              /* english_numbers.unit */
+                    en_num_run(nb, digs, nd); numeral = nb;
+                    noun = (n == 1) ? EN_UNITS[u].one : EN_UNITS[u].many;
+                } else {
+                    if (n >= 1 && n <= 10) numeral = MASC_BEFORE_NOUN[n];
+                    else { cyp__num_words_for_run(digs, nd, nb); reduce_cant(nb); numeral = nb; }
+                    noun = (n == 2) ? UNITS_SPOKEN[u].soft
+                         : (n == 3 || n == 6) ? UNITS_SPOKEN[u].asp
+                         : UNITS_SPOKEN[u].plain;
+                }
                 int nl = (int)strlen(numeral), ul = (int)strlen(noun);
                 if (o + nl + 1 + ul >= max) goto done;   /* out of room: truncate */
                 o = put_n(out, o, max, numeral, nl);     /* pre-checked: cannot fail */
@@ -2190,7 +2425,9 @@ static void pass_currency(const char *in, char *out) {
                          * Before the 2026-07-28 ruling this path was the ONLY one saying
                          * "o bunnoedd", which is what made them disagree. */
                         (void)sb;
-                        char pl[4300]; pounds_plural_str(pl, sizeof(pl), digs, nd);
+                        char pl[4300];
+                        if (g_en) en_pounds(pl, digs, nd, NULL, 0);
+                        else pounds_plural_str(pl, sizeof(pl), digs, nd);
                         o += sprintf(out + o, "%s", pl);
                         /* Mirrors _currency_repl's _sep_if_latin_tail. Unreachable for
                          * ASCII letters (the suffix's own trailing \b would have failed)
@@ -2202,6 +2439,12 @@ static void pass_currency(const char *in, char *out) {
                     }
                     while (i < j) out[o++] = in[i++];   /* absurd digit run: leave it */
                     continue;
+                }
+                if (g_en) {
+                    en_pounds(out + o, in + ds, de - ds, ps >= 0 ? in + ps : NULL, ps >= 0 ? pe - ps : 0);
+                    o += (int)strlen(out + o);
+                    if (digit_seq_sep(in, j)) out[o++] = ' ';   /* _sep_if_latin_tail */
+                    i = j; continue;
                 }
                 long n = atoin_commas(in + ds, de - ds);
                 char pb[700];
@@ -2409,12 +2652,13 @@ static void pass_time(const char *in, char *out, int max) {
                      * a None minute group to 0 the same way). h from hv, which equals the
                      * old atoin(in + i, hl) re-parse by construction. */
                     int h = hv;
-                    const char *qual = clock_qualifier(h, mk, mlen);
+                    const char *qual = g_en ? NULL : clock_qualifier(h, mk, mlen);
                     int h12 = h % 12;
                     if (h12 == 0) h12 = 12;             /* h % 12 or 12 */
                     int nxt = h12 % 12 + 1;             /* the hour "i" counts down to */
                     char mb[64], core[256];
-                    if (mm == 0)       snprintf(core, sizeof core, "%s o'r gloch", HOUR_TRAD[h12]);
+                    if (g_en)          en_time(core, h, mm, mk, mlen);   /* marker inside */
+                    else if (mm == 0)  snprintf(core, sizeof core, "%s o'r gloch", HOUR_TRAD[h12]);
                     else if (mm == 15) snprintf(core, sizeof core, "chwarter wedi %s", HOUR_TRAD[h12]);
                     else if (mm == 30) snprintf(core, sizeof core, "hanner awr wedi %s", HOUR_TRAD[h12]);
                     else if (mm == 45) snprintf(core, sizeof core, "chwarter i %s", HOUR_TRAD_MUT[nxt]);
@@ -2456,8 +2700,9 @@ static void pass_pence(const char *in, char *out) {
             int j = i;
             while (isdigit((unsigned char)in[j]) || in[j] == ',') j++;
             if ((in[j] == 'p' || in[j] == 'c') && !(word_after(in, j + 1))) {
-                char cb[700]; pence_words(cb, atoin_commas(in + i, j - i));
-                o += sprintf(out + o, "%s", cb);
+                if (g_en) { en_pence_run(out + o, in + i, j - i); o += (int)strlen(out + o); }
+                else { char cb[700]; pence_words(cb, atoin_commas(in + i, j - i));
+                       o += sprintf(out + o, "%s", cb); }
                 i = j + 1; continue;
             }
         }
@@ -2513,7 +2758,7 @@ static void pass_symbols(const char *in, char *out, int max) {
         char c = in[i];
         int no;
         if ((c == '+' || c == '=' || c == '@') && i > 0 && in[i - 1] == ' ' && in[i + 1] == ' ') {
-            const char *r = c == '+' ? "plws" : c == '=' ? "yn hafal i" : "at";
+            const char *r = c == '+' ? (g_en ? "plus" : "plws") : c == '=' ? (g_en ? "equals" : "yn hafal i") : "at";
             no = put_n(out, o, max, r, (int)strlen(r));
             if (no < 0) break;
             o = no;
@@ -2526,7 +2771,7 @@ static void pass_symbols(const char *in, char *out, int max) {
          * welsh_normalize._symbols' _C_WORD_CLASS rules (same disclosed Latin-only
          * cp_is_word domain). */
         if ((c == '+' || c == '=' || c == '@') && word_before(in, i) && word_after(in, i + 1)) {
-            const char *r = c == '+' ? " plws " : c == '=' ? " yn hafal i " : " at ";
+            const char *r = c == '+' ? (g_en ? " plus " : " plws ") : c == '=' ? (g_en ? " equals " : " yn hafal i ") : " at ";
             no = put_n(out, o, max, r, (int)strlen(r));
             if (no < 0) break;
             o = no;
@@ -2660,15 +2905,19 @@ static void pass_typographic(const char *in, char *out) {
     out[o] = 0;
 }
 
-void cyp_normalize(const char *in, char *out, int max) {
+void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
     (void)max;
+    /* Mirrors WelshNormalizer.normalize(text, lang): the triggers are shared, only the
+     * words written back differ (g_en). CYP_LANG_AUTO is not a number language -- the
+     * phonemizer resolves it (number_lang) before calling here -- and reads as Welsh. */
+    g_en = (lang == CYP_LANG_EN);
     static char a[65536], b[65536];
     snprintf(a, sizeof(a), "%s", in);
     pass_typographic(a, b); memcpy(a, b, strlen(b) + 1);
     /* Emoji first: their names are ordinary Welsh words and must go through every pass
      * below exactly as typed text would. */
     pass_emoji(a, b); memcpy(a, b, strlen(b) + 1);
-    for (const Abbrev *ab = ABBREV; ab->pat; ab++) { pass_abbrev(a, b, ab); memcpy(a, b, strlen(b) + 1); }
+    for (const Abbrev *ab = g_en ? ABBREV_EN : ABBREV; ab->pat; ab++) { pass_abbrev(a, b, ab); memcpy(a, b, strlen(b) + 1); }
     pass_deshout(a, b); memcpy(a, b, strlen(b) + 1);
     /* Emails/URLs first: their dots and @ must reach no number or symbol pass, and "@" is
      * the SCHWA in the phone inventory. Then Roman numerals BEFORE pass_acronym, which is
@@ -2689,7 +2938,7 @@ void cyp_normalize(const char *in, char *out, int max) {
     pass_unit(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     /* Before pass_integer, which would otherwise flatten "10 blynedd" to "deg blynedd"
      * and lose both the nasal mutation and the "deng" form. */
-    pass_blynedd(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
+    if (!g_en) { pass_blynedd(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1); }  /* "N blynedd" is Welsh */
     pass_time(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     pass_pence(a, b); memcpy(a, b, strlen(b) + 1);
     /* The digit/letter splitter -- placement is load-bearing on both edges; the full
@@ -2708,4 +2957,6 @@ void cyp_normalize(const char *in, char *out, int max) {
     pass_amp(a, b); memcpy(a, b, strlen(b) + 1);
     pass_symbols(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     pass_lower_collapse(a, out);
+    g_en = 0;
 }
+void cyp_normalize(const char *in, char *out, int max) { cyp_normalize_lang(in, CYP_LANG_CY, out, max); }

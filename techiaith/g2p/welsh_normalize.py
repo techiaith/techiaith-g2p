@@ -20,6 +20,8 @@ Cardinal forms are the VERIFIED reference values (decimal, standalone/masculine)
 from __future__ import annotations
 
 import re
+
+from . import english_numbers as _EN
 from pathlib import Path
 
 from .canonical import decimal_value
@@ -390,6 +392,14 @@ _ABBREV = [
     (re.compile(r"\bMr\b\.?"), "mistar"),
     (re.compile(r"\bMs\b\.?"), "ms"),
 ]
+# In an English utterance the titles take their English forms; the Welsh abbreviations
+# (e.e., h.y., ayyb, d.s.) cannot occur in English text and are simply not in this list.
+_ABBREV_EN = [
+    (re.compile(r"\bDr\b\.?"), "doctor"),
+    (re.compile(r"\bMrs\b\.?"), "missus"),
+    (re.compile(r"\bMr\b\.?"), "mister"),
+    (re.compile(r"\bMs\b\.?"), "ms"),
+]
 
 # Acronyms are spelled out as lower-case LETTERS joined by ACRONYM_JOIN (not letter-name
 # words): the G2P names the letters itself (bangor_g2p._EN_LETTER_NAMES), so "BBC" ->
@@ -525,6 +535,12 @@ _DATE_NUM = re.compile(r"\b([0-9]{1,2})/([0-9]{1,2})/([0-9]{2,4})\b")
 _DATE_MONTH = re.compile(r"\b([0-9]{1,2})\s+(" + "|".join(_MONTHS) + r")\b"
                          rf"(?:\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
 _ORDINAL_RE = re.compile(r"\b([0-9]+)(af|il|ydd|edd|ed|fed|eg|ain)\b")
+# English twins of the two Welsh-only triggers. Same shapes; only the suffix set and the
+# month list differ. The English branches of every OTHER pass reuse the Welsh trigger.
+_ORDINAL_RE_EN = re.compile(r"\b([0-9]+)(st|nd|rd|th)\b", re.I)
+_DATE_MONTH_EN = re.compile(r"\b([0-9]{1,2})\s+(" + "|".join(_EN.MONTHS) + r")\b"
+                            rf"(?:\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
+_MONTH_NUM_EN = {name: i + 1 for i, name in enumerate(_EN.MONTHS)}
 
 
 def _date_num_repl(m: re.Match) -> str:
@@ -1169,6 +1185,7 @@ _MATH_OPS = [
     (re.compile(r"(?<=[0-9])\s*\+\s*(?=[0-9])"), " plws "),
     (re.compile(r"(?<=[0-9])\s*[xX×]\s*(?=[0-9])"), " lluosi "),
 ]
+_MATH_OPS_EN = [(_MATH_OPS[0][0], " plus "), (_MATH_OPS[1][0], " times ")]
 # Degree symbol. "gradd" alone for a bare degree, and the scale named when it is given. The
 # scale letter is consumed so it cannot fall through to the acronym pass and be spelled out.
 _DEGREE = [
@@ -1176,6 +1193,8 @@ _DEGREE = [
     (re.compile(r"(?<=[0-9])\s*°\s*[Ff]\b"), " gradd fahrenheit"),
     (re.compile(r"(?<=[0-9])\s*°"), " gradd"),
 ]
+_DEGREE_EN = [(_DEGREE[0][0], " degrees celsius"), (_DEGREE[1][0], " degrees fahrenheit"),
+              (_DEGREE[2][0], " degrees")]
 
 # --- emoji ------------------------------------------------------------------------------
 # Emoji were DROPPED silently: "Da iawn 👍" read "da iawn" and the emoji contributed nothing.
@@ -1812,88 +1831,175 @@ def _blynedd_repl(m: re.Match) -> str:
     return f"{numeral} {noun}"
 
 
+
+# ---------------------------------------------------------------------------------------
+# English branches. The TRIGGER regexes above are shared with Welsh; only what is written
+# back differs, and that comes from english_numbers. Every glue rule the Welsh branch has
+# for staying a separate word from what follows (_sep_if_latin_tail,
+# _sep_after_spelled_digits) and for yielding to a following unit (_UNIT_TAIL) is applied
+# identically here, so the two languages diverge in vocabulary and nowhere else.
+
+def _roman_repl_en(m: re.Match) -> str:
+    t = m.group(0)
+    if t in _ROMAN_NOT:
+        return t
+    v = _roman_value(t)
+    if v is None:
+        return t
+    prev = re.search(r"([A-Za-zÀ-ÿ'\u2019]+)\s*$", m.string[:m.start()])
+    structural = bool(prev) and prev.group(1).lower() in (_ROMAN_STRUCTURAL | _EN.ROMAN_STRUCTURAL)
+    return _EN.roman(v, structural)
+
+
+def _date_num_repl_en(m: re.Match) -> str:
+    d, mm, y = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    return _EN.date(d, mm, y) if 1 <= d <= 31 and 1 <= mm <= 12 else m.group(0)
+
+
+def _date_month_repl_en(m: re.Match) -> str:
+    d = int(m.group(1))
+    mm = _MONTH_NUM_EN[m.group(2).lower()]
+    y = int(m.group(3)) if m.group(3) else None
+    return _EN.date(d, mm, y) if 1 <= d <= 31 else m.group(0)
+
+
+def _ordinal_repl_en(m: re.Match) -> str:
+    return _EN.ordinal(int(m.group(1)))
+
+
+def _fraction_repl_en(m: re.Match) -> str:
+    words = _EN.fraction(int(m.group(1)), int(m.group(2)))
+    return words if words is not None else m.group(0)
+
+
+def _currency_repl_en(m: re.Match) -> str:
+    suffix = m.group(3)
+    if suffix is None and _UNIT_TAIL.match(m.string, m.end()):
+        return m.group(0)
+    if suffix is not None:
+        frac = m.group(2) or ""
+        zeros = _MAGNITUDE_ZEROS[suffix.lower()]
+        digits = m.group(1).replace(",", "") + frac + "0" * (zeros - len(frac))
+        return _sep_if_latin_tail(_EN.pounds(int(digits)), m)
+    amount = int(m.group(1).replace(",", ""))
+    pence_part = int(m.group(2)) if m.group(2) else None
+    return _sep_if_latin_tail(_EN.pounds(amount, pence_part or None), m)
+
+
+def _unit_repl_en(m: re.Match) -> str:
+    return _EN.unit(m.group(1).replace(",", ""), m.group(2))
+
+
+def _time_repl_en(m: re.Match) -> str:
+    h = int(m.group(1))
+    mm = int(m.group(2)) if m.group(2) is not None else 0
+    return _EN.time(h, mm, m.group(3))
+
+
+def _pence_repl_en(m: re.Match) -> str:
+    return _EN.pence(int(m.group(1).replace(",", "")))
+
+
+def _percent_repl_en(m: re.Match) -> str:
+    return _sep_if_latin_tail(_EN.percent(int(m.group(1).replace(",", ""))), m)
+
+
+def _decimal_repl_en(m: re.Match) -> str:
+    return _EN.decimal(int(m.group(1)), m.group(2))
+
+
+def _digit_seq_repl_en(m: re.Match) -> str:
+    return _sep_after_spelled_digits(_EN.spell_digits(m.group(0)), m)
+
+
+def _phone_repl_en(m: re.Match) -> str:
+    digits = [c for c in m.group(0) if _norm_digit_value(c) >= 0]
+    if not 9 <= len(digits) <= 11:
+        return m.group(0)
+    return _sep_after_spelled_digits(_EN.spell_digits(m.group(0)), m)
+
+
+def _integer_repl_en(m: re.Match) -> str:
+    """Bare four-digit 1100-2099 with no thousands comma reads as a year ("in 2026" ->
+    twenty twenty six, "1500 people" -> fifteen hundred people, both natural British).
+    Welsh keeps the year register for dates only, so this is an English-only convention."""
+    raw = m.group(0)
+    n = int(raw.replace(",", ""))
+    if "," not in raw and len(raw) == 4 and 1100 <= n <= 2099:
+        return _EN.year(n)
+    return _EN.cardinal(n)
+
+
+def _amp_repl_en(m: re.Match) -> str:
+    return f"and {m.group(1)}"
+
+
+def _symbols_en(text: str) -> str:
+    text = re.sub(r"(?<= )\+(?= )", "plus", text)
+    text = re.sub(r"(?<= )=(?= )", "equals", text)
+    text = re.sub(r"(?<= )@(?= )", "at", text)
+    text = re.sub(rf"(?<=[{_C_WORD_CLASS}])\+(?=[{_C_WORD_CLASS}])", " plus ", text)
+    text = re.sub(rf"(?<=[{_C_WORD_CLASS}])=(?=[{_C_WORD_CLASS}])", " equals ", text)
+    text = re.sub(rf"(?<=[{_C_WORD_CLASS}])@(?=[{_C_WORD_CLASS}])", " at ", text)
+    text = _FUSING_PUNCT_BETWEEN_WORDS.sub(" ", text)
+    return text
+
+
 class WelshNormalizer:
     @staticmethod
     def num_to_welsh_public(n: int) -> str:
         """Cardinal verbaliser, for callers that need numbers without full normalization."""
         return num_to_welsh(n)
 
-    def normalize(self, text: str) -> str:
+    def normalize(self, text: str, lang: str = "cy") -> str:
+        """Verbalise numbers and symbols in `lang` ("cy" or "en"); everything else --
+        typography, emoji, de-shouting, acronyms, the digit/letter splitter -- is language
+        independent. Callers that know the utterance language pass it; BangorG2P.normalize
+        detects it from the letters when they do not. The Welsh path is byte-identical to
+        what this method did before `lang` existed."""
+        if lang not in ("cy", "en"):
+            raise ValueError(f"lang {lang!r} is not supported; use 'cy' or 'en'")
+        en = lang == "en"
         text = text.translate(_TYPOGRAPHIC)
-        # Emoji first: their names are ordinary Welsh words and should go through every
-        # pass below exactly as typed text would. Presentation marks are dropped before
-        # the lookup so "❤" and "❤️" find the same name.
         if _EMOJI_RE is not None:
             text = _EMOJI_RE.sub(_emoji_repl, text.translate(_EMOJI_SKIP_MAP))
-            # TAG characters AFTER matching, not before: they are PART of the tag-sequence
-            # flags ("🏴" + gbwls + cancel), which are in the table and sort longest-first, so
-            # stripping them early would destroy the very sequences that need them. Whatever
-            # survives is a tag flag we have no name for, and would otherwise reach the phone
-            # layer as raw codepoints.
             text = _TAG_CHARS.sub("", text)
-        for rx, repl in _ABBREV:
+        for rx, repl in (_ABBREV_EN if en else _ABBREV):
             text = rx.sub(repl, text)
         text = _deshout(text)
-        # ROMAN NUMERALS BEFORE _ACRONYM, which is [A-Z0-9]{2,} and would otherwise claim
-        # "IV" as a code and spell it "i·v". After _deshout, so an all-caps sentence has
-        # already been folded and only genuine capitals reach the pattern.
-        text = _ROMAN.sub(_roman_repl, text)
+        text = _ROMAN.sub(_roman_repl_en if en else _roman_repl, text)
         text = _ACRONYM.sub(_spell_acronym, text)
-        text = _DATE_NUM.sub(_date_num_repl, text)
-        text = _DATE_MONTH.sub(_date_month_repl, text)
-        text = _ORDINAL_RE.sub(_ordinal_repl, text)
-        text = _FRACTION.sub(_fraction_repl, text)
-        # CURRENCY BEFORE UNIT, and the order is load-bearing. With _UNIT first, the unit
-        # pass ate the digits out of a currency amount: "£5m" -> "£pum metr" (five metres,
-        # £ left dangling), "£2.5m" -> "dwy bunt.pum metr", "mae £3m yn y gronfa" ->
-        # "mae £tri metr yn y gronfa". Currency has to claim its own amount, decimal and
-        # all, before anything else reads the digits. _currency_repl yields back to _UNIT
-        # for any amount a unit would legitimately follow (see _UNIT_TAIL there), so
-        # "£5kg" still reads as it always did.
-        text = _CURRENCY.sub(_currency_repl, text)
-        text = _UNIT.sub(_unit_repl, text)
-        # Before _INTEGER, which would otherwise turn "10 blynedd" into a flat
-        # "deg blynedd" and lose both the nasal mutation and the "deng" form.
-        text = _BLYNEDD.sub(_blynedd_repl, text)
-        text = _TIME.sub(_time_repl, text)
-        # Emails and URLs BETWEEN the two clock passes, and the position is load-bearing
-        # twice over. Their dots and @ must not be seen by any number or symbol pass ("@"
-        # is the SCHWA in the phone inventory, so anything left of it is read as a vowel
-        # rather than dropped). And they must run BEFORE _TIME_NOCOLON, mirroring C's
-        # pass order (pass_email_url runs early there): "post@7pm.com" is an address
-        # whose "7pm" is then read INSIDE the verbalised form -- identically in both
-        # implementations. With the old order the colonless pass would eat the "7pm" out
-        # of the RAW address and leave a bare "@" behind.
+        text = _DATE_NUM.sub(_date_num_repl_en if en else _date_num_repl, text)
+        if en:
+            text = _DATE_MONTH_EN.sub(_date_month_repl_en, text)
+            text = _ORDINAL_RE_EN.sub(_ordinal_repl_en, text)
+        else:
+            text = _DATE_MONTH.sub(_date_month_repl, text)
+            text = _ORDINAL_RE.sub(_ordinal_repl, text)
+        text = _FRACTION.sub(_fraction_repl_en if en else _fraction_repl, text)
+        text = _CURRENCY.sub(_currency_repl_en if en else _currency_repl, text)
+        text = _UNIT.sub(_unit_repl_en if en else _unit_repl, text)
+        if not en:                       # "N blynedd" is a Welsh construction; English
+            text = _BLYNEDD.sub(_blynedd_repl, text)   # "N years" is a plain cardinal
+        text = _TIME.sub(_time_repl_en if en else _time_repl, text)
         text = _EMAIL_OR_URL.sub(_email_url_repl, text)
-        # After email/URLs (above); before _PENCE, or "7p.m." is stolen back by the pence
-        # rule the moment the colonless match is unavailable.
-        text = _TIME_NOCOLON.sub(_time_repl, text)
-        text = _PENCE.sub(_pence_repl, text)
-        # The digit/letter splitter -- placement is load-bearing on both edges; the full
-        # reasoning lives at _DIGIT_LETTER_BOUNDARY's definition. C mirror:
-        # pass_digit_letter_split, at the same point in its driver.
+        text = _TIME_NOCOLON.sub(_time_repl_en if en else _time_repl, text)
+        text = _PENCE.sub(_pence_repl_en if en else _pence_repl, text)
         text = _DIGIT_LETTER_BOUNDARY.sub(" ", text)
-        # Operators and the degree sign BEFORE EVERY number pass, so their operands are
-        # still DIGITS when the lookarounds run. Placing them after _DECIMAL silently
-        # broke "98.6°F": by then the text read "...pwynt chwech°F" and the (?<=\d)
-        # lookbehind saw an "h". It also means no unverbalised character is left sitting
-        # between two words for the phone layer to glue into a nonword.
-        for rx, rep in _DEGREE:
+        for rx, rep in (_DEGREE_EN if en else _DEGREE):
             text = rx.sub(rep, text)
-        for rx, rep in _MATH_OPS:
+        for rx, rep in (_MATH_OPS_EN if en else _MATH_OPS):
             text = rx.sub(rep, text)
-        text = _PERCENT.sub(_percent_repl, text)
-        text = _DECIMAL.sub(_decimal_repl, text)
-        # DIGIT SEQUENCES BEFORE _INTEGER, and after the time/date/currency passes so a
-        # "07:00" or "01/01/1980" is claimed by the pass that understands it first. _DECIMAL
-        # is also already done, so "0.5" is "sero pwynt pump" and never reaches these.
-        # _PHONE before _DIGIT_SEQ: the phone pattern spans the whole grouped number, and
-        # _DIGIT_SEQ would otherwise consume its first group and leave the rest as cardinals.
-        text = _PHONE.sub(_phone_repl, text)
-        text = _DIGIT_SEQ.sub(_digit_seq_repl, text)
-        text = _INTEGER.sub(lambda m: num_to_welsh(int(m.group(0).replace(",", ""))), text)
-        text = _AMPERSAND.sub(_amp_repl, text)
-        text = _symbols(text)
+        text = _PERCENT.sub(_percent_repl_en if en else _percent_repl, text)
+        text = _DECIMAL.sub(_decimal_repl_en if en else _decimal_repl, text)
+        text = _PHONE.sub(_phone_repl_en if en else _phone_repl, text)
+        text = _DIGIT_SEQ.sub(_digit_seq_repl_en if en else _digit_seq_repl, text)
+        if en:
+            text = _INTEGER.sub(_integer_repl_en, text)
+        else:
+            text = _INTEGER.sub(lambda m: num_to_welsh(int(m.group(0).replace(",", ""))), text)
+        text = _AMPERSAND.sub(_amp_repl_en if en else _amp_repl, text)
+        text = (_symbols_en if en else _symbols)(text)
         text = text.lower()
         text = re.sub(r"\s+", " ", text).strip()
         return text

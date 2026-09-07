@@ -1,0 +1,2137 @@
+0	zero
+1	one
+2	two
+3	three
+4	four
+5	five
+6	six
+7	seven
+8	eight
+9	nine
+10	ten
+11	eleven
+12	twelve
+13	thirteen
+14	fourteen
+15	fifteen
+16	sixteen
+17	seventeen
+18	eighteen
+19	nineteen
+20	twenty
+21	twenty one
+22	twenty two
+23	twenty three
+24	twenty four
+25	twenty five
+26	twenty six
+27	twenty seven
+28	twenty eight
+29	twenty nine
+30	thirty
+31	thirty one
+32	thirty two
+33	thirty three
+34	thirty four
+35	thirty five
+36	thirty six
+37	thirty seven
+38	thirty eight
+39	thirty nine
+40	forty
+41	forty one
+42	forty two
+43	forty three
+44	forty four
+45	forty five
+46	forty six
+47	forty seven
+48	forty eight
+49	forty nine
+50	fifty
+51	fifty one
+52	fifty two
+53	fifty three
+54	fifty four
+55	fifty five
+56	fifty six
+57	fifty seven
+58	fifty eight
+59	fifty nine
+60	sixty
+61	sixty one
+62	sixty two
+63	sixty three
+64	sixty four
+65	sixty five
+66	sixty six
+67	sixty seven
+68	sixty eight
+69	sixty nine
+70	seventy
+71	seventy one
+72	seventy two
+73	seventy three
+74	seventy four
+75	seventy five
+76	seventy six
+77	seventy seven
+78	seventy eight
+79	seventy nine
+80	eighty
+81	eighty one
+82	eighty two
+83	eighty three
+84	eighty four
+85	eighty five
+86	eighty six
+87	eighty seven
+88	eighty eight
+89	eighty nine
+90	ninety
+91	ninety one
+92	ninety two
+93	ninety three
+94	ninety four
+95	ninety five
+96	ninety six
+97	ninety seven
+98	ninety eight
+99	ninety nine
+100	one hundred
+101	one hundred and one
+102	one hundred and two
+103	one hundred and three
+104	one hundred and four
+105	one hundred and five
+106	one hundred and six
+107	one hundred and seven
+108	one hundred and eight
+109	one hundred and nine
+110	one hundred and ten
+111	one hundred and eleven
+112	one hundred and twelve
+113	one hundred and thirteen
+114	one hundred and fourteen
+115	one hundred and fifteen
+116	one hundred and sixteen
+117	one hundred and seventeen
+118	one hundred and eighteen
+119	one hundred and nineteen
+120	one hundred and twenty
+121	one hundred and twenty one
+122	one hundred and twenty two
+123	one hundred and twenty three
+124	one hundred and twenty four
+125	one hundred and twenty five
+126	one hundred and twenty six
+127	one hundred and twenty seven
+128	one hundred and twenty eight
+129	one hundred and twenty nine
+130	one hundred and thirty
+131	one hundred and thirty one
+132	one hundred and thirty two
+133	one hundred and thirty three
+134	one hundred and thirty four
+135	one hundred and thirty five
+136	one hundred and thirty six
+137	one hundred and thirty seven
+138	one hundred and thirty eight
+139	one hundred and thirty nine
+140	one hundred and forty
+141	one hundred and forty one
+142	one hundred and forty two
+143	one hundred and forty three
+144	one hundred and forty four
+145	one hundred and forty five
+146	one hundred and forty six
+147	one hundred and forty seven
+148	one hundred and forty eight
+149	one hundred and forty nine
+150	one hundred and fifty
+151	one hundred and fifty one
+152	one hundred and fifty two
+153	one hundred and fifty three
+154	one hundred and fifty four
+155	one hundred and fifty five
+156	one hundred and fifty six
+157	one hundred and fifty seven
+158	one hundred and fifty eight
+159	one hundred and fifty nine
+160	one hundred and sixty
+161	one hundred and sixty one
+162	one hundred and sixty two
+163	one hundred and sixty three
+164	one hundred and sixty four
+165	one hundred and sixty five
+166	one hundred and sixty six
+167	one hundred and sixty seven
+168	one hundred and sixty eight
+169	one hundred and sixty nine
+170	one hundred and seventy
+171	one hundred and seventy one
+172	one hundred and seventy two
+173	one hundred and seventy three
+174	one hundred and seventy four
+175	one hundred and seventy five
+176	one hundred and seventy six
+177	one hundred and seventy seven
+178	one hundred and seventy eight
+179	one hundred and seventy nine
+180	one hundred and eighty
+181	one hundred and eighty one
+182	one hundred and eighty two
+183	one hundred and eighty three
+184	one hundred and eighty four
+185	one hundred and eighty five
+186	one hundred and eighty six
+187	one hundred and eighty seven
+188	one hundred and eighty eight
+189	one hundred and eighty nine
+190	one hundred and ninety
+191	one hundred and ninety one
+192	one hundred and ninety two
+193	one hundred and ninety three
+194	one hundred and ninety four
+195	one hundred and ninety five
+196	one hundred and ninety six
+197	one hundred and ninety seven
+198	one hundred and ninety eight
+199	one hundred and ninety nine
+200	two hundred
+201	two hundred and one
+202	two hundred and two
+203	two hundred and three
+204	two hundred and four
+205	two hundred and five
+206	two hundred and six
+207	two hundred and seven
+208	two hundred and eight
+209	two hundred and nine
+210	two hundred and ten
+211	two hundred and eleven
+212	two hundred and twelve
+213	two hundred and thirteen
+214	two hundred and fourteen
+215	two hundred and fifteen
+216	two hundred and sixteen
+217	two hundred and seventeen
+218	two hundred and eighteen
+219	two hundred and nineteen
+220	two hundred and twenty
+221	two hundred and twenty one
+222	two hundred and twenty two
+223	two hundred and twenty three
+224	two hundred and twenty four
+225	two hundred and twenty five
+226	two hundred and twenty six
+227	two hundred and twenty seven
+228	two hundred and twenty eight
+229	two hundred and twenty nine
+230	two hundred and thirty
+231	two hundred and thirty one
+232	two hundred and thirty two
+233	two hundred and thirty three
+234	two hundred and thirty four
+235	two hundred and thirty five
+236	two hundred and thirty six
+237	two hundred and thirty seven
+238	two hundred and thirty eight
+239	two hundred and thirty nine
+240	two hundred and forty
+241	two hundred and forty one
+242	two hundred and forty two
+243	two hundred and forty three
+244	two hundred and forty four
+245	two hundred and forty five
+246	two hundred and forty six
+247	two hundred and forty seven
+248	two hundred and forty eight
+249	two hundred and forty nine
+250	two hundred and fifty
+251	two hundred and fifty one
+252	two hundred and fifty two
+253	two hundred and fifty three
+254	two hundred and fifty four
+255	two hundred and fifty five
+256	two hundred and fifty six
+257	two hundred and fifty seven
+258	two hundred and fifty eight
+259	two hundred and fifty nine
+260	two hundred and sixty
+261	two hundred and sixty one
+262	two hundred and sixty two
+263	two hundred and sixty three
+264	two hundred and sixty four
+265	two hundred and sixty five
+266	two hundred and sixty six
+267	two hundred and sixty seven
+268	two hundred and sixty eight
+269	two hundred and sixty nine
+270	two hundred and seventy
+271	two hundred and seventy one
+272	two hundred and seventy two
+273	two hundred and seventy three
+274	two hundred and seventy four
+275	two hundred and seventy five
+276	two hundred and seventy six
+277	two hundred and seventy seven
+278	two hundred and seventy eight
+279	two hundred and seventy nine
+280	two hundred and eighty
+281	two hundred and eighty one
+282	two hundred and eighty two
+283	two hundred and eighty three
+284	two hundred and eighty four
+285	two hundred and eighty five
+286	two hundred and eighty six
+287	two hundred and eighty seven
+288	two hundred and eighty eight
+289	two hundred and eighty nine
+290	two hundred and ninety
+291	two hundred and ninety one
+292	two hundred and ninety two
+293	two hundred and ninety three
+294	two hundred and ninety four
+295	two hundred and ninety five
+296	two hundred and ninety six
+297	two hundred and ninety seven
+298	two hundred and ninety eight
+299	two hundred and ninety nine
+300	three hundred
+301	three hundred and one
+308	three hundred and eight
+315	three hundred and fifteen
+322	three hundred and twenty two
+329	three hundred and twenty nine
+336	three hundred and thirty six
+343	three hundred and forty three
+350	three hundred and fifty
+357	three hundred and fifty seven
+364	three hundred and sixty four
+371	three hundred and seventy one
+378	three hundred and seventy eight
+385	three hundred and eighty five
+392	three hundred and ninety two
+399	three hundred and ninety nine
+406	four hundred and six
+413	four hundred and thirteen
+420	four hundred and twenty
+427	four hundred and twenty seven
+434	four hundred and thirty four
+441	four hundred and forty one
+448	four hundred and forty eight
+455	four hundred and fifty five
+462	four hundred and sixty two
+469	four hundred and sixty nine
+476	four hundred and seventy six
+483	four hundred and eighty three
+490	four hundred and ninety
+497	four hundred and ninety seven
+504	five hundred and four
+511	five hundred and eleven
+518	five hundred and eighteen
+525	five hundred and twenty five
+532	five hundred and thirty two
+539	five hundred and thirty nine
+546	five hundred and forty six
+553	five hundred and fifty three
+560	five hundred and sixty
+567	five hundred and sixty seven
+574	five hundred and seventy four
+581	five hundred and eighty one
+588	five hundred and eighty eight
+595	five hundred and ninety five
+602	six hundred and two
+609	six hundred and nine
+616	six hundred and sixteen
+623	six hundred and twenty three
+630	six hundred and thirty
+637	six hundred and thirty seven
+644	six hundred and forty four
+651	six hundred and fifty one
+658	six hundred and fifty eight
+665	six hundred and sixty five
+672	six hundred and seventy two
+679	six hundred and seventy nine
+686	six hundred and eighty six
+693	six hundred and ninety three
+700	seven hundred
+707	seven hundred and seven
+714	seven hundred and fourteen
+721	seven hundred and twenty one
+728	seven hundred and twenty eight
+735	seven hundred and thirty five
+742	seven hundred and forty two
+749	seven hundred and forty nine
+756	seven hundred and fifty six
+763	seven hundred and sixty three
+770	seven hundred and seventy
+777	seven hundred and seventy seven
+784	seven hundred and eighty four
+791	seven hundred and ninety one
+798	seven hundred and ninety eight
+805	eight hundred and five
+812	eight hundred and twelve
+819	eight hundred and nineteen
+826	eight hundred and twenty six
+833	eight hundred and thirty three
+840	eight hundred and forty
+847	eight hundred and forty seven
+854	eight hundred and fifty four
+861	eight hundred and sixty one
+868	eight hundred and sixty eight
+875	eight hundred and seventy five
+882	eight hundred and eighty two
+889	eight hundred and eighty nine
+896	eight hundred and ninety six
+903	nine hundred and three
+910	nine hundred and ten
+917	nine hundred and seventeen
+924	nine hundred and twenty four
+931	nine hundred and thirty one
+938	nine hundred and thirty eight
+945	nine hundred and forty five
+952	nine hundred and fifty two
+959	nine hundred and fifty nine
+966	nine hundred and sixty six
+973	nine hundred and seventy three
+980	nine hundred and eighty
+987	nine hundred and eighty seven
+994	nine hundred and ninety four
+1001	one thousand and one
+1008	one thousand and eight
+1015	one thousand and fifteen
+1022	one thousand and twenty two
+1029	one thousand and twenty nine
+1036	one thousand and thirty six
+1043	one thousand and forty three
+1050	one thousand and fifty
+1057	one thousand and fifty seven
+1064	one thousand and sixty four
+1071	one thousand and seventy one
+1078	one thousand and seventy eight
+1085	one thousand and eighty five
+1092	one thousand and ninety two
+1099	one thousand and ninety nine
+1106	eleven oh six
+1113	eleven thirteen
+1120	eleven twenty
+1127	eleven twenty seven
+1134	eleven thirty four
+1141	eleven forty one
+1148	eleven forty eight
+1155	eleven fifty five
+1162	eleven sixty two
+1169	eleven sixty nine
+1176	eleven seventy six
+1183	eleven eighty three
+1190	eleven ninety
+1197	eleven ninety seven
+1204	twelve oh four
+1211	twelve eleven
+1218	twelve eighteen
+1225	twelve twenty five
+1232	twelve thirty two
+1239	twelve thirty nine
+1246	twelve forty six
+1253	twelve fifty three
+1260	twelve sixty
+1267	twelve sixty seven
+1274	twelve seventy four
+1281	twelve eighty one
+1288	twelve eighty eight
+1295	twelve ninety five
+1302	thirteen oh two
+1309	thirteen oh nine
+1316	thirteen sixteen
+1323	thirteen twenty three
+1330	thirteen thirty
+1337	thirteen thirty seven
+1344	thirteen forty four
+1351	thirteen fifty one
+1358	thirteen fifty eight
+1365	thirteen sixty five
+1372	thirteen seventy two
+1379	thirteen seventy nine
+1386	thirteen eighty six
+1393	thirteen ninety three
+1400	fourteen hundred
+1407	fourteen oh seven
+1414	fourteen fourteen
+1421	fourteen twenty one
+1428	fourteen twenty eight
+1435	fourteen thirty five
+1442	fourteen forty two
+1449	fourteen forty nine
+1456	fourteen fifty six
+1463	fourteen sixty three
+1470	fourteen seventy
+1477	fourteen seventy seven
+1484	fourteen eighty four
+1491	fourteen ninety one
+1498	fourteen ninety eight
+1505	fifteen oh five
+1512	fifteen twelve
+1519	fifteen nineteen
+1526	fifteen twenty six
+1533	fifteen thirty three
+1540	fifteen forty
+1547	fifteen forty seven
+1554	fifteen fifty four
+1561	fifteen sixty one
+1568	fifteen sixty eight
+1575	fifteen seventy five
+1582	fifteen eighty two
+1589	fifteen eighty nine
+1596	fifteen ninety six
+1603	sixteen oh three
+1610	sixteen ten
+1617	sixteen seventeen
+1624	sixteen twenty four
+1631	sixteen thirty one
+1638	sixteen thirty eight
+1645	sixteen forty five
+1652	sixteen fifty two
+1659	sixteen fifty nine
+1666	sixteen sixty six
+1673	sixteen seventy three
+1680	sixteen eighty
+1687	sixteen eighty seven
+1694	sixteen ninety four
+1701	seventeen oh one
+1708	seventeen oh eight
+1715	seventeen fifteen
+1722	seventeen twenty two
+1729	seventeen twenty nine
+1736	seventeen thirty six
+1743	seventeen forty three
+1750	seventeen fifty
+1757	seventeen fifty seven
+1764	seventeen sixty four
+1771	seventeen seventy one
+1778	seventeen seventy eight
+1785	seventeen eighty five
+1792	seventeen ninety two
+1799	seventeen ninety nine
+1806	eighteen oh six
+1813	eighteen thirteen
+1820	eighteen twenty
+1827	eighteen twenty seven
+1834	eighteen thirty four
+1841	eighteen forty one
+1848	eighteen forty eight
+1855	eighteen fifty five
+1862	eighteen sixty two
+1869	eighteen sixty nine
+1876	eighteen seventy six
+1883	eighteen eighty three
+1890	eighteen ninety
+1897	eighteen ninety seven
+1904	nineteen oh four
+1911	nineteen eleven
+1918	nineteen eighteen
+1925	nineteen twenty five
+1932	nineteen thirty two
+1939	nineteen thirty nine
+1946	nineteen forty six
+1953	nineteen fifty three
+1960	nineteen sixty
+1967	nineteen sixty seven
+1974	nineteen seventy four
+1981	nineteen eighty one
+1988	nineteen eighty eight
+1995	nineteen ninety five
+2002	two thousand and two
+2009	two thousand and nine
+2016	twenty sixteen
+2023	twenty twenty three
+2030	twenty thirty
+2037	twenty thirty seven
+2044	twenty forty four
+2051	twenty fifty one
+2058	twenty fifty eight
+2065	twenty sixty five
+2072	twenty seventy two
+2079	twenty seventy nine
+2086	twenty eighty six
+2093	twenty ninety three
+2100	two thousand one hundred
+2107	two thousand one hundred and seven
+2114	two thousand one hundred and fourteen
+2121	two thousand one hundred and twenty one
+2128	two thousand one hundred and twenty eight
+2135	two thousand one hundred and thirty five
+2142	two thousand one hundred and forty two
+2149	two thousand one hundred and forty nine
+2156	two thousand one hundred and fifty six
+2163	two thousand one hundred and sixty three
+2170	two thousand one hundred and seventy
+2177	two thousand one hundred and seventy seven
+2184	two thousand one hundred and eighty four
+2191	two thousand one hundred and ninety one
+2198	two thousand one hundred and ninety eight
+2205	two thousand two hundred and five
+2212	two thousand two hundred and twelve
+2219	two thousand two hundred and nineteen
+2226	two thousand two hundred and twenty six
+2233	two thousand two hundred and thirty three
+2240	two thousand two hundred and forty
+2247	two thousand two hundred and forty seven
+2254	two thousand two hundred and fifty four
+2261	two thousand two hundred and sixty one
+2268	two thousand two hundred and sixty eight
+2275	two thousand two hundred and seventy five
+2282	two thousand two hundred and eighty two
+2289	two thousand two hundred and eighty nine
+2296	two thousand two hundred and ninety six
+2303	two thousand three hundred and three
+2310	two thousand three hundred and ten
+2317	two thousand three hundred and seventeen
+2324	two thousand three hundred and twenty four
+2331	two thousand three hundred and thirty one
+2338	two thousand three hundred and thirty eight
+2345	two thousand three hundred and forty five
+2352	two thousand three hundred and fifty two
+2359	two thousand three hundred and fifty nine
+2366	two thousand three hundred and sixty six
+2373	two thousand three hundred and seventy three
+2380	two thousand three hundred and eighty
+2387	two thousand three hundred and eighty seven
+2394	two thousand three hundred and ninety four
+2401	two thousand four hundred and one
+2408	two thousand four hundred and eight
+2415	two thousand four hundred and fifteen
+2422	two thousand four hundred and twenty two
+2429	two thousand four hundred and twenty nine
+2436	two thousand four hundred and thirty six
+2443	two thousand four hundred and forty three
+2450	two thousand four hundred and fifty
+2457	two thousand four hundred and fifty seven
+2464	two thousand four hundred and sixty four
+2471	two thousand four hundred and seventy one
+2478	two thousand four hundred and seventy eight
+2485	two thousand four hundred and eighty five
+2492	two thousand four hundred and ninety two
+2499	two thousand four hundred and ninety nine
+2506	two thousand five hundred and six
+2513	two thousand five hundred and thirteen
+2520	two thousand five hundred and twenty
+2527	two thousand five hundred and twenty seven
+2534	two thousand five hundred and thirty four
+2541	two thousand five hundred and forty one
+2548	two thousand five hundred and forty eight
+2555	two thousand five hundred and fifty five
+2562	two thousand five hundred and sixty two
+2569	two thousand five hundred and sixty nine
+2576	two thousand five hundred and seventy six
+2583	two thousand five hundred and eighty three
+2590	two thousand five hundred and ninety
+2597	two thousand five hundred and ninety seven
+2604	two thousand six hundred and four
+2611	two thousand six hundred and eleven
+2618	two thousand six hundred and eighteen
+2625	two thousand six hundred and twenty five
+2632	two thousand six hundred and thirty two
+2639	two thousand six hundred and thirty nine
+2646	two thousand six hundred and forty six
+2653	two thousand six hundred and fifty three
+2660	two thousand six hundred and sixty
+2667	two thousand six hundred and sixty seven
+2674	two thousand six hundred and seventy four
+2681	two thousand six hundred and eighty one
+2688	two thousand six hundred and eighty eight
+2695	two thousand six hundred and ninety five
+2702	two thousand seven hundred and two
+2709	two thousand seven hundred and nine
+2716	two thousand seven hundred and sixteen
+2723	two thousand seven hundred and twenty three
+2730	two thousand seven hundred and thirty
+2737	two thousand seven hundred and thirty seven
+2744	two thousand seven hundred and forty four
+2751	two thousand seven hundred and fifty one
+2758	two thousand seven hundred and fifty eight
+2765	two thousand seven hundred and sixty five
+2772	two thousand seven hundred and seventy two
+2779	two thousand seven hundred and seventy nine
+2786	two thousand seven hundred and eighty six
+2793	two thousand seven hundred and ninety three
+2800	two thousand eight hundred
+2807	two thousand eight hundred and seven
+2814	two thousand eight hundred and fourteen
+2821	two thousand eight hundred and twenty one
+2828	two thousand eight hundred and twenty eight
+2835	two thousand eight hundred and thirty five
+2842	two thousand eight hundred and forty two
+2849	two thousand eight hundred and forty nine
+2856	two thousand eight hundred and fifty six
+2863	two thousand eight hundred and sixty three
+2870	two thousand eight hundred and seventy
+2877	two thousand eight hundred and seventy seven
+2884	two thousand eight hundred and eighty four
+2891	two thousand eight hundred and ninety one
+2898	two thousand eight hundred and ninety eight
+2905	two thousand nine hundred and five
+2912	two thousand nine hundred and twelve
+2919	two thousand nine hundred and nineteen
+2926	two thousand nine hundred and twenty six
+2933	two thousand nine hundred and thirty three
+2940	two thousand nine hundred and forty
+2947	two thousand nine hundred and forty seven
+2954	two thousand nine hundred and fifty four
+2961	two thousand nine hundred and sixty one
+2968	two thousand nine hundred and sixty eight
+2975	two thousand nine hundred and seventy five
+2982	two thousand nine hundred and eighty two
+2989	two thousand nine hundred and eighty nine
+2996	two thousand nine hundred and ninety six
+3003	three thousand and three
+3010	three thousand and ten
+3017	three thousand and seventeen
+3024	three thousand and twenty four
+3031	three thousand and thirty one
+3038	three thousand and thirty eight
+3045	three thousand and forty five
+3052	three thousand and fifty two
+3059	three thousand and fifty nine
+3066	three thousand and sixty six
+3073	three thousand and seventy three
+3080	three thousand and eighty
+3087	three thousand and eighty seven
+3094	three thousand and ninety four
+3101	three thousand one hundred and one
+3108	three thousand one hundred and eight
+3115	three thousand one hundred and fifteen
+3122	three thousand one hundred and twenty two
+3129	three thousand one hundred and twenty nine
+3136	three thousand one hundred and thirty six
+3143	three thousand one hundred and forty three
+3150	three thousand one hundred and fifty
+3157	three thousand one hundred and fifty seven
+3164	three thousand one hundred and sixty four
+3171	three thousand one hundred and seventy one
+3178	three thousand one hundred and seventy eight
+3185	three thousand one hundred and eighty five
+3192	three thousand one hundred and ninety two
+3199	three thousand one hundred and ninety nine
+3206	three thousand two hundred and six
+3213	three thousand two hundred and thirteen
+3220	three thousand two hundred and twenty
+3227	three thousand two hundred and twenty seven
+3234	three thousand two hundred and thirty four
+3241	three thousand two hundred and forty one
+3248	three thousand two hundred and forty eight
+3255	three thousand two hundred and fifty five
+3262	three thousand two hundred and sixty two
+3269	three thousand two hundred and sixty nine
+3276	three thousand two hundred and seventy six
+3283	three thousand two hundred and eighty three
+3290	three thousand two hundred and ninety
+3297	three thousand two hundred and ninety seven
+3304	three thousand three hundred and four
+3311	three thousand three hundred and eleven
+3318	three thousand three hundred and eighteen
+3325	three thousand three hundred and twenty five
+3332	three thousand three hundred and thirty two
+3339	three thousand three hundred and thirty nine
+3346	three thousand three hundred and forty six
+3353	three thousand three hundred and fifty three
+3360	three thousand three hundred and sixty
+3367	three thousand three hundred and sixty seven
+3374	three thousand three hundred and seventy four
+3381	three thousand three hundred and eighty one
+3388	three thousand three hundred and eighty eight
+3395	three thousand three hundred and ninety five
+3402	three thousand four hundred and two
+3409	three thousand four hundred and nine
+3416	three thousand four hundred and sixteen
+3423	three thousand four hundred and twenty three
+3430	three thousand four hundred and thirty
+3437	three thousand four hundred and thirty seven
+3444	three thousand four hundred and forty four
+3451	three thousand four hundred and fifty one
+3458	three thousand four hundred and fifty eight
+3465	three thousand four hundred and sixty five
+3472	three thousand four hundred and seventy two
+3479	three thousand four hundred and seventy nine
+3486	three thousand four hundred and eighty six
+3493	three thousand four hundred and ninety three
+3500	three thousand five hundred
+3507	three thousand five hundred and seven
+3514	three thousand five hundred and fourteen
+3521	three thousand five hundred and twenty one
+3528	three thousand five hundred and twenty eight
+3535	three thousand five hundred and thirty five
+3542	three thousand five hundred and forty two
+3549	three thousand five hundred and forty nine
+3556	three thousand five hundred and fifty six
+3563	three thousand five hundred and sixty three
+3570	three thousand five hundred and seventy
+3577	three thousand five hundred and seventy seven
+3584	three thousand five hundred and eighty four
+3591	three thousand five hundred and ninety one
+3598	three thousand five hundred and ninety eight
+3605	three thousand six hundred and five
+3612	three thousand six hundred and twelve
+3619	three thousand six hundred and nineteen
+3626	three thousand six hundred and twenty six
+3633	three thousand six hundred and thirty three
+3640	three thousand six hundred and forty
+3647	three thousand six hundred and forty seven
+3654	three thousand six hundred and fifty four
+3661	three thousand six hundred and sixty one
+3668	three thousand six hundred and sixty eight
+3675	three thousand six hundred and seventy five
+3682	three thousand six hundred and eighty two
+3689	three thousand six hundred and eighty nine
+3696	three thousand six hundred and ninety six
+3703	three thousand seven hundred and three
+3710	three thousand seven hundred and ten
+3717	three thousand seven hundred and seventeen
+3724	three thousand seven hundred and twenty four
+3731	three thousand seven hundred and thirty one
+3738	three thousand seven hundred and thirty eight
+3745	three thousand seven hundred and forty five
+3752	three thousand seven hundred and fifty two
+3759	three thousand seven hundred and fifty nine
+3766	three thousand seven hundred and sixty six
+3773	three thousand seven hundred and seventy three
+3780	three thousand seven hundred and eighty
+3787	three thousand seven hundred and eighty seven
+3794	three thousand seven hundred and ninety four
+3801	three thousand eight hundred and one
+3808	three thousand eight hundred and eight
+3815	three thousand eight hundred and fifteen
+3822	three thousand eight hundred and twenty two
+3829	three thousand eight hundred and twenty nine
+3836	three thousand eight hundred and thirty six
+3843	three thousand eight hundred and forty three
+3850	three thousand eight hundred and fifty
+3857	three thousand eight hundred and fifty seven
+3864	three thousand eight hundred and sixty four
+3871	three thousand eight hundred and seventy one
+3878	three thousand eight hundred and seventy eight
+3885	three thousand eight hundred and eighty five
+3892	three thousand eight hundred and ninety two
+3899	three thousand eight hundred and ninety nine
+3906	three thousand nine hundred and six
+3913	three thousand nine hundred and thirteen
+3920	three thousand nine hundred and twenty
+3927	three thousand nine hundred and twenty seven
+3934	three thousand nine hundred and thirty four
+3941	three thousand nine hundred and forty one
+3948	three thousand nine hundred and forty eight
+3955	three thousand nine hundred and fifty five
+3962	three thousand nine hundred and sixty two
+3969	three thousand nine hundred and sixty nine
+3976	three thousand nine hundred and seventy six
+3983	three thousand nine hundred and eighty three
+3990	three thousand nine hundred and ninety
+3997	three thousand nine hundred and ninety seven
+4004	four thousand and four
+4011	four thousand and eleven
+4018	four thousand and eighteen
+4025	four thousand and twenty five
+4032	four thousand and thirty two
+4039	four thousand and thirty nine
+4046	four thousand and forty six
+4053	four thousand and fifty three
+4060	four thousand and sixty
+4067	four thousand and sixty seven
+4074	four thousand and seventy four
+4081	four thousand and eighty one
+4088	four thousand and eighty eight
+4095	four thousand and ninety five
+4102	four thousand one hundred and two
+4109	four thousand one hundred and nine
+4116	four thousand one hundred and sixteen
+4123	four thousand one hundred and twenty three
+4130	four thousand one hundred and thirty
+4137	four thousand one hundred and thirty seven
+4144	four thousand one hundred and forty four
+4151	four thousand one hundred and fifty one
+4158	four thousand one hundred and fifty eight
+4165	four thousand one hundred and sixty five
+4172	four thousand one hundred and seventy two
+4179	four thousand one hundred and seventy nine
+4186	four thousand one hundred and eighty six
+4193	four thousand one hundred and ninety three
+4200	four thousand two hundred
+4207	four thousand two hundred and seven
+4214	four thousand two hundred and fourteen
+4221	four thousand two hundred and twenty one
+4228	four thousand two hundred and twenty eight
+4235	four thousand two hundred and thirty five
+4242	four thousand two hundred and forty two
+4249	four thousand two hundred and forty nine
+4256	four thousand two hundred and fifty six
+4263	four thousand two hundred and sixty three
+4270	four thousand two hundred and seventy
+4277	four thousand two hundred and seventy seven
+4284	four thousand two hundred and eighty four
+4291	four thousand two hundred and ninety one
+4298	four thousand two hundred and ninety eight
+4305	four thousand three hundred and five
+4312	four thousand three hundred and twelve
+4319	four thousand three hundred and nineteen
+4326	four thousand three hundred and twenty six
+4333	four thousand three hundred and thirty three
+4340	four thousand three hundred and forty
+4347	four thousand three hundred and forty seven
+4354	four thousand three hundred and fifty four
+4361	four thousand three hundred and sixty one
+4368	four thousand three hundred and sixty eight
+4375	four thousand three hundred and seventy five
+4382	four thousand three hundred and eighty two
+4389	four thousand three hundred and eighty nine
+4396	four thousand three hundred and ninety six
+4403	four thousand four hundred and three
+4410	four thousand four hundred and ten
+4417	four thousand four hundred and seventeen
+4424	four thousand four hundred and twenty four
+4431	four thousand four hundred and thirty one
+4438	four thousand four hundred and thirty eight
+4445	four thousand four hundred and forty five
+4452	four thousand four hundred and fifty two
+4459	four thousand four hundred and fifty nine
+4466	four thousand four hundred and sixty six
+4473	four thousand four hundred and seventy three
+4480	four thousand four hundred and eighty
+4487	four thousand four hundred and eighty seven
+4494	four thousand four hundred and ninety four
+4501	four thousand five hundred and one
+4508	four thousand five hundred and eight
+4515	four thousand five hundred and fifteen
+4522	four thousand five hundred and twenty two
+4529	four thousand five hundred and twenty nine
+4536	four thousand five hundred and thirty six
+4543	four thousand five hundred and forty three
+4550	four thousand five hundred and fifty
+4557	four thousand five hundred and fifty seven
+4564	four thousand five hundred and sixty four
+4571	four thousand five hundred and seventy one
+4578	four thousand five hundred and seventy eight
+4585	four thousand five hundred and eighty five
+4592	four thousand five hundred and ninety two
+4599	four thousand five hundred and ninety nine
+4606	four thousand six hundred and six
+4613	four thousand six hundred and thirteen
+4620	four thousand six hundred and twenty
+4627	four thousand six hundred and twenty seven
+4634	four thousand six hundred and thirty four
+4641	four thousand six hundred and forty one
+4648	four thousand six hundred and forty eight
+4655	four thousand six hundred and fifty five
+4662	four thousand six hundred and sixty two
+4669	four thousand six hundred and sixty nine
+4676	four thousand six hundred and seventy six
+4683	four thousand six hundred and eighty three
+4690	four thousand six hundred and ninety
+4697	four thousand six hundred and ninety seven
+4704	four thousand seven hundred and four
+4711	four thousand seven hundred and eleven
+4718	four thousand seven hundred and eighteen
+4725	four thousand seven hundred and twenty five
+4732	four thousand seven hundred and thirty two
+4739	four thousand seven hundred and thirty nine
+4746	four thousand seven hundred and forty six
+4753	four thousand seven hundred and fifty three
+4760	four thousand seven hundred and sixty
+4767	four thousand seven hundred and sixty seven
+4774	four thousand seven hundred and seventy four
+4781	four thousand seven hundred and eighty one
+4788	four thousand seven hundred and eighty eight
+4795	four thousand seven hundred and ninety five
+4802	four thousand eight hundred and two
+4809	four thousand eight hundred and nine
+4816	four thousand eight hundred and sixteen
+4823	four thousand eight hundred and twenty three
+4830	four thousand eight hundred and thirty
+4837	four thousand eight hundred and thirty seven
+4844	four thousand eight hundred and forty four
+4851	four thousand eight hundred and fifty one
+4858	four thousand eight hundred and fifty eight
+4865	four thousand eight hundred and sixty five
+4872	four thousand eight hundred and seventy two
+4879	four thousand eight hundred and seventy nine
+4886	four thousand eight hundred and eighty six
+4893	four thousand eight hundred and ninety three
+4900	four thousand nine hundred
+4907	four thousand nine hundred and seven
+4914	four thousand nine hundred and fourteen
+4921	four thousand nine hundred and twenty one
+4928	four thousand nine hundred and twenty eight
+4935	four thousand nine hundred and thirty five
+4942	four thousand nine hundred and forty two
+4949	four thousand nine hundred and forty nine
+4956	four thousand nine hundred and fifty six
+4963	four thousand nine hundred and sixty three
+4970	four thousand nine hundred and seventy
+4977	four thousand nine hundred and seventy seven
+4984	four thousand nine hundred and eighty four
+4991	four thousand nine hundred and ninety one
+4998	four thousand nine hundred and ninety eight
+5005	five thousand and five
+5012	five thousand and twelve
+5019	five thousand and nineteen
+5026	five thousand and twenty six
+5033	five thousand and thirty three
+5040	five thousand and forty
+5047	five thousand and forty seven
+5054	five thousand and fifty four
+5061	five thousand and sixty one
+5068	five thousand and sixty eight
+5075	five thousand and seventy five
+5082	five thousand and eighty two
+5089	five thousand and eighty nine
+5096	five thousand and ninety six
+5103	five thousand one hundred and three
+5110	five thousand one hundred and ten
+5117	five thousand one hundred and seventeen
+5124	five thousand one hundred and twenty four
+5131	five thousand one hundred and thirty one
+5138	five thousand one hundred and thirty eight
+5145	five thousand one hundred and forty five
+5152	five thousand one hundred and fifty two
+5159	five thousand one hundred and fifty nine
+5166	five thousand one hundred and sixty six
+5173	five thousand one hundred and seventy three
+5180	five thousand one hundred and eighty
+5187	five thousand one hundred and eighty seven
+5194	five thousand one hundred and ninety four
+5201	five thousand two hundred and one
+5208	five thousand two hundred and eight
+5215	five thousand two hundred and fifteen
+5222	five thousand two hundred and twenty two
+5229	five thousand two hundred and twenty nine
+5236	five thousand two hundred and thirty six
+5243	five thousand two hundred and forty three
+5250	five thousand two hundred and fifty
+5257	five thousand two hundred and fifty seven
+5264	five thousand two hundred and sixty four
+5271	five thousand two hundred and seventy one
+5278	five thousand two hundred and seventy eight
+5285	five thousand two hundred and eighty five
+5292	five thousand two hundred and ninety two
+5299	five thousand two hundred and ninety nine
+5306	five thousand three hundred and six
+5313	five thousand three hundred and thirteen
+5320	five thousand three hundred and twenty
+5327	five thousand three hundred and twenty seven
+5334	five thousand three hundred and thirty four
+5341	five thousand three hundred and forty one
+5348	five thousand three hundred and forty eight
+5355	five thousand three hundred and fifty five
+5362	five thousand three hundred and sixty two
+5369	five thousand three hundred and sixty nine
+5376	five thousand three hundred and seventy six
+5383	five thousand three hundred and eighty three
+5390	five thousand three hundred and ninety
+5397	five thousand three hundred and ninety seven
+5404	five thousand four hundred and four
+5411	five thousand four hundred and eleven
+5418	five thousand four hundred and eighteen
+5425	five thousand four hundred and twenty five
+5432	five thousand four hundred and thirty two
+5439	five thousand four hundred and thirty nine
+5446	five thousand four hundred and forty six
+5453	five thousand four hundred and fifty three
+5460	five thousand four hundred and sixty
+5467	five thousand four hundred and sixty seven
+5474	five thousand four hundred and seventy four
+5481	five thousand four hundred and eighty one
+5488	five thousand four hundred and eighty eight
+5495	five thousand four hundred and ninety five
+5502	five thousand five hundred and two
+5509	five thousand five hundred and nine
+5516	five thousand five hundred and sixteen
+5523	five thousand five hundred and twenty three
+5530	five thousand five hundred and thirty
+5537	five thousand five hundred and thirty seven
+5544	five thousand five hundred and forty four
+5551	five thousand five hundred and fifty one
+5558	five thousand five hundred and fifty eight
+5565	five thousand five hundred and sixty five
+5572	five thousand five hundred and seventy two
+5579	five thousand five hundred and seventy nine
+5586	five thousand five hundred and eighty six
+5593	five thousand five hundred and ninety three
+5600	five thousand six hundred
+5607	five thousand six hundred and seven
+5614	five thousand six hundred and fourteen
+5621	five thousand six hundred and twenty one
+5628	five thousand six hundred and twenty eight
+5635	five thousand six hundred and thirty five
+5642	five thousand six hundred and forty two
+5649	five thousand six hundred and forty nine
+5656	five thousand six hundred and fifty six
+5663	five thousand six hundred and sixty three
+5670	five thousand six hundred and seventy
+5677	five thousand six hundred and seventy seven
+5684	five thousand six hundred and eighty four
+5691	five thousand six hundred and ninety one
+5698	five thousand six hundred and ninety eight
+5705	five thousand seven hundred and five
+5712	five thousand seven hundred and twelve
+5719	five thousand seven hundred and nineteen
+5726	five thousand seven hundred and twenty six
+5733	five thousand seven hundred and thirty three
+5740	five thousand seven hundred and forty
+5747	five thousand seven hundred and forty seven
+5754	five thousand seven hundred and fifty four
+5761	five thousand seven hundred and sixty one
+5768	five thousand seven hundred and sixty eight
+5775	five thousand seven hundred and seventy five
+5782	five thousand seven hundred and eighty two
+5789	five thousand seven hundred and eighty nine
+5796	five thousand seven hundred and ninety six
+5803	five thousand eight hundred and three
+5810	five thousand eight hundred and ten
+5817	five thousand eight hundred and seventeen
+5824	five thousand eight hundred and twenty four
+5831	five thousand eight hundred and thirty one
+5838	five thousand eight hundred and thirty eight
+5845	five thousand eight hundred and forty five
+5852	five thousand eight hundred and fifty two
+5859	five thousand eight hundred and fifty nine
+5866	five thousand eight hundred and sixty six
+5873	five thousand eight hundred and seventy three
+5880	five thousand eight hundred and eighty
+5887	five thousand eight hundred and eighty seven
+5894	five thousand eight hundred and ninety four
+5901	five thousand nine hundred and one
+5908	five thousand nine hundred and eight
+5915	five thousand nine hundred and fifteen
+5922	five thousand nine hundred and twenty two
+5929	five thousand nine hundred and twenty nine
+5936	five thousand nine hundred and thirty six
+5943	five thousand nine hundred and forty three
+5950	five thousand nine hundred and fifty
+5957	five thousand nine hundred and fifty seven
+5964	five thousand nine hundred and sixty four
+5971	five thousand nine hundred and seventy one
+5978	five thousand nine hundred and seventy eight
+5985	five thousand nine hundred and eighty five
+5992	five thousand nine hundred and ninety two
+5999	five thousand nine hundred and ninety nine
+6006	six thousand and six
+6013	six thousand and thirteen
+6020	six thousand and twenty
+6027	six thousand and twenty seven
+6034	six thousand and thirty four
+6041	six thousand and forty one
+6048	six thousand and forty eight
+6055	six thousand and fifty five
+6062	six thousand and sixty two
+6069	six thousand and sixty nine
+6076	six thousand and seventy six
+6083	six thousand and eighty three
+6090	six thousand and ninety
+6097	six thousand and ninety seven
+6104	six thousand one hundred and four
+6111	six thousand one hundred and eleven
+6118	six thousand one hundred and eighteen
+6125	six thousand one hundred and twenty five
+6132	six thousand one hundred and thirty two
+6139	six thousand one hundred and thirty nine
+6146	six thousand one hundred and forty six
+6153	six thousand one hundred and fifty three
+6160	six thousand one hundred and sixty
+6167	six thousand one hundred and sixty seven
+6174	six thousand one hundred and seventy four
+6181	six thousand one hundred and eighty one
+6188	six thousand one hundred and eighty eight
+6195	six thousand one hundred and ninety five
+6202	six thousand two hundred and two
+6209	six thousand two hundred and nine
+6216	six thousand two hundred and sixteen
+6223	six thousand two hundred and twenty three
+6230	six thousand two hundred and thirty
+6237	six thousand two hundred and thirty seven
+6244	six thousand two hundred and forty four
+6251	six thousand two hundred and fifty one
+6258	six thousand two hundred and fifty eight
+6265	six thousand two hundred and sixty five
+6272	six thousand two hundred and seventy two
+6279	six thousand two hundred and seventy nine
+6286	six thousand two hundred and eighty six
+6293	six thousand two hundred and ninety three
+6300	six thousand three hundred
+6307	six thousand three hundred and seven
+6314	six thousand three hundred and fourteen
+6321	six thousand three hundred and twenty one
+6328	six thousand three hundred and twenty eight
+6335	six thousand three hundred and thirty five
+6342	six thousand three hundred and forty two
+6349	six thousand three hundred and forty nine
+6356	six thousand three hundred and fifty six
+6363	six thousand three hundred and sixty three
+6370	six thousand three hundred and seventy
+6377	six thousand three hundred and seventy seven
+6384	six thousand three hundred and eighty four
+6391	six thousand three hundred and ninety one
+6398	six thousand three hundred and ninety eight
+6405	six thousand four hundred and five
+6412	six thousand four hundred and twelve
+6419	six thousand four hundred and nineteen
+6426	six thousand four hundred and twenty six
+6433	six thousand four hundred and thirty three
+6440	six thousand four hundred and forty
+6447	six thousand four hundred and forty seven
+6454	six thousand four hundred and fifty four
+6461	six thousand four hundred and sixty one
+6468	six thousand four hundred and sixty eight
+6475	six thousand four hundred and seventy five
+6482	six thousand four hundred and eighty two
+6489	six thousand four hundred and eighty nine
+6496	six thousand four hundred and ninety six
+6503	six thousand five hundred and three
+6510	six thousand five hundred and ten
+6517	six thousand five hundred and seventeen
+6524	six thousand five hundred and twenty four
+6531	six thousand five hundred and thirty one
+6538	six thousand five hundred and thirty eight
+6545	six thousand five hundred and forty five
+6552	six thousand five hundred and fifty two
+6559	six thousand five hundred and fifty nine
+6566	six thousand five hundred and sixty six
+6573	six thousand five hundred and seventy three
+6580	six thousand five hundred and eighty
+6587	six thousand five hundred and eighty seven
+6594	six thousand five hundred and ninety four
+6601	six thousand six hundred and one
+6608	six thousand six hundred and eight
+6615	six thousand six hundred and fifteen
+6622	six thousand six hundred and twenty two
+6629	six thousand six hundred and twenty nine
+6636	six thousand six hundred and thirty six
+6643	six thousand six hundred and forty three
+6650	six thousand six hundred and fifty
+6657	six thousand six hundred and fifty seven
+6664	six thousand six hundred and sixty four
+6671	six thousand six hundred and seventy one
+6678	six thousand six hundred and seventy eight
+6685	six thousand six hundred and eighty five
+6692	six thousand six hundred and ninety two
+6699	six thousand six hundred and ninety nine
+6706	six thousand seven hundred and six
+6713	six thousand seven hundred and thirteen
+6720	six thousand seven hundred and twenty
+6727	six thousand seven hundred and twenty seven
+6734	six thousand seven hundred and thirty four
+6741	six thousand seven hundred and forty one
+6748	six thousand seven hundred and forty eight
+6755	six thousand seven hundred and fifty five
+6762	six thousand seven hundred and sixty two
+6769	six thousand seven hundred and sixty nine
+6776	six thousand seven hundred and seventy six
+6783	six thousand seven hundred and eighty three
+6790	six thousand seven hundred and ninety
+6797	six thousand seven hundred and ninety seven
+6804	six thousand eight hundred and four
+6811	six thousand eight hundred and eleven
+6818	six thousand eight hundred and eighteen
+6825	six thousand eight hundred and twenty five
+6832	six thousand eight hundred and thirty two
+6839	six thousand eight hundred and thirty nine
+6846	six thousand eight hundred and forty six
+6853	six thousand eight hundred and fifty three
+6860	six thousand eight hundred and sixty
+6867	six thousand eight hundred and sixty seven
+6874	six thousand eight hundred and seventy four
+6881	six thousand eight hundred and eighty one
+6888	six thousand eight hundred and eighty eight
+6895	six thousand eight hundred and ninety five
+6902	six thousand nine hundred and two
+6909	six thousand nine hundred and nine
+6916	six thousand nine hundred and sixteen
+6923	six thousand nine hundred and twenty three
+6930	six thousand nine hundred and thirty
+6937	six thousand nine hundred and thirty seven
+6944	six thousand nine hundred and forty four
+6951	six thousand nine hundred and fifty one
+6958	six thousand nine hundred and fifty eight
+6965	six thousand nine hundred and sixty five
+6972	six thousand nine hundred and seventy two
+6979	six thousand nine hundred and seventy nine
+6986	six thousand nine hundred and eighty six
+6993	six thousand nine hundred and ninety three
+7000	seven thousand
+7007	seven thousand and seven
+7014	seven thousand and fourteen
+7021	seven thousand and twenty one
+7028	seven thousand and twenty eight
+7035	seven thousand and thirty five
+7042	seven thousand and forty two
+7049	seven thousand and forty nine
+7056	seven thousand and fifty six
+7063	seven thousand and sixty three
+7070	seven thousand and seventy
+7077	seven thousand and seventy seven
+7084	seven thousand and eighty four
+7091	seven thousand and ninety one
+7098	seven thousand and ninety eight
+7105	seven thousand one hundred and five
+7112	seven thousand one hundred and twelve
+7119	seven thousand one hundred and nineteen
+7126	seven thousand one hundred and twenty six
+7133	seven thousand one hundred and thirty three
+7140	seven thousand one hundred and forty
+7147	seven thousand one hundred and forty seven
+7154	seven thousand one hundred and fifty four
+7161	seven thousand one hundred and sixty one
+7168	seven thousand one hundred and sixty eight
+7175	seven thousand one hundred and seventy five
+7182	seven thousand one hundred and eighty two
+7189	seven thousand one hundred and eighty nine
+7196	seven thousand one hundred and ninety six
+7203	seven thousand two hundred and three
+7210	seven thousand two hundred and ten
+7217	seven thousand two hundred and seventeen
+7224	seven thousand two hundred and twenty four
+7231	seven thousand two hundred and thirty one
+7238	seven thousand two hundred and thirty eight
+7245	seven thousand two hundred and forty five
+7252	seven thousand two hundred and fifty two
+7259	seven thousand two hundred and fifty nine
+7266	seven thousand two hundred and sixty six
+7273	seven thousand two hundred and seventy three
+7280	seven thousand two hundred and eighty
+7287	seven thousand two hundred and eighty seven
+7294	seven thousand two hundred and ninety four
+7301	seven thousand three hundred and one
+7308	seven thousand three hundred and eight
+7315	seven thousand three hundred and fifteen
+7322	seven thousand three hundred and twenty two
+7329	seven thousand three hundred and twenty nine
+7336	seven thousand three hundred and thirty six
+7343	seven thousand three hundred and forty three
+7350	seven thousand three hundred and fifty
+7357	seven thousand three hundred and fifty seven
+7364	seven thousand three hundred and sixty four
+7371	seven thousand three hundred and seventy one
+7378	seven thousand three hundred and seventy eight
+7385	seven thousand three hundred and eighty five
+7392	seven thousand three hundred and ninety two
+7399	seven thousand three hundred and ninety nine
+7406	seven thousand four hundred and six
+7413	seven thousand four hundred and thirteen
+7420	seven thousand four hundred and twenty
+7427	seven thousand four hundred and twenty seven
+7434	seven thousand four hundred and thirty four
+7441	seven thousand four hundred and forty one
+7448	seven thousand four hundred and forty eight
+7455	seven thousand four hundred and fifty five
+7462	seven thousand four hundred and sixty two
+7469	seven thousand four hundred and sixty nine
+7476	seven thousand four hundred and seventy six
+7483	seven thousand four hundred and eighty three
+7490	seven thousand four hundred and ninety
+7497	seven thousand four hundred and ninety seven
+7504	seven thousand five hundred and four
+7511	seven thousand five hundred and eleven
+7518	seven thousand five hundred and eighteen
+7525	seven thousand five hundred and twenty five
+7532	seven thousand five hundred and thirty two
+7539	seven thousand five hundred and thirty nine
+7546	seven thousand five hundred and forty six
+7553	seven thousand five hundred and fifty three
+7560	seven thousand five hundred and sixty
+7567	seven thousand five hundred and sixty seven
+7574	seven thousand five hundred and seventy four
+7581	seven thousand five hundred and eighty one
+7588	seven thousand five hundred and eighty eight
+7595	seven thousand five hundred and ninety five
+7602	seven thousand six hundred and two
+7609	seven thousand six hundred and nine
+7616	seven thousand six hundred and sixteen
+7623	seven thousand six hundred and twenty three
+7630	seven thousand six hundred and thirty
+7637	seven thousand six hundred and thirty seven
+7644	seven thousand six hundred and forty four
+7651	seven thousand six hundred and fifty one
+7658	seven thousand six hundred and fifty eight
+7665	seven thousand six hundred and sixty five
+7672	seven thousand six hundred and seventy two
+7679	seven thousand six hundred and seventy nine
+7686	seven thousand six hundred and eighty six
+7693	seven thousand six hundred and ninety three
+7700	seven thousand seven hundred
+7707	seven thousand seven hundred and seven
+7714	seven thousand seven hundred and fourteen
+7721	seven thousand seven hundred and twenty one
+7728	seven thousand seven hundred and twenty eight
+7735	seven thousand seven hundred and thirty five
+7742	seven thousand seven hundred and forty two
+7749	seven thousand seven hundred and forty nine
+7756	seven thousand seven hundred and fifty six
+7763	seven thousand seven hundred and sixty three
+7770	seven thousand seven hundred and seventy
+7777	seven thousand seven hundred and seventy seven
+7784	seven thousand seven hundred and eighty four
+7791	seven thousand seven hundred and ninety one
+7798	seven thousand seven hundred and ninety eight
+7805	seven thousand eight hundred and five
+7812	seven thousand eight hundred and twelve
+7819	seven thousand eight hundred and nineteen
+7826	seven thousand eight hundred and twenty six
+7833	seven thousand eight hundred and thirty three
+7840	seven thousand eight hundred and forty
+7847	seven thousand eight hundred and forty seven
+7854	seven thousand eight hundred and fifty four
+7861	seven thousand eight hundred and sixty one
+7868	seven thousand eight hundred and sixty eight
+7875	seven thousand eight hundred and seventy five
+7882	seven thousand eight hundred and eighty two
+7889	seven thousand eight hundred and eighty nine
+7896	seven thousand eight hundred and ninety six
+7903	seven thousand nine hundred and three
+7910	seven thousand nine hundred and ten
+7917	seven thousand nine hundred and seventeen
+7924	seven thousand nine hundred and twenty four
+7931	seven thousand nine hundred and thirty one
+7938	seven thousand nine hundred and thirty eight
+7945	seven thousand nine hundred and forty five
+7952	seven thousand nine hundred and fifty two
+7959	seven thousand nine hundred and fifty nine
+7966	seven thousand nine hundred and sixty six
+7973	seven thousand nine hundred and seventy three
+7980	seven thousand nine hundred and eighty
+7987	seven thousand nine hundred and eighty seven
+7994	seven thousand nine hundred and ninety four
+8001	eight thousand and one
+8008	eight thousand and eight
+8015	eight thousand and fifteen
+8022	eight thousand and twenty two
+8029	eight thousand and twenty nine
+8036	eight thousand and thirty six
+8043	eight thousand and forty three
+8050	eight thousand and fifty
+8057	eight thousand and fifty seven
+8064	eight thousand and sixty four
+8071	eight thousand and seventy one
+8078	eight thousand and seventy eight
+8085	eight thousand and eighty five
+8092	eight thousand and ninety two
+8099	eight thousand and ninety nine
+8106	eight thousand one hundred and six
+8113	eight thousand one hundred and thirteen
+8120	eight thousand one hundred and twenty
+8127	eight thousand one hundred and twenty seven
+8134	eight thousand one hundred and thirty four
+8141	eight thousand one hundred and forty one
+8148	eight thousand one hundred and forty eight
+8155	eight thousand one hundred and fifty five
+8162	eight thousand one hundred and sixty two
+8169	eight thousand one hundred and sixty nine
+8176	eight thousand one hundred and seventy six
+8183	eight thousand one hundred and eighty three
+8190	eight thousand one hundred and ninety
+8197	eight thousand one hundred and ninety seven
+8204	eight thousand two hundred and four
+8211	eight thousand two hundred and eleven
+8218	eight thousand two hundred and eighteen
+8225	eight thousand two hundred and twenty five
+8232	eight thousand two hundred and thirty two
+8239	eight thousand two hundred and thirty nine
+8246	eight thousand two hundred and forty six
+8253	eight thousand two hundred and fifty three
+8260	eight thousand two hundred and sixty
+8267	eight thousand two hundred and sixty seven
+8274	eight thousand two hundred and seventy four
+8281	eight thousand two hundred and eighty one
+8288	eight thousand two hundred and eighty eight
+8295	eight thousand two hundred and ninety five
+8302	eight thousand three hundred and two
+8309	eight thousand three hundred and nine
+8316	eight thousand three hundred and sixteen
+8323	eight thousand three hundred and twenty three
+8330	eight thousand three hundred and thirty
+8337	eight thousand three hundred and thirty seven
+8344	eight thousand three hundred and forty four
+8351	eight thousand three hundred and fifty one
+8358	eight thousand three hundred and fifty eight
+8365	eight thousand three hundred and sixty five
+8372	eight thousand three hundred and seventy two
+8379	eight thousand three hundred and seventy nine
+8386	eight thousand three hundred and eighty six
+8393	eight thousand three hundred and ninety three
+8400	eight thousand four hundred
+8407	eight thousand four hundred and seven
+8414	eight thousand four hundred and fourteen
+8421	eight thousand four hundred and twenty one
+8428	eight thousand four hundred and twenty eight
+8435	eight thousand four hundred and thirty five
+8442	eight thousand four hundred and forty two
+8449	eight thousand four hundred and forty nine
+8456	eight thousand four hundred and fifty six
+8463	eight thousand four hundred and sixty three
+8470	eight thousand four hundred and seventy
+8477	eight thousand four hundred and seventy seven
+8484	eight thousand four hundred and eighty four
+8491	eight thousand four hundred and ninety one
+8498	eight thousand four hundred and ninety eight
+8505	eight thousand five hundred and five
+8512	eight thousand five hundred and twelve
+8519	eight thousand five hundred and nineteen
+8526	eight thousand five hundred and twenty six
+8533	eight thousand five hundred and thirty three
+8540	eight thousand five hundred and forty
+8547	eight thousand five hundred and forty seven
+8554	eight thousand five hundred and fifty four
+8561	eight thousand five hundred and sixty one
+8568	eight thousand five hundred and sixty eight
+8575	eight thousand five hundred and seventy five
+8582	eight thousand five hundred and eighty two
+8589	eight thousand five hundred and eighty nine
+8596	eight thousand five hundred and ninety six
+8603	eight thousand six hundred and three
+8610	eight thousand six hundred and ten
+8617	eight thousand six hundred and seventeen
+8624	eight thousand six hundred and twenty four
+8631	eight thousand six hundred and thirty one
+8638	eight thousand six hundred and thirty eight
+8645	eight thousand six hundred and forty five
+8652	eight thousand six hundred and fifty two
+8659	eight thousand six hundred and fifty nine
+8666	eight thousand six hundred and sixty six
+8673	eight thousand six hundred and seventy three
+8680	eight thousand six hundred and eighty
+8687	eight thousand six hundred and eighty seven
+8694	eight thousand six hundred and ninety four
+8701	eight thousand seven hundred and one
+8708	eight thousand seven hundred and eight
+8715	eight thousand seven hundred and fifteen
+8722	eight thousand seven hundred and twenty two
+8729	eight thousand seven hundred and twenty nine
+8736	eight thousand seven hundred and thirty six
+8743	eight thousand seven hundred and forty three
+8750	eight thousand seven hundred and fifty
+8757	eight thousand seven hundred and fifty seven
+8764	eight thousand seven hundred and sixty four
+8771	eight thousand seven hundred and seventy one
+8778	eight thousand seven hundred and seventy eight
+8785	eight thousand seven hundred and eighty five
+8792	eight thousand seven hundred and ninety two
+8799	eight thousand seven hundred and ninety nine
+8806	eight thousand eight hundred and six
+8813	eight thousand eight hundred and thirteen
+8820	eight thousand eight hundred and twenty
+8827	eight thousand eight hundred and twenty seven
+8834	eight thousand eight hundred and thirty four
+8841	eight thousand eight hundred and forty one
+8848	eight thousand eight hundred and forty eight
+8855	eight thousand eight hundred and fifty five
+8862	eight thousand eight hundred and sixty two
+8869	eight thousand eight hundred and sixty nine
+8876	eight thousand eight hundred and seventy six
+8883	eight thousand eight hundred and eighty three
+8890	eight thousand eight hundred and ninety
+8897	eight thousand eight hundred and ninety seven
+8904	eight thousand nine hundred and four
+8911	eight thousand nine hundred and eleven
+8918	eight thousand nine hundred and eighteen
+8925	eight thousand nine hundred and twenty five
+8932	eight thousand nine hundred and thirty two
+8939	eight thousand nine hundred and thirty nine
+8946	eight thousand nine hundred and forty six
+8953	eight thousand nine hundred and fifty three
+8960	eight thousand nine hundred and sixty
+8967	eight thousand nine hundred and sixty seven
+8974	eight thousand nine hundred and seventy four
+8981	eight thousand nine hundred and eighty one
+8988	eight thousand nine hundred and eighty eight
+8995	eight thousand nine hundred and ninety five
+9002	nine thousand and two
+9009	nine thousand and nine
+9016	nine thousand and sixteen
+9023	nine thousand and twenty three
+9030	nine thousand and thirty
+9037	nine thousand and thirty seven
+9044	nine thousand and forty four
+9051	nine thousand and fifty one
+9058	nine thousand and fifty eight
+9065	nine thousand and sixty five
+9072	nine thousand and seventy two
+9079	nine thousand and seventy nine
+9086	nine thousand and eighty six
+9093	nine thousand and ninety three
+9100	nine thousand one hundred
+9107	nine thousand one hundred and seven
+9114	nine thousand one hundred and fourteen
+9121	nine thousand one hundred and twenty one
+9128	nine thousand one hundred and twenty eight
+9135	nine thousand one hundred and thirty five
+9142	nine thousand one hundred and forty two
+9149	nine thousand one hundred and forty nine
+9156	nine thousand one hundred and fifty six
+9163	nine thousand one hundred and sixty three
+9170	nine thousand one hundred and seventy
+9177	nine thousand one hundred and seventy seven
+9184	nine thousand one hundred and eighty four
+9191	nine thousand one hundred and ninety one
+9198	nine thousand one hundred and ninety eight
+9205	nine thousand two hundred and five
+9212	nine thousand two hundred and twelve
+9219	nine thousand two hundred and nineteen
+9226	nine thousand two hundred and twenty six
+9233	nine thousand two hundred and thirty three
+9240	nine thousand two hundred and forty
+9247	nine thousand two hundred and forty seven
+9254	nine thousand two hundred and fifty four
+9261	nine thousand two hundred and sixty one
+9268	nine thousand two hundred and sixty eight
+9275	nine thousand two hundred and seventy five
+9282	nine thousand two hundred and eighty two
+9289	nine thousand two hundred and eighty nine
+9296	nine thousand two hundred and ninety six
+9303	nine thousand three hundred and three
+9310	nine thousand three hundred and ten
+9317	nine thousand three hundred and seventeen
+9324	nine thousand three hundred and twenty four
+9331	nine thousand three hundred and thirty one
+9338	nine thousand three hundred and thirty eight
+9345	nine thousand three hundred and forty five
+9352	nine thousand three hundred and fifty two
+9359	nine thousand three hundred and fifty nine
+9366	nine thousand three hundred and sixty six
+9373	nine thousand three hundred and seventy three
+9380	nine thousand three hundred and eighty
+9387	nine thousand three hundred and eighty seven
+9394	nine thousand three hundred and ninety four
+9401	nine thousand four hundred and one
+9408	nine thousand four hundred and eight
+9415	nine thousand four hundred and fifteen
+9422	nine thousand four hundred and twenty two
+9429	nine thousand four hundred and twenty nine
+9436	nine thousand four hundred and thirty six
+9443	nine thousand four hundred and forty three
+9450	nine thousand four hundred and fifty
+9457	nine thousand four hundred and fifty seven
+9464	nine thousand four hundred and sixty four
+9471	nine thousand four hundred and seventy one
+9478	nine thousand four hundred and seventy eight
+9485	nine thousand four hundred and eighty five
+9492	nine thousand four hundred and ninety two
+9499	nine thousand four hundred and ninety nine
+9506	nine thousand five hundred and six
+9513	nine thousand five hundred and thirteen
+9520	nine thousand five hundred and twenty
+9527	nine thousand five hundred and twenty seven
+9534	nine thousand five hundred and thirty four
+9541	nine thousand five hundred and forty one
+9548	nine thousand five hundred and forty eight
+9555	nine thousand five hundred and fifty five
+9562	nine thousand five hundred and sixty two
+9569	nine thousand five hundred and sixty nine
+9576	nine thousand five hundred and seventy six
+9583	nine thousand five hundred and eighty three
+9590	nine thousand five hundred and ninety
+9597	nine thousand five hundred and ninety seven
+9604	nine thousand six hundred and four
+9611	nine thousand six hundred and eleven
+9618	nine thousand six hundred and eighteen
+9625	nine thousand six hundred and twenty five
+9632	nine thousand six hundred and thirty two
+9639	nine thousand six hundred and thirty nine
+9646	nine thousand six hundred and forty six
+9653	nine thousand six hundred and fifty three
+9660	nine thousand six hundred and sixty
+9667	nine thousand six hundred and sixty seven
+9674	nine thousand six hundred and seventy four
+9681	nine thousand six hundred and eighty one
+9688	nine thousand six hundred and eighty eight
+9695	nine thousand six hundred and ninety five
+9702	nine thousand seven hundred and two
+9709	nine thousand seven hundred and nine
+9716	nine thousand seven hundred and sixteen
+9723	nine thousand seven hundred and twenty three
+9730	nine thousand seven hundred and thirty
+9737	nine thousand seven hundred and thirty seven
+9744	nine thousand seven hundred and forty four
+9751	nine thousand seven hundred and fifty one
+9758	nine thousand seven hundred and fifty eight
+9765	nine thousand seven hundred and sixty five
+9772	nine thousand seven hundred and seventy two
+9779	nine thousand seven hundred and seventy nine
+9786	nine thousand seven hundred and eighty six
+9793	nine thousand seven hundred and ninety three
+9800	nine thousand eight hundred
+9807	nine thousand eight hundred and seven
+9814	nine thousand eight hundred and fourteen
+9821	nine thousand eight hundred and twenty one
+9828	nine thousand eight hundred and twenty eight
+9835	nine thousand eight hundred and thirty five
+9842	nine thousand eight hundred and forty two
+9849	nine thousand eight hundred and forty nine
+9856	nine thousand eight hundred and fifty six
+9863	nine thousand eight hundred and sixty three
+9870	nine thousand eight hundred and seventy
+9877	nine thousand eight hundred and seventy seven
+9884	nine thousand eight hundred and eighty four
+9891	nine thousand eight hundred and ninety one
+9898	nine thousand eight hundred and ninety eight
+9905	nine thousand nine hundred and five
+9912	nine thousand nine hundred and twelve
+9919	nine thousand nine hundred and nineteen
+9926	nine thousand nine hundred and twenty six
+9933	nine thousand nine hundred and thirty three
+9940	nine thousand nine hundred and forty
+9947	nine thousand nine hundred and forty seven
+9954	nine thousand nine hundred and fifty four
+9961	nine thousand nine hundred and sixty one
+9968	nine thousand nine hundred and sixty eight
+9975	nine thousand nine hundred and seventy five
+9982	nine thousand nine hundred and eighty two
+9989	nine thousand nine hundred and eighty nine
+9996	nine thousand nine hundred and ninety six
+100000	one hundred thousand
+999999	nine hundred and ninety nine thousand nine hundred and ninety nine
+1000000	one million
+2000000	two million
+1234567	one million two hundred and thirty four thousand five hundred and sixty seven
+2026	twenty twenty six
+1984	nineteen eighty four
+999999999	nine hundred and ninety nine million nine hundred and ninety nine thousand nine hundred and ninety nine
+1000000000	one billion
+50000000	fifty million
+200000	two hundred thousand
+300000	three hundred thousand
+1,000	one thousand
+1,234	one thousand two hundred and thirty four
+12,345	twelve thousand three hundred and forty five
+3.5	three point five
+3.14	three point one four
+20.15	twenty point one five
+50%	fifty percent
+100 %	one hundred percent
+25%	twenty five percent
+mae 100 o bobl	mae one hundred o bobl
+ci & chath	ci and chath
+ci & aderyn	ci and aderyn
+e.e.	e.e.
+h.y.	h.y.
+ayb	ayb
+ayyb	ayyb
+Dr Jones	doctor jones
+BBC	bbc
+S4C	s pedwar c
+Mae'r tywydd yn braf	mae'r tywydd yn braf
+Mae 234 o bobl yn y BBC	mae two hundred and thirty four o bobl yn y bbc
+Roedd 42 o blant	roedd forty two o blant
+yn 2026 bydd	yn twenty twenty six bydd
+yr NHS a'r BBC	yr nhs a'r bbc
+e.e. cath a chi	e.e. cath a chi
+d.s. pwysig	d.s. pwysig
+S4C a'r BBC.	s pedwar c a'r bbc.
+A55	a pum deg pump
+A470	a pedwar cant saith deg
+OK	ok
+HMS	h·m·s
+3D	tri d
+COVID19	c·o·v·i·d un deg naw
+B1	b un
+CROESO I GYMRU	croeso i gymru
+aeth o ar hyd yr A55	aeth o ar hyd yr a pum deg pump
+s4c	s four c
+ADRODDIAD	adroddiad
+NATO	nato
+DVLA	dvla
+US	us
+WJEC	w·j·e·c
+USB	u·s·b
+KGB	k·g·b
+HTML	h·t·m·l
+y BBC	y bbc
+i BBC Cymru	i bbc cymru
+o BBC Radio	o bbc radio
+a BBC	a bbc
+BBC y dydd	bbc y dydd
+y CD	y cd
+API	a·p·i
+TTS	tts
+URL	u·r·l
+PDF	p·d·f
+A55 a'r M4	a pum deg pump a'r m pedwar
+1/2	one half
+1/4	one quarter
+3/4	three quarters
+1/3	one third
+2/3	two thirds
+5/8	five eighths
+7/8	seven eighths
+1/10	one tenth
+5km	five kilometres
+3kg	three kilograms
+10cm	ten centimetres
+2m	two metres
+500g	five hundred grams
+2l	two litres
+1,500km	one thousand five hundred kilometres
+mae 3/4 o'r dosbarth	mae three quarters o'r dosbarth
+5mm	five millimetres
+2mm	two millimetres
+3mm	three millimetres
+6mm	six millimetres
+10mm	ten millimetres
+1,500mm	one thousand five hundred millimetres
+mae 5mm o law	mae five millimetres o law
+5/4	five four
+4/4	four four
+9/2	nine two
+6/3	six three
+11/7/8	eleven seven eight
+1/2/3	one half three
+5 km	five kilometres
+3 kg	three kilograms
+2 m	two metres
+10 cm	ten centimetres
+500　g	five hundred grams
+2l	two litres
+6m	six metres
+7kg	seven kilograms
+£ 5m	five million pounds
+£ 5bn	five billion pounds
+£ 5	five pounds
+£ 5.99	five pounds ninety nine
+£ 5kg	£ five kilograms
+£　5M	£ pump m
+ci cath	ci cath
+a b	a b
+bore　da	bore da
+ci  cath	ci cath
+ bore da 	bore da
+5  km	five km
+mae ci yma	mae ci yma
+Mae’r tywydd yn braf	mae'r tywydd yn braf
+Dw i’n mynd	dw i'n mynd
+i’w dŷ	i'w dŷ
+o’r blaen	o'r blaen
+S4C a’r BBC.	s pedwar c a'r bbc.
+ʼn awr	'n awr
+dydd Iau’r wythnos	dydd iau'r wythnos
+17/07/2026	the seventeenth of july twenty twenty six
+1/1/2000	the first of january two thousand
+31/12/1999	the thirty first of december nineteen ninety nine
+3/3/2033	the third of march twenty thirty three
+17 Gorffennaf 2026	seventeen gorffennaf twenty twenty six
+25 Rhagfyr	twenty five rhagfyr
+1 Ionawr 2000	one ionawr two thousand
+y 5ed o Fai	y five ed o fai
+ganwyd hi ar 2/2/2022	ganwyd hi ar the second of february twenty twenty two
+£5	five pounds
+£1	one pound
+£2	two pounds
+£3	three pounds
+£6	six pounds
+£10	ten pounds
+£100	one hundred pounds
+£5.99	five pounds ninety nine
+£2.50	two pounds fifty
+£1234.56	one thousand two hundred and thirty four pounds fifty six
+50p	fifty pence
+99c	ninety nine pence
+5c	five pence
+3:00	three o'clock
+10:30	ten thirty
+9:05	nine oh five
+14:45	fourteen forty five
+23:59	twenty three fifty nine
+12:00	twelve o'clock
+2 + 2 = 4	two plus two equals four
+e-bost @ y safle	e-bost at y safle
+a = b + c	a equals b plus c
+£20 a 50p	twenty pounds a fifty pence
+ci - cath	ci - cath
+£5m	five million pounds
+£1m	one million pounds
+£2m	two million pounds
+£3m	three million pounds
+£6m	six million pounds
+£10m	ten million pounds
+£100m	one hundred million pounds
+£2.5m	two million five hundred thousand pounds
+£1.5m	one million five hundred thousand pounds
+£0.5m	five hundred thousand pounds
+£5.99m	five million nine hundred and ninety thousand pounds
+£1,500m	one billion five hundred million pounds
+£10k	ten thousand pounds
+£1k	one thousand pounds
+£2k	two thousand pounds
+£250k	two hundred and fifty thousand pounds
+£1.5k	one thousand five hundred pounds
+£3bn	three billion pounds
+£1bn	one billion pounds
+£2bn	two billion pounds
+£2.5bn	two billion five hundred million pounds
+£100bn	one hundred billion pounds
+£5M	five million pounds
+£10K	ten thousand pounds
+£3BN	three billion pounds
+£3Bn	three billion pounds
+£ 5m	five million pounds
+£5m.	five million pounds.
+mae £3m yn y gronfa	mae three million pounds yn y gronfa
+cost o £2.5m a £750k	cost o two million five hundred thousand pounds a seven hundred and fifty thousand pounds
+£5MB	£pump m·b
+5M	pump m
+£0m	zero pounds
+£5kg	£five kilograms
+£5km	£five kilometres
+£5mm	£five millimetres
+£5cm	£five centimetres
+£5g	£five grams
+£5l	£five litres
+£5 kg	£five kilograms
+£5 m	£five metres
+£5million	five pounds million
+1af	one af
+2il	two il
+3ydd	three ydd
+3edd	three edd
+5ed	five ed
+10fed	ten fed
+11eg	eleven eg
+17eg	seventeen eg
+20fed	twenty fed
+21ain	twenty one ain
+31ain	thirty one ain
+7:00p.m.	seven o'clock p·m
+16:00p.m.	sixteen o'clock p·m
+3:00a.m.	three o'clock a·m
+3:00 a.m.	three o'clock a·m
+7:00 p.m.	seven o'clock p·m
+10:30p.m.	ten thirty p·m
+12:15p.m.	twelve fifteen p·m
+23:45a.m.	twenty three forty five a·m
+7p	seven pence
+50p.	fifty pence.
+12:15P.M.	twelve un deg pump p.m.
+amser: 3:00p.m.	amser: three o'clock p·m
+7pm	seven o'clock p·m
+7am	seven o'clock a·m
+9yp	nine o'clock p·m
+2yh	two o'clock p·m
+10yb	ten o'clock a·m
+7p.m.	seven o'clock p·m
+10am hyd 4pm	ten o'clock a·m hyd four o'clock p·m
+12pm	twelve o'clock p·m
+12am	twelve o'clock a·m
+7PM	seven o'clock p·m
+10YB	ten o'clock a·m
+3:00PM	three o'clock p·m
+3:45PM	three forty five p·m
+AR AGOR 9AM HYD 5PM	ar agor nine o'clock a·m hyd five o'clock p·m
+7.30pm	seven thirty p·m
+16.30yh	sixteen thirty p·m
+2.50pm	two fifty p·m
+post@7pm.com	post at seven o'clock p·m dot com
+7pm@x.com	seven o'clock p·m at x dot com
+www.7pm.com	w·w·w dot seven o'clock p·m dot com
+7 pm	seven pm
+5 am ddim	five am ddim
+2 am 1	two am one
+the PM said	the pm said
+45PM	pedwar deg pump p·m
+30PM	tri deg p·m
+7.30	seven point three zero
+7.300pm	seven point three zero zero pm
+25:00pm	twenty five zero zero pm
+1,23pm	one hundred and twenty three pm
+£2.50pm	two pounds fifty pm
+7A.M.	saith a.m.
+3:00 PM	three o'clock p·m
+16:00 y bore	sixteen o'clock y bore
+0800x	zero eight zero zero x
+05lhn0	zero five lhn zero
+00c3	zero zero c three
+007	zero zero seven
+rhif 05lhn0	rhif zero five lhn zero
+0800/123	zero eight zero zero one hundred and twenty three
+ffon:01248	ffon zero one two four eight
+01248-382000	zero one two four eight three eight two zero zero zero
+00	zero zero
+0abc	zero abc
+0d	zero d
+x05	x zero five
+a007	a zero zero seven
+800x	eight hundred x
+5x	five x
+3.5x	three point five x
+50%x	fifty percent x
+1/2x	one two x
+£5x	five pounds x
+1,000x	one thousand x
+12:30x	twelve thirty x
+2026x	twenty twenty six x
+x800	x eight hundred
+covid19	covid nineteen
+h2o	h two o
+1 Ionawr 2026x	one ionawr twenty twenty six x
+25 Rhagfyr 1999abc	twenty five rhagfyr nineteen ninety nine abc
+1 Ionawr 20261	one ionawr twenty thousand two hundred and sixty one
+ê9p	ênine pence
+_05	_ zero five
+5_x	five _x
+a+b	a plus b
+a=b	a equals b
+a@b	a at b
+a*b	a b
+2*3	two three
+5*5	five five
+gôl*sgôr	gôl sgôr
+C++	c++
+A+	a+
+A+ grade	a+ grade
+a+ b	a+ b
+Home screen 1 of 3	home screen one of three
+Page 3 of 10	page three of ten
+Tab 1 of 4	tab one of four
+Showing 2 of 10 items	showing two of ten items
+1,234,567	one million two hundred and thirty four thousand five hundred and sixty seven
+1000	one thousand
+1100	eleven hundred
+1999	nineteen ninety nine
+2000	two thousand
+2005	two thousand and five
+2010	twenty ten
+1066	one thousand and sixty six
+1905	nineteen oh five
+In 2026 and 1999	in twenty twenty six and nineteen ninety nine
+1500 people	fifteen hundred people
+2,026	two thousand and twenty six
+1st	first
+2nd	second
+3rd	third
+4th	fourth
+5th	fifth
+8th	eighth
+9th	ninth
+11th	eleventh
+12th	twelfth
+13th	thirteenth
+20th	twentieth
+21st	twenty first
+22nd	twenty second
+23rd	twenty third
+30th	thirtieth
+100th	one hundredth
+101st	one hundred and first
+112th	one hundred and twelfth
+120th	one hundred and twentieth
+1000th	one thousandth
+1,000th	onezeroth
+3RD	tri r·d
+31 January	the thirty first of january
+12 March 2026	the twelfth of march twenty twenty six
+1 May 1999	the first of may nineteen ninety nine
+25 december 2000	the twenty fifth of december two thousand
+3 June	the third of june
+3 june 20261	the third of june twenty thousand two hundred and sixty one
+12/3/26	the twelfth of march twenty six
+29/2/2024	the twenty ninth of february twenty twenty four
+32/1/2000	thirty two one two thousand
+3:30	three thirty
+3:05	three oh five
+15:30	fifteen thirty
+00:00	zero o'clock
+3pm	three o'clock p·m
+3:30pm	three thirty p·m
+11am	eleven o'clock a·m
+9 a.m.	nine a.m.
+10 yb	ten yb
+10:15 y.h.	ten fifteen p·m
+3:00pmx	three zero zero pmx
+£250	two hundred and fifty pounds
+£1.50	one pound fifty
+£0.50	fifty pence
+£0.05	five pence
+£0	zero pounds
+£1,000	one thousand pounds
+£5.5	five pounds five
+1p	one penny
+99p	ninety nine pence
+0p	zero pence
+4c	four pence
+1,000p	one thousand pence
+15%	fifteen percent
+100%	one hundred percent
+0.5%	zero.five percent
+0.75	zero point seven five
+10.05	ten point zero five
+1000.5	one thousand point five
+007.5	seven point five
+3/16	three sixteenths
+15/16	fifteen sixteenths
+7/2	seven two
+1/25	one twenty five
+0/2	zero halves
+2/4	two quarters
+0/4	zero quarters
+1km	one kilometre
+2.5kg	two point five kilograms
+1 m	one metre
+2 m	two metres
+3 mm	three millimetres
+0km	zero kilometres
+500ml	five hundred ml
+1,000km	one thousand kilometres
+01km	one kilometre
+0300 123 4567	zero three zero zero one two three four five six seven
+07700 900123	zero seven seven zero zero nine zero zero one two three
+0800 1111	zero eight zero zero eleven eleven
+0044	zero zero four four
+Henry VIII	henry the eighth
+Elizabeth II	elizabeth the second
+Chapter IV	chapter four
+Part II	part two
+World War II	world war two
+Level III	level three
+Pennod IV	pennod four
+Act I	act i
+MMXXVI	two thousand and twenty six
+Louis XIV	louis the fourteenth
+Section XL	section forty
+5 + 3	five plus three
+2 x 3	two times three
+3 × 4	three times four
+10 = 10	ten equals ten
+5+3	five plus three
+a/b	a b
+20°C	twenty degrees celsius
+98.6°F	ninety eight point six degrees fahrenheit
+45°	forty five degrees
+20 °C	twenty degrees celsius
+Dr Smith	doctor smith
+Mr and Mrs Jones	mister and missus jones
+Ms Davies	ms davies
+Dr. Who	doctor who
+e.e. hyn	e.e. hyn
+BBC & ITV	bbc and itv
+Tom & Jerry	tom and jerry
+A & E	a and e
+Marks & Spencer	marks and spencer
+1,234,567,890,123	one two three four five six seven eight nine zero one two three
+999,999,999,999	nine hundred and ninety nine billion nine hundred and ninety nine million nine hundred and ninety nine thousand nine hundred and ninety nine
+1,000,000,000,000	one zero zero zero zero zero zero zero zero zero zero zero zero
+12345678901234567890	one two three four five six seven eight nine zero one two three four five six seven eight nine zero
+0.0	zero point zero
+-5	-five
+minus 5	minus five
+3 items in your basket	three items in your basket
+Battery at 45%	battery at forty five percent
+Call 0300 123 4567 now	call zero three zero zero one two three four five six seven now
+Older state pensioners set for automatic bonus from DWP	older state pensioners set for automatic bonus from d·w·p
+Read 3 new messages	read three new messages
+You have 1 new notification	you have one new notification
+Alarm set for 6:45 am	alarm set for six forty five a·m
+Meeting at 14:00 on 3rd April	meeting at fourteen o'clock on third april
+The 2nd of 3 steps	the second of three steps
+Version 2.0	version two point zero
+iPhone 15 Pro	iphone fifteen pro
+5 blynedd	five blynedd
+3 mlynedd	three mlynedd
+No.10	no.ten
+1 January 2026x	the first of january twenty twenty six x
+25 December 1999abc	the twenty fifth of december nineteen ninety nine abc
+1 Ionawr 2026	one ionawr twenty twenty six

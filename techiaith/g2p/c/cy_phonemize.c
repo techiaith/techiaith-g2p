@@ -1385,11 +1385,76 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
     return fn;
 }
 
+/* English function words that are not Welsh words, as English evidence for number_lang.
+ * Same list and reasoning as bangor_g2p._EN_FUNCTION_WORDS: bangordict.dict carries "of",
+ * "the", "for", "it", "not" as English loans with Welsh phonology, so dictionary
+ * exclusivity sees them as shared and "Tab 1 of 4" has no evidence; the genuinely Welsh
+ * homographs ("at", "is", "to", "was", "her", "be", "can", "had", "call") are absent.
+ * Sorted (strcmp order) for the binary search. */
+static const char *EN_FUNCTION_WORDS[] = {
+    "also", "and", "any", "are", "been", "but", "by", "could", "for", "from", "has", "have",
+    "he", "here", "his", "how", "in", "it", "its", "more", "most", "my", "not", "of", "on",
+    "our", "she", "should", "some", "than", "that", "the", "their", "then", "there", "these",
+    "they", "this", "those", "we", "were", "what", "when", "where", "which", "who", "why",
+    "will", "with", "would", "you", "your"};
+static int en_function_word(const char *w) {
+    int lo = 0, hi = (int)(sizeof(EN_FUNCTION_WORDS) / sizeof(EN_FUNCTION_WORDS[0])) - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2, c = strcmp(EN_FUNCTION_WORDS[mid], w);
+        if (c == 0) return 1;
+        if (c < 0) lo = mid + 1; else hi = mid - 1;
+    }
+    return 0;
+}
+static int nl_utf8_next(const unsigned char *s, long *cp) {   /* one code point; bad byte = itself */
+    unsigned char c = s[0];
+    if (c < 0x80) { *cp = c; return 1; }
+    int n = (c >= 0xF0) ? 4 : (c >= 0xE0) ? 3 : (c >= 0xC0) ? 2 : 1;
+    if (n == 1) { *cp = c; return 1; }
+    long v = c & (0xFF >> (n + 1));
+    for (int k = 1; k < n; k++) {
+        if ((s[k] & 0xC0) != 0x80) { *cp = c; return 1; }
+        v = (v << 6) | (s[k] & 0x3F);
+    }
+    *cp = v; return n;
+}
+/* Language for DIGIT verbalisation -- mirrors bangor_g2p._number_lang. Maximal runs of
+ * alphabetic code points of the raw text, lowercased, scored by dictionary exclusivity
+ * over the same two maps the sentence routing uses, plus the function-word list; one
+ * English-only word and no Welsh-only word is enough ("Page 3"), because a Welsh "tri"
+ * inside an English interface is unintelligible where an English "three" inside Welsh is
+ * not. No evidence -> Welsh, the voice's own language. Separate from, and a lower bar
+ * than, the phone routing (_sentence_lang), exactly as in Python. */
+static int number_lang(CyPhonemizer *p, const char *text) {
+    const unsigned char *s = (const unsigned char *)text;
+    int en_only = 0, cy_only = 0;
+    size_t i = 0;
+    while (s[i]) {
+        long cp; int n = nl_utf8_next(s + i, &cp);
+        if (!cyp__cp_is_alpha(cp)) { i += (size_t)n; continue; }
+        size_t start = i;
+        while (s[i] && (n = nl_utf8_next(s + i, &cp), cyp__cp_is_alpha(cp))) i += (size_t)n;
+        char raw[512], low[512];
+        size_t L = i - start;
+        if (L >= sizeof(raw)) continue;                 /* no dictionary word is this long */
+        memcpy(raw, s + start, L); raw[L] = 0;
+        cyp__lower_strip(raw, low, (int)sizeof(low));
+        if (en_function_word(low)) { en_only++; continue; }
+        int in_w = wmap_lookup(p->welsh, low) != NULL;
+        int in_e = wmap_lookup(p->eng, low) != NULL;
+        if (in_e && !in_w) en_only++;
+        else if (in_w && !in_e) cy_only++;
+    }
+    return en_only > cy_only ? CYP_LANG_EN : CYP_LANG_CY;
+}
 int cyp_text_to_ids_lang(CyPhonemizer *p, const char *text, int lang,
                          int32_t *out, int max_out) {
     if (!p || !text || !out) return -1;
     static char nbuf[65536];
-    cyp_normalize(text, nbuf, sizeof(nbuf));  /* numbers/%/abbrev/acronyms/de-shout -> lowercased */
+    /* Number language: an explicit lang is the caller's word (Python: `lang or
+     * self._number_lang(text)`); CYP_LANG_AUTO detects it from the letters. */
+    int num_lang = lang != CYP_LANG_AUTO ? lang : number_lang(p, text);
+    cyp_normalize_lang(text, num_lang, nbuf, sizeof(nbuf));  /* numbers/%/abbrev/acronyms/de-shout -> lowercased */
     int32_t flat[8192];
     int fn = phonemize_flat(p, nbuf, lang, flat, (int)(sizeof(flat) / sizeof(flat[0])));
     if (fn < 0) return -1;

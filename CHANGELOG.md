@@ -2,6 +2,47 @@
 
 All notable changes to `techiaith-g2p` are documented in this file.
 
+## [1.3.0] — 2026-09-07
+
+`data_version` does **not** move (`e015a51f4373ef2b`): the phone inventory, emission policy,
+dictionaries and tagger data are unchanged, and text normalisation has never been part of the
+hash. The API can take this pin with no HF config change; the apps re-vendor the C sources only.
+
+### Added
+- **Digits inside an English utterance read as English words.** A screen reader hands the
+  engine one utterance at a time ("Home screen 1 of 3", "Battery at 45%", "Alarm set for
+  6:45 am"), and every one of them came out with Welsh numerals in the middle of English —
+  "home screen un o tri". The normaliser now takes the language the numbers are read in
+  (`normalize(text, lang="cy"|"en")`; C: `cyp_normalize_lang`). The triggers — what counts as
+  a time, a date, a price, a percentage, a unit, a fraction, a Roman numeral — are shared;
+  only the words written back differ, so the two languages cannot drift on *what* they
+  verbalise. British English conventions, agreed with the owner 2026-09-07
+  (`techiaith/g2p/english_numbers.py` is the contract; `docs/number-language.md` the summary):
+  "one hundred and twenty three", "twenty twenty six" for a bare 1100–2099, "the twelfth of
+  march", "three thirty p·m" (letters through the acronym join), "five pounds ninety nine",
+  "fifty pence", "fifteen percent", phone numbers digit by digit with "zero", "henry the
+  eighth" but "chapter four". Anything the Welsh path did is byte-identical to 1.2.0: the
+  Welsh golden corpus (1,986 rows) is unchanged.
+- **The number language is detected per utterance** (`BangorG2P._number_lang`; C:
+  `number_lang`) from the alphabetic words of the raw text, by the same dictionary-exclusivity
+  evidence as the phone routing but with a lower bar — one English-only word and no Welsh-only
+  word is enough, because a Welsh "tri" inside an English interface is unintelligible where an
+  English "three" inside Welsh is not. No evidence (a bare "3") means Welsh, the voice's own
+  language; an explicit `lang` to `text_to_ids` / `cyp_text_to_ids_lang` wins outright.
+  The phone routing (`_sentence_lang`) is untouched, so how words *sound* has not changed.
+- **English function words count as English evidence** even though `bangordict.dict` lists
+  "of", "the", "for", "it", "not" as loans with Welsh phonology (which made "Tab 1 of 4" look
+  language-neutral). The list is the high-frequency closed class minus every genuine Welsh
+  homograph ("at", "is", "to", "was", "her", "be", "can", "had", "call"); the tagger's Welsh
+  training features settled the borderline cases. Same list in Python and C, asserted equal.
+- `normalize_golden_en.tsv` (2,137 rows: the Welsh corpus's inputs plus the English
+  constructs) holds the C mirror to the Python verbaliser; the parity fuzz corpus gained a
+  section of English screen-reader strings and Welsh sentences with the same constructs.
+
+### Changed
+- `english_numbers.cardinal` reads more than twelve significant digits digit by digit, the
+  floor the Welsh path already had, so no digit run can raise.
+
 ## [1.2.0] — 2026-09-07
 
 `data_version` **moves**: `b1edc63e35bb7a6f` → `e015a51f4373ef2b`. Every consumer — the API's

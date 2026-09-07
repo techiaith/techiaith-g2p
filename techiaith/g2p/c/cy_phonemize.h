@@ -75,6 +75,13 @@ int cyp_lts(CyPhonemizer *p, const char *word, int32_t *out, int max_out);
 long cyp_normalize_load_vocab(const char *core_dir);
 void cyp_num_to_welsh(long n, char *out, int max_out);        /* cardinal 0..999,999,999 */
 void cyp_normalize(const char *utf8_text, char *out, int max_out);
+/* The same, with the language the NUMBERS are read in: CYP_LANG_CY (what cyp_normalize
+ * does) or CYP_LANG_EN (British English: "one hundred and twenty three", "the twelfth of
+ * march twenty twenty six", "three thirty p·m", "five pounds ninety nine"). Mirrors
+ * WelshNormalizer.normalize(text, lang); the words come from english_numbers.py.
+ * cyp_text_to_ids_lang chooses this per utterance (explicit lang, else detected from
+ * the words), so most callers never call it directly. CYP_LANG_AUTO reads as Welsh. */
+void cyp_normalize_lang(const char *utf8_text, int lang, char *out, int max_out);
 
 const char *cyp_data_version(const CyPhonemizer *p);  /* matches the model's config */
 int cyp_num_symbols(const CyPhonemizer *p);           /* 256 */
