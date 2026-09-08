@@ -235,6 +235,20 @@ def build_corpus(n: int, seed: int = 1234) -> list[str]:
         )
         corpus.append(rng.choice(en_frames).format(**fill))
         corpus.append(rng.choice(cy_frames).format(**fill))
+        # 5b. Sentence / clause boundaries (1.3.1): two languages in one utterance, joined by
+        # every delimiter the splitter knows, plus abbreviations that must NOT split.
+        a_s = rng.choice(cy_frames).format(**fill); b_s = rng.choice(en_frames).format(**fill)
+        joiner = rng.choice([". ", "! ", "? ", "... ", ", ", "; ", ": ", " - ", " \u2013 ", " \u2014 ", "\n", ".\n", ".  ", ". \t"])
+        corpus.append(a_s + joiner + b_s if rng.random() < 0.5 else b_s + joiner + a_s)
+        corpus.append(rng.choice(["e.e. ", "h.y. ", "Dr. ", "Mr. ", "U.S.A. ", "3.5 ", "y.b. "]) + a_s + ". " + b_s)
+        corpus.append(f"{fill['a']}, {fill['b']} a {fill['c']}")
+        corpus.append(f"£{fill['a']}, {rng.choice(['diolch', 'please', 'os gwelwch yn dda'])}")
+        # 5c. Text STRUCTURE (1.4.0): headings and list lines (newlines), bullets, brackets, dashes,
+        # ellipses, repeated marks, quotes after a stop -- the segments layer and the pause passes.
+        w1, w2 = rng.choice(pool_w), rng.choice(pool_w)
+        corpus.append(rng.choice([f"{w1}\n{w2}\n{a_s}", f"{w1}\n\n{b_s}", f"{w1}:\n• {w2}\n- {a_s}", f"* {w1}\n* {w2}",
+                                  f"{a_s} ({w1}) {b_s}", f"{b_s} — {a_s}", f"{w1} … {w2}", f"{a_s}...", f"{b_s}!!! {a_s}?!",
+                                  f"{w1} • {w2} • {a_s}", f"“{b_s}” {a_s}", f"{w1}.\n{w2}.\n", f"({w1}) {w2}", f"{a_s} - {b_s}"]))
     rng.shuffle(corpus)
     return corpus[:n] if n < len(corpus) else corpus
 

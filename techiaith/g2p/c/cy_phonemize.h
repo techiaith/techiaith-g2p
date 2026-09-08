@@ -82,6 +82,24 @@ void cyp_normalize(const char *utf8_text, char *out, int max_out);
  * cyp_text_to_ids_lang chooses this per utterance (explicit lang, else detected from
  * the words), so most callers never call it directly. CYP_LANG_AUTO reads as Welsh. */
 void cyp_normalize_lang(const char *utf8_text, int lang, char *out, int max_out);
+/* What cyp_text_to_ids (CYP_LANG_AUTO) feeds the phonemizer: the number language detected per
+ * sentence/clause from the words (needs the phonemizer's dictionaries, hence the handle).
+ * Mirrors BangorG2P.normalize(text) with lang=None. */
+void cyp_normalize_auto(CyPhonemizer *p, const char *utf8_text, char *out, int max_out);
+/* Text STRUCTURE (docs/text-structure-programme.md §3) -- mirrors BangorG2P.segments. The utterance
+ * as rendering units: a sentence, a heading, a list line, each with the boundary that follows it. A
+ * line without terminal punctuation takes a full stop (a heading gets the sentence-final fall);
+ * brackets and dashes become comma pauses in the normaliser. Numbers and phones are decided per
+ * segment. Each segment's ids are a complete BOS..EOS sequence at ids[start .. start+count); render
+ * one model pass per segment and insert cyp_boundary_gap_ms(boundary) ms of silence between
+ * passes, so device and API sound the same. cyp_text_to_ids is the concatenation of the segments'
+ * phones, so both callers agree by construction. Returns the segment count, -1 on overflow. */
+enum { CYP_BOUNDARY_END = 0, CYP_BOUNDARY_SENTENCE = 1, CYP_BOUNDARY_LINE = 2, CYP_BOUNDARY_PARAGRAPH = 3 };
+typedef struct { int start, count, boundary, number_lang, phone_lang; } CypSegment;
+int cyp_segments(CyPhonemizer *p, const char *utf8_text, int lang, CypSegment *segs, int max_segs,
+                 int32_t *ids, int max_ids);
+int cyp_boundary_gap_ms(int boundary);              /* 250 / 350 / 600 / 0 -- BOUNDARY_GAP_MS */
+void cyp__pause_late(const char *in, char *out);    /* internal: the late pause pass, for cy_phonemize.c */
 
 const char *cyp_data_version(const CyPhonemizer *p);  /* matches the model's config */
 int cyp_num_symbols(const CyPhonemizer *p);           /* 256 */

@@ -1706,6 +1706,23 @@
 50%	pum deg y cant
 100 %	cant y cant
 25%	dau ddeg pump y cant
+Maw 8 Medi	mawrth yr wythfed o fedi
+8 Maw	yr wythfed o fawrth
+Llun 1 Ion 2026	llun y cyntaf o ionawr dwy fil a dau ddeg chwech
+Iau 4 Gorff	iau y pedwerydd o orffennaf
+Sul 7 Chwef	sul y seithfed o chwefror
+5 hyd 7	pump hyd saith
+Gwe 31 Rhag	gwener yr unfed ar ddeg ar hugain o ragfyr
+Sad 2 Tach 2027	sadwrn yr ail o dachwedd dwy fil a dau ddeg saith
+Mer 9 Ebr	mercher y nawfed o ebrill
+3 Hyd	y trydydd o hydref
+Ion 5	ion pump
+Tue 8 Sept	tue wyth sept
+Sep 8	sep wyth
+1af Ionawr 2026	y cyntaf o ionawr dwy fil a dau ddeg chwech
+2il Chwef	yr ail o chwefror
+Gwe 31ain Rhag	gwener yr unfed ar ddeg ar hugain o ragfyr
+99fed Medi	naw deg naw fed medi
 mae 100 o bobl	mae cant o bobl
 ci & chath	ci a chath
 ci & aderyn	ci ac aderyn
@@ -1739,19 +1756,19 @@ NATO	nato
 DVLA	dvla
 US	us
 WJEC	w·j·e·c
-USB	u·s·b
-KGB	k·g·b
-HTML	h·t·m·l
+USB	usb
+KGB	kgb
+HTML	html
 y BBC	y bbc
 i BBC Cymru	i bbc cymru
 o BBC Radio	o bbc radio
 a BBC	a bbc
 BBC y dydd	bbc y dydd
 y CD	y cd
-API	a·p·i
+API	api
 TTS	tts
-URL	u·r·l
-PDF	p·d·f
+URL	url
+PDF	pdf
 A55 a'r M4	a pum deg pump a'r m pedwar
 1/2	hanner
 1/4	chwarter
@@ -1842,7 +1859,7 @@ ganwyd hi ar 2/2/2022	ganwyd hi ar yr ail o chwefror dwy fil a dau ddeg dau
 e-bost @ y safle	e-bost at y safle
 a = b + c	a yn hafal i b plws c
 £20 a 50p	dau ddeg punt a pum deg ceiniog
-ci - cath	ci - cath
+ci - cath	ci, cath
 £5m	pum miliwn o bunnoedd
 £1m	un miliwn o bunnoedd
 £2m	dwy miliwn o bunnoedd
@@ -1984,3 +2001,72 @@ C++	c++
 A+	a+
 A+ grade	a+ grade
 a+ b	a+ b
+README	readme
+CHANGELOG	changelog
+CONTRIBUTING	contributing
+LICENSE	license
+CI/CD	c·i cd
+Set up CI/CD	set up c·i cd
+Add README	add readme
+WHATSAPP	whatsapp
+GMAIL	gmail
+SPOTIFY	spotify
+NETFLIX	netflix
+FACEBOOK	facebook
+INSTAGRAM	instagram
+WIFI	wifi
+LOGIN	login
+CAU	cau
+AGOR	agor
+IAWN	iawn
+CADW	cadw
+WEDI	wedi
+NÔL	nôl
+GOSODIADAU	gosodiadau
+DWP	d·w·p
+NHS	n·h·s
+HMRC	h·m·r·c
+HDMI	h·d·m·i
+GCSE	g·c·s·e
+ESTYN	estyn
+CBAC	cbac
+FTSE	f·t·s·e
+OS	os
+AR	ar
+CI	c·i
+EU	eu
+YAML	yaml
+JSON	json
+ASDA	asda
+IKEA	ikea
+GITLAB	gitlab
+KUBERNETES	kubernetes
+DEVOPS	devops
+BAFTA	bafta
+OFCOM	ofcom
+RSPCA	r·s·p·c·a
+MiB	mib
+54 MiB	pum deg pedwar mib
+GWP	g·w·p
+WWW	w·w·w
+HTTPS	h·t·t·p·s
+SQL	sql
+GIF	g·i·f
+JPEG	j·p·e·g
+UKIP	ukip
+y DWP a'r NHS	y dwp a'r nhs
+“Chapter VI” Bank	“chapter chwech” bank
+«Pennod IV»	«pennod pedwar»
+'Chapter IV'	'chapter y pedwerydd'
+(Pennod VI)	pennod chwech
+‘Henry VIII’	‘henry yr wythfed'
+Chapter’ VI	chapter' y chweched
+Ŵ VI	ŵ y chweched
+ŵr II	ŵr yr ail
+1, 1	un, un
+Rhif 1, Rhif 2	rhif un, rhif dau
+1,000, 2,000	un mil, dwy fil
+£5, diolch	pum punt, diolch
+1,,2	un,dau
+3, 4 a 5	tri, pedwar a pump
+£1,000, os	mil o bunnoedd, os

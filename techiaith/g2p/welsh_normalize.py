@@ -429,7 +429,7 @@ _VOWELS = set("aeiouwyâêîôûŵŷàáä/")  # for & -> a/ac (Welsh vowels inc
 # lexicon and falls through to LTS: "i’w" reads /ˈiː.u/ (two syllables) instead of /ɪu/,
 # and "i’n" gains a stress the clitic should not have. Folded before every other pass so
 # nothing downstream ever sees the non-ASCII form.
-_TYPOGRAPHIC = str.maketrans({"’": "'", "ʼ": "'"})
+_TYPOGRAPHIC = str.maketrans({"’": "'", "ʼ": "'", "∶": ":", "：": ":"})   # U+2236 ratio, U+FF1A: clock times
 
 # --- ordinals 1-31 (masculine, feminine) — traditional (verified reference §3) ---
 _ORDINAL = {
@@ -532,14 +532,53 @@ _DATE_NUM = re.compile(r"\b([0-9]{1,2})/([0-9]{1,2})/([0-9]{2,4})\b")
 # the year register vs the plain cardinal) -- a pre-existing divergence the fuzzers never
 # fed (no corpus shape puts a letter directly after a year). The class is _C_WORD_CLASS,
 # not \w, for the usual Latin-only-mirror reason at the top of the module.
-_DATE_MONTH = re.compile(r"\b([0-9]{1,2})\s+(" + "|".join(_MONTHS) + r")\b"
-                         rf"(?:\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
+# Abbreviated dates as UI chrome writes them (2026-09-08: TalkBack reads a widget's "Tue 8 Sept"
+# literally -- "tue eight sept" -- where VoiceOver expands its own labels). A title-case weekday
+# abbreviation may precede the date and a title-case month abbreviation may stand in it; English
+# also comes month-first ("Sep 8", "Tuesday, September 8"). The abbreviations are case-SENSITIVE
+# (title case, the `(?-i:...)` groups) because "mar", "sat", "sun", "dec", "hyd", "iau", "llun"
+# are words; the full month names stay case-insensitive as before. Longest alternative first, so
+# "Sept"/"Tues"/"Chwef" win over their prefixes; cy_normalize.c walks the same tables in the same
+# order. The weekday is read as its full name before the date: "tuesday the eighth of september".
+_WD_EN = {"mon": "monday", "tue": "tuesday", "tues": "tuesday", "wed": "wednesday",
+          "thu": "thursday", "thur": "thursday", "thurs": "thursday", "fri": "friday",
+          "sat": "saturday", "sun": "sunday"}
+_MON_ABBR_EN = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "jun": 6, "jul": 7, "aug": 8,
+                "sep": 9, "sept": 9, "oct": 10, "nov": 11, "dec": 12}
+_WD_CY = {"llun": "llun", "maw": "mawrth", "mer": "mercher", "iau": "iau", "gwe": "gwener",
+          "sad": "sadwrn", "sul": "sul"}
+_MON_ABBR_CY = {"ion": 1, "chwe": 2, "chwef": 2, "maw": 3, "ebr": 4, "meh": 6, "gor": 7,
+                "gorff": 7, "hyd": 10, "tach": 11, "rhag": 12}
+
+
+def _title_alt(words) -> str:
+    """Regex alternation of the title-case forms, longest first (the order C walks its table)."""
+    return "|".join(w[0].upper() + w[1:] for w in sorted(words, key=lambda w: (-len(w), w)))
+
+
+_WD_EN_ALT, _WD_CY_ALT = _title_alt(_WD_EN), _title_alt(_WD_CY)
+_MON_ABBR_EN_ALT, _MON_ABBR_CY_ALT = _title_alt(_MON_ABBR_EN), _title_alt(_MON_ABBR_CY)
+# Groups: 1 weekday abbreviation (optional), 2 day, 3 month (full or abbreviated), 4 year.
+_DATE_MONTH = re.compile(
+    r"\b(?:(?-i:(" + _WD_CY_ALT + r"))\.?,?\s+)?([0-9]{1,2})(?:af|il|ydd|edd|ed|fed|eg|ain)?\s+"
+    r"(" + "|".join(_MONTHS) + r"|(?-i:" + _MON_ABBR_CY_ALT + r"))\b"
+    rf"(?:,?\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
 _ORDINAL_RE = re.compile(r"\b([0-9]+)(af|il|ydd|edd|ed|fed|eg|ain)\b")
 # English twins of the two Welsh-only triggers. Same shapes; only the suffix set and the
 # month list differ. The English branches of every OTHER pass reuse the Welsh trigger.
 _ORDINAL_RE_EN = re.compile(r"\b([0-9]+)(st|nd|rd|th)\b", re.I)
-_DATE_MONTH_EN = re.compile(r"\b([0-9]{1,2})\s+(" + "|".join(_EN.MONTHS) + r")\b"
-                            rf"(?:\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
+_DATE_MONTH_EN = re.compile(
+    r"\b(?:(?-i:(" + _WD_EN_ALT + r"))\.?,?\s+)?([0-9]{1,2})(?:st|nd|rd|th)?\s+"
+    r"(" + "|".join(_EN.MONTHS) + r"|(?-i:" + _MON_ABBR_EN_ALT + r"))\b"
+    rf"(?:,?\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?", re.I)
+# Month-first English ("Sep 8", "Tuesday, September 8, 2026"): the month must be title case (full
+# or abbreviated) so "may 5 people" is left alone; the day is 1-2 digits not followed by a word
+# character or by ":"/"." + digit ("Sep 8:30", "Sep 8.5"). The day may carry an ordinal suffix in either
+# order ("8th Sept", "Jan 1st"; Welsh "1af Ionawr"). Groups: 1 weekday, 2 month, 3 day, 4 year.
+_DATE_MONTH_FIRST_EN = re.compile(
+    r"\b(?:(" + _WD_EN_ALT + r")\.?,?\s+)?"
+    r"(" + _title_alt(_EN.MONTHS) + r"|" + _MON_ABBR_EN_ALT + r")\s+([0-9]{1,2})(?i:st|nd|rd|th)?"
+    rf"(?![{_C_WORD_CLASS}])(?![:.][0-9])(?:,?\s+([0-9]{{4}})(?![{_C_WORD_CLASS}]))?")
 _MONTH_NUM_EN = {name: i + 1 for i, name in enumerate(_EN.MONTHS)}
 
 
@@ -549,10 +588,14 @@ def _date_num_repl(m: re.Match) -> str:
 
 
 def _date_month_repl(m: re.Match) -> str:
-    d = int(m.group(1))
-    mm = _MONTH_NUM[m.group(2).lower()]
-    y = int(m.group(3)) if m.group(3) else None
-    return _date_words(d, mm, y) if 1 <= d <= 31 else m.group(0)
+    d = int(m.group(2))
+    mon = m.group(3).lower()
+    mm = _MONTH_NUM.get(mon) or _MON_ABBR_CY[mon]
+    y = int(m.group(4)) if m.group(4) else None
+    if not 1 <= d <= 31:
+        return m.group(0)
+    out = _date_words(d, mm, y)
+    return _WD_CY[m.group(1).lower()] + " " + out if m.group(1) else out
 
 
 def _ordinal_repl(m: re.Match) -> str:
@@ -648,7 +691,7 @@ def _pounds_plural(n: int) -> str:
 # digit STRING so an absurd amount cannot overflow anything, and so the C port can
 # reproduce it without 64-bit arithmetic.
 _MAGNITUDE_ZEROS = {"k": 3, "m": 6, "bn": 9}
-_CURRENCY = re.compile(r"£\s?([0-9][0-9,]*)(?:\.([0-9]{1,2}))?(?:([Bb][Nn]|[Mm]|[Kk])\b)?")
+_CURRENCY = re.compile(r"£\s?([0-9](?:,?[0-9])*)(?:\.([0-9]{1,2}))?(?:([Bb][Nn]|[Mm]|[Kk])\b)?")   # comma only before a digit (see _INTEGER)
 # (?<![A-Za-z]) stops the pence rule firing inside an alphanumeric code: without it
 # the "4c" inside "s4c" read as fourpence ("spedwar ceiniog").
 _PENCE = re.compile(r"(?<![A-Za-z])([0-9][0-9,]*)([pc])\b")
@@ -1054,7 +1097,9 @@ _DECIMAL = re.compile(r"([0-9]+)\.([0-9]+)")
 # a digit run that the sequence patterns did not claim lands, so if its digit class were
 # wider than theirs the crash would simply move here -- `int("0٣٣")` is 33, which C,
 # reading the ASCII "0" and dropping the rest, never says.
-_INTEGER = re.compile(_D + r"[0-9,]*")
+# A comma belongs to the number only when a digit follows: "1, 1" is two numbers and a pause,
+# not "1,1". Before 2026-09-07 the trailing comma was swallowed ("un un") and the pause lost.
+_INTEGER = re.compile(_D + r"(?:,?[0-9])*")
 _AMPERSAND = re.compile(r"&\s*([A-Za-zÀ-ÿ])")
 
 # Characters that GLUE their neighbours into a nonword when unhandled. Dropping one silently
@@ -1490,18 +1535,34 @@ def _clock_marker_token(tok: str, text: str, start: int) -> bool:
 # no other headword can ever be queried. Digit-bearing tokens (S4C, A55) never reach the
 # gate: they are codes, unpronounceable as words, and stay with the speller.
 _VOCAB_DICTS = ("bangordict.dict", "bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict")
-# The gate distinguishes WHERE a headword comes from. The English/foreign tables (xx, en, cmudict)
-# hold entries whose pronunciation IS the acronym's spoken form -- "bbc" is b-ii-b-ii-s-ii,
-# "usa" is j-uu-e-s-ei -- so an all-caps token they know reads correctly at any length. The
-# native Welsh table (bangordict.dict) holds Welsh WORDS, and a short all-caps token that only
-# it knows is almost always an English acronym colliding with one: "DWP" is not the Welsh
-# adjective dwp ("thick"), "NHS" is not a Welsh word. Native-only headwords therefore gate only
-# from _CY_SHOUT_MIN_LEN letters, where an all-caps token is a shouted word ("ADRODDIAD",
-# "CROESO") rather than an acronym. Below that they spell, as techiaith-g2p 1.0.1 (the deployed
-# API) spells everything. Both sides mirror this: cy_normalize.c keeps two pools.
-_VOCAB_DICTS_EN = ("bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict")
-_VOCAB_DICTS_CY = ("bangordict.dict",)
-_CY_SHOUT_MIN_LEN = 5
+# The gate (2026-09-07, techiaith-g2p 1.3.1; owner: "lots of capitalised words are still
+# being spelled out"). An all-caps pure-letter token reads as a WORD when
+#   1. it is not on _ALWAYS_SPELL -- the initialisms the rules below would otherwise read
+#      as words: those that are also Welsh headwords ("DWP" is not the adjective dwp, "NHS"
+#      is not a word) and those with a vowel and four or more letters that are still said
+#      letter by letter ("GCSE", "HDMI", "RSPCA"). Measured over ~250 UK/tech initialisms:
+#      every other one is either already letter-spelled by rule 4 or has its spoken form in
+#      the English tables ("BBC", "USA", "NATO", "ASDA") -- so the list is the whole exception
+#      set, and adding to it is the fix when a new collision is heard;
+#   2. the English/foreign tables know it (xx, en, cmudict, and the native English lexicon
+#      cmudict_native -- which knows whatsapp, gmail, spotify, netflix, wifi, login and was
+#      never consulted before, so those spelled out): its entry IS the spoken form;
+#   3. the native Welsh table knows it and it has three or more letters ("CAU", "AGOR",
+#      "IAWN", "CADW", "WEDI" -- a shouted word or a screen-reader label). Two-letter caps
+#      tokens are initialisms ("OS", "AR", "CI", "EU"), and 34 of the 36 two-letter Welsh-only
+#      headwords are function words nobody writes in caps;
+#   4. no dictionary knows it but it has four or more letters and a vowel (A E I O U W Y):
+#      "README", "CHANGELOG", "OFCOM" read through letter-to-sound; "HMRC", "GDPR", "HTML",
+#      "GPS", "USB" have no vowel and spell.
+# Before 1.3.1 rule 3 required five letters and rule 4 did not exist, so CAU/AGOR/IAWN and
+# every unknown name spelled out. Both sides mirror this: cy_normalize.c keeps the two
+# pools, the list and the vowel rule (avocab_reads_as_word).
+_VOCAB_DICTS_EN = ("geiriadur-ynganu-bangor/bangordict.xx.dict", "geiriadur-ynganu-bangor/bangordict.en.dict",
+                   "geiriadur-ynganu-bangor/cmudict.dict", "english/cmudict_native.dict")
+_VOCAB_DICTS_CY = ("geiriadur-ynganu-bangor/bangordict.dict",)
+_ALWAYS_SPELL = frozenset("""
+    ADHD ASAP BTEC DOD DVSA DWP EPA FTSE GCSE HDMI IAAS IISS IMDB IOD ISBN JCVI JPEG LDAP MHRA NHS NVME OCR OECD PAAS PHD PHE RAC RNID RNLI RSPCA UKCA UKHSA UNDP UNEP USDA WJEC
+""".split())   # same list, same order, in cy_normalize.c (ALWAYS_SPELL)
 _VOCAB_HEADWORD = re.compile(r"[A-Za-z]{2,}(?=[ \t\r]|$)")
 _ACRO_VOCAB: "tuple[set[str], set[str]] | None" = None
 
@@ -1515,7 +1576,7 @@ def _acronym_vocab() -> "tuple[set[str], set[str]]":
     name this word", not "this word survived phone-id mapping"."""
     global _ACRO_VOCAB
     if _ACRO_VOCAB is None:
-        base = Path(__file__).parent / "data" / "geiriadur-ynganu-bangor"
+        base = Path(__file__).parent / "data"
         def load(names):
             vocab = set()
             for name in names:
@@ -1529,12 +1590,16 @@ def _acronym_vocab() -> "tuple[set[str], set[str]]":
 
 
 def _acronym_reads_as_word(tok: str) -> bool:
-    """The vocabulary gate. See _VOCAB_DICTS_EN / _VOCAB_DICTS_CY for the reasoning."""
+    """The vocabulary gate; the numbered rules are in the comment above _VOCAB_DICTS_EN."""
+    if tok in _ALWAYS_SPELL:
+        return False
     low = tok.lower()
     en, cy = _acronym_vocab()
     if low in en:
         return True
-    return low in cy and len(tok) >= _CY_SHOUT_MIN_LEN
+    if low in cy:
+        return len(tok) >= 3
+    return len(tok) >= 4 and any(c in "AEIOUWY" for c in tok)
 
 
 def _spell_acronym(m: re.Match) -> str:
@@ -1857,10 +1922,22 @@ def _date_num_repl_en(m: re.Match) -> str:
 
 
 def _date_month_repl_en(m: re.Match) -> str:
-    d = int(m.group(1))
-    mm = _MONTH_NUM_EN[m.group(2).lower()]
-    y = int(m.group(3)) if m.group(3) else None
-    return _EN.date(d, mm, y) if 1 <= d <= 31 else m.group(0)
+    return _date_en(m, m.group(1), m.group(2), m.group(3), m.group(4))
+
+
+def _date_month_first_repl_en(m: re.Match) -> str:
+    return _date_en(m, m.group(1), m.group(3), m.group(2), m.group(4))
+
+
+def _date_en(m: re.Match, wd, day, mon, year) -> str:
+    d = int(day)
+    mon = mon.lower()
+    mm = _MONTH_NUM_EN.get(mon) or _MON_ABBR_EN[mon]
+    y = int(year) if year else None
+    if not 1 <= d <= 31:
+        return m.group(0)
+    out = _EN.date(d, mm, y)
+    return _WD_EN[wd.lower()] + " " + out if wd else out
 
 
 def _ordinal_repl_en(m: re.Match) -> str:
@@ -1945,6 +2022,48 @@ def _symbols_en(text: str) -> str:
     return text
 
 
+# --- structure punctuation -> the pauses the model realises ----------------------------------
+# Measured on the release model (docs/text-structure-programme.md §2): only , ; : are pauses to
+# it; ( ) — … and quotes are tokens it was trained with but never learned to pause on. So brackets,
+# spaced dashes and em/en dashes become a comma pause, an ellipsis a full stop at the end of the
+# text (the segment) and a comma inside it, and a list marker at the start of a line is dropped.
+# Two pauses in a row collapse to the second (", ." -> "."), and nothing pauses before the first
+# word. Mirrored by pass_pause_punct in cy_normalize.c.
+# Early (before the emoji pass, which would otherwise name U+2022 "bwled"): a list marker at the
+# start of the text is dropped, a bullet between words is a separator. The owner heard the bullet
+# spoken and the ellipsis voiced on the phones, 2026-09-08.
+_BULLETS = "•‣◦▪▫●■□"
+_BULLET = re.compile(r"^[ \t]*[-*–—" + _BULLETS + r"][ \t]+")
+_BULLET_SEP = re.compile(r"[ \t]*[" + _BULLETS + r"][ \t]*")
+# Late (after the number passes, which need their brackets: "(01248) 382000").
+_DASHES = re.compile(r"[ \t]*[—–][ \t]*|[ \t]+-[ \t]+")
+_PARENS = re.compile(r"[ \t]*[()][ \t]*")
+_ELLIPSIS_END = re.compile(r"(?:…|\.{2,})(?=[ \t]*$)")
+_ELLIPSIS = re.compile(r"…|\.{2,}")
+_REPEATED_END = re.compile(r"([!?])[!?]+")
+_DOUBLE_PAUSE = re.compile(r",[ \t]*(?=[,.!?;:])")
+_PAUSE_AFTER_STOP = re.compile(r"(?<=[.!?;:])[ \t]*,")
+_LEADING_PAUSE = re.compile(r"^[ \t]*,[ \t]*")
+_TRAILING_PAUSE = re.compile(r"[ \t]*,[ \t]*$")
+
+
+def _pause_punct_early(text: str) -> str:
+    text = _BULLET.sub("", text)
+    return _BULLET_SEP.sub(", ", text)
+
+
+def _pause_punct(text: str) -> str:
+    text = _DASHES.sub(", ", text)
+    text = _PARENS.sub(", ", text)
+    text = _ELLIPSIS_END.sub(".", text)
+    text = _ELLIPSIS.sub(",", text)
+    text = _REPEATED_END.sub(r"\1", text)
+    text = _DOUBLE_PAUSE.sub("", text)
+    text = _PAUSE_AFTER_STOP.sub("", text)
+    text = _TRAILING_PAUSE.sub("", text)
+    return _LEADING_PAUSE.sub("", text)
+
+
 class WelshNormalizer:
     @staticmethod
     def num_to_welsh_public(n: int) -> str:
@@ -1961,6 +2080,7 @@ class WelshNormalizer:
             raise ValueError(f"lang {lang!r} is not supported; use 'cy' or 'en'")
         en = lang == "en"
         text = text.translate(_TYPOGRAPHIC)
+        text = _pause_punct_early(text)
         if _EMOJI_RE is not None:
             text = _EMOJI_RE.sub(_emoji_repl, text.translate(_EMOJI_SKIP_MAP))
             text = _TAG_CHARS.sub("", text)
@@ -1972,6 +2092,7 @@ class WelshNormalizer:
         text = _DATE_NUM.sub(_date_num_repl_en if en else _date_num_repl, text)
         if en:
             text = _DATE_MONTH_EN.sub(_date_month_repl_en, text)
+            text = _DATE_MONTH_FIRST_EN.sub(_date_month_first_repl_en, text)
             text = _ORDINAL_RE_EN.sub(_ordinal_repl_en, text)
         else:
             text = _DATE_MONTH.sub(_date_month_repl, text)
@@ -2000,6 +2121,7 @@ class WelshNormalizer:
             text = _INTEGER.sub(lambda m: num_to_welsh(int(m.group(0).replace(",", ""))), text)
         text = _AMPERSAND.sub(_amp_repl_en if en else _amp_repl, text)
         text = (_symbols_en if en else _symbols)(text)
+        text = _pause_punct(text)
         text = text.lower()
         text = re.sub(r"\s+", " ", text).strip()
         return text

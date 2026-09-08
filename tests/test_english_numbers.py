@@ -112,6 +112,15 @@ def test_fractions_units_roman():
     ("21st", "twenty first"), ("3rd", "third"), ("3Rd", "third"), ("100th", "one hundredth"),
     ("3RD", "tri r·d"),          # the acronym pass claims "RD" first, as it does "3YDD" in Welsh
     ("12 March 2026", "the twelfth of march twenty twenty six"),
+    # abbreviated UI dates (2026-09-08: TalkBack read a widget's "Tue 8 Sept" as "tue eight sept")
+    ("Tue 8 Sept", "tuesday the eighth of september"), ("Tue Sep 8", "tuesday the eighth of september"),
+    ("Tuesday, September 8, 2026", "tuesday, the eighth of september twenty twenty six"),
+    ("Sep 8", "the eighth of september"), ("Sat 12 Dec", "saturday the twelfth of december"),
+    ("Tues 9 Sept", "tuesday the ninth of september"), ("Thurs 1 Aug", "thursday the first of august"),
+    ("may 5 people", "may five people"),               # month-first needs title case: "may" is a verb
+    ("sat on 8 Sept", "sat on the eighth of september"),   # a weekday abbreviation is title case too
+    ("March 3rd", "the third of march"), ("Jan 1st", "the first of january"),
+    ("8th Sept 2026", "the eighth of september twenty twenty six"), ("Sep 8:30", "sep eight thirty"),
     ("31/12/1999", "the thirty first of december nineteen ninety nine"),
     ("3:30pm", "three thirty p·m"), ("7.30pm", "seven thirty p·m"), ("11am", "eleven o'clock a·m"),
     ("15:30", "fifteen thirty"), ("00:00", "zero o'clock"),
@@ -158,24 +167,16 @@ def test_number_lang_english(g2p, text):
 
 @pytest.mark.parametrize("text", [
     "Mae 3 o'r plant yn yr ysgol", "Rhif 10", "Tudalen 3 o 5", "Am 3 o'r gloch", "Pennod IV",
-    "Cost: £5.99",
+    # ("Cost: £5.99" is spelled the same in both languages; the corpus prior reads it as English)
     "1 2 3",                    # no letters: no evidence, the voice's own language
     "Mae'r Bank of Wales yn 3 oed",   # an English name does not outvote the Welsh around it
     "Dyma'r internet café am 3",
-    "Mae'r gwas yn is na'r to am 3",   # "was"/"is"/"to" are Welsh words, not evidence
+    "Mae'r gwas yn is na'r to am 3",   # "was"/"is"/"to" are Welsh words here; the Welsh weight wins
+    "Un taxi", "Y BBC", "c, a, th.",    # numeral + loan; article + acronym; a dictation of letters
 ])
 def test_number_lang_welsh(g2p, text):
     assert g2p._number_lang(text) == "cy"
 
-
-def test_function_words_are_not_welsh_words(g2p):
-    """The list exists because these are hidden as loans in bangordict.dict; none may be a
-    real Welsh word, and the known Welsh homographs must stay out of it."""
-    from techiaith.g2p.bangor_g2p import _EN_FUNCTION_WORDS
-    for w in ("at", "is", "to", "was", "her", "be", "can", "had", "call", "an", "all", "or"):
-        assert w not in _EN_FUNCTION_WORDS
-    for w in ("the", "of", "for", "it", "not", "and", "in", "on"):
-        assert w in _EN_FUNCTION_WORDS
 
 
 def test_text_to_ids_threads_the_language(g2p):
@@ -185,3 +186,131 @@ def test_text_to_ids_threads_the_language(g2p):
     assert auto == g2p.text_to_ids("Page 3", lang="en")
     assert auto != g2p.text_to_ids("Page 3", lang="cy")
     assert g2p.text_to_ids("Tudalen 3") == g2p.text_to_ids("Tudalen 3", lang="cy")
+
+
+# --- sentence and clause boundaries (owner, 2026-09-07: "1 o 1. 1 of 1" came out English) ---
+
+@pytest.mark.parametrize("text, expected", [
+    ("1 o 1. 1 of 1", "un o un. one of one"),
+    ("1 o 1, 1 of 1", "un o un, one of one"),                    # "o" is Welsh evidence
+    ("Tudalen 1 o 3, Page 1 of 3", "tudalen un o tri, page one of three"),
+    ("Croeso - Welcome, 1 o 3 – 1 of 3", "croeso, welcome, un o tri, one of three"),   # dashes are comma pauses
+    ("Battery. 45%.", "battery. forty five percent."),           # no evidence: carries forward
+    ("Page 3. Tudalen 3.", "page three. tudalen tri."),
+    ("e.e. 3 peth. 2 things", "er enghraifft tri peth. two things"),   # "e.e." is not an end
+    ("Dr. Jones has 3 cats. Mae 2 gath.", "doctor jones has three cats. mae dau gath."),
+    ("Project information\n1 Commit\n0 Tags", "project information one commit zero tags"),
+    ("It's 3 o'clock", "it's three o'clock"), ("3 o'clock", "three o'clock"),   # "o'" is not Welsh
+    ("Mae 3 o'r plant yn yr ysgol", "mae tri o'r plant yn yr ysgol"),
+    ("Home screen 1 of 3", "home screen one of three"),
+    ("Battery, 45%", "battery, forty five percent"),             # English sentence with a comma: one span
+])
+def test_number_language_per_sentence(g2p, text, expected):
+    assert g2p.normalize(text) == expected
+
+
+def test_single_language_text_is_one_pass(g2p, wn):
+    """When every span agrees the whole text is normalised once, so a Welsh utterance is
+    byte-identical to WelshNormalizer.normalize(text) whatever its punctuation."""
+    for text in ("Rhif 1, Rhif 2. Tudalen 3!", "Mae 3 o'r plant yn yr ysgol. Am 3:30.", "1, 1"):
+        assert g2p.normalize(text) == wn.normalize(text)
+    assert g2p.normalize("1, 1") == "un, un"                      # the comma is a pause, not "1,1"
+    assert wn.normalize("£5, os gwelwch yn dda") == "pum punt, os gwelwch yn dda"
+
+
+def test_c_auto_normalisation_matches_python_per_span(g2p):
+    """cyp_normalize_auto is what cyp_text_to_ids feeds the phonemizer: the per-sentence /
+    per-clause number language, the carry-forward and the joins. It must equal
+    BangorG2P.normalize(text) as TEXT, not only as ids, so a divergence names the span."""
+    import ctypes
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    so = repo / "techiaith" / "g2p" / "c" / "libcy_phonemize.so"
+    if not so.exists():
+        pytest.skip("libcy_phonemize.so not built (make -C techiaith/g2p/c libcy_phonemize.so)")
+    lib = ctypes.CDLL(str(so))
+    lib.cyp_create.restype = ctypes.c_void_p
+    lib.cyp_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+    lib.cyp_normalize_auto.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
+    h = lib.cyp_create(str(repo / "techiaith" / "g2p").encode(), b"native")
+    assert h, "cyp_create failed"
+    cases = ["1 o 1. 1 of 1", "1 o 1, 1 of 1", "Tudalen 1 o 3, Page 1 of 3", "Battery. 45%.",
+             "Page 3. Tudalen 3.", "e.e. 3 peth. 2 things", "Dr. Jones has 3 cats. Mae 2 gath.",
+             "Croeso - Welcome, 1 o 3 – 1 of 3", "Project information\n1 Commit\n0 Tags",
+             "It's 3 o'clock", "Mae'r 3 yma. Page 3 here!", "Rhif 1; Number 1: 2 things",
+             "y.b. 3. 4 items", "U.S.A. 3 things. Mae 2 beth", "Mae 3 o'r plant. Show 3 of 4.",
+             "Home screen 1 of 3", "Rhif 1, Rhif 2", "1, 1", "", "...", "3", "1 o 1.\r\n1 of 1"]
+    for text in cases:
+        buf = ctypes.create_string_buffer(65536)
+        lib.cyp_normalize_auto(h, text.encode("utf-8"), buf, 65536)
+        assert buf.value.decode("utf-8") == g2p.normalize(text), f"AUTO normalisation diverges on {text!r}"
+
+
+# --- phone routing per sentence (owner, 2026-09-08) --------------------------------------------
+
+def test_phone_routing_per_sentence(g2p):
+    """An English sentence followed by a Welsh one gets each sentence's own phones."""
+    segs = g2p.segments("1 of 1. 1 o 1")
+    assert [s.phone_lang for s in segs] == ["en", "cy"]
+    assert segs[0].tokens == g2p.phonemize("one of one.", on_oov="lts", lang="en")
+    assert segs[1].tokens == g2p.phonemize("un o un", on_oov="lts", lang="cy")
+    assert "y" in segs[1].tokens and "ʌ" in segs[0].tokens        # Welsh /y/ in "un", English /ʌ/ in "one"
+    # a lowercase continuation after the stop is NOT a sentence end ("learn more. link")
+    assert len(g2p.segments("one of one. un o un")) == 1
+
+
+def test_techiaith_is_welsh_in_any_context(g2p):
+    welsh = ["ˈ", "t", "e", "x", "|", "j", "ai", "th"]
+    for text in ("Techiaith TTS", "Google Lens button double tap to activate. Techiaith TTS",
+                 "Techiaith TTS, button, double tap to activate", "Open the Techiaith app now please"):
+        toks = g2p.phonemize(g2p.normalize(text), on_oov="lts")
+        assert any(toks[i:i + 8] == welsh for i in range(len(toks))), (text, toks)
+
+
+def test_single_language_text_routes_in_one_pass(g2p):
+    """Every sentence agreeing means one pass with that language: byte-identical to an explicit
+    lang, whatever the number of sentences."""
+    for text, lang in (("Mae'r tywydd yn braf. Mae'r haul yn gwenu. Dewch allan.", "cy"),
+                       ("The weather is fine today. The sun is shining. Come outside.", "en"),
+                       ("Dw i'n mynd i'r dref.", "cy")):
+        assert g2p.phonemize(text, on_oov="lts") == g2p.phonemize(text, on_oov="lts", lang=lang)
+
+
+def test_no_evidence_sentence_inherits_the_utterance(g2p):
+    """"I agree." alone would route Welsh (no English bar); inside an English utterance it
+    inherits English, so "i" is the pronoun, not the Welsh preposition."""
+    toks = g2p.phonemize("The weather is fine today and the sun is out. I agree.", on_oov="lts")
+    assert toks == g2p.phonemize("The weather is fine today and the sun is out. I agree.", on_oov="lts", lang="en")
+
+
+def test_c_ids_match_python_across_sentence_routing(g2p):
+    import ctypes
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    so = repo / "techiaith" / "g2p" / "c" / "libcy_phonemize.so"
+    if not so.exists():
+        pytest.skip("libcy_phonemize.so not built")
+    lib = ctypes.CDLL(str(so))
+    lib.cyp_create.restype = ctypes.c_void_p
+    lib.cyp_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+    lib.cyp_text_to_ids.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_int32), ctypes.c_int]
+    h = lib.cyp_create(str(repo / "techiaith" / "g2p").encode(), b"native")
+    for text in ("1 of 1. 1 o 1", "1 o 1. 1 of 1", "Google Lens button double tap to activate. Techiaith TTS",
+                 "Mae'r tywydd yn braf. The weather is fine.", "The weather is fine today and the sun is out. I agree.",
+                 "Iawn. OK. Da. Fine.", "Croeso - Welcome, 1 o 3 – 1 of 3. Diolch.", "Settings\nGeneral\nAbout phone"):
+        buf = (ctypes.c_int32 * 8192)()
+        n = lib.cyp_text_to_ids(h, text.encode("utf-8"), buf, 8192)
+        assert list(buf[:n]) == g2p.text_to_ids(text), text
+
+
+def test_live_as_a_label_is_the_adjective(g2p):
+    """VoiceOver's "Live Recognition" was /lɪv/: a capitalised label-initial "Live" is tagged PROPN,
+    which the heteronym table did not map. PROPN and ADV take the adjective reading; verbs keep /lɪv/."""
+    def live(text):
+        toks = g2p.phonemize(g2p.normalize(text), on_oov="lts")
+        i = toks.index("l"); return toks[i:i + 4]
+    for text in ("Live Recognition", "Live Text", "Live Photos", "live music", "Go live", "Live Recognition, button",
+                 "to start Live Recognition or use the Live Recognition Rotor", "there is live music tonight"):
+        assert live(text) == ["l", "ˈ", "ai", "v"], text
+    for text in ("I live in Bangor", "They live here", "We live and learn"):
+        assert live(text) == ["l", "ˈ", "i", "v"], text

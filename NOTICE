@@ -64,10 +64,12 @@ The POS models that select heteronym readings were trained on:
   National Corpus, https://anc.org/data/masc/ — licensed under the Creative Commons
   Attribution 3.0 United States License (CC BY 3.0 US). Ide, N., Baker, C., Fellbaum, C., Fillmore,
   C. and Passonneau, R. (2008), "MASC: the Manually Annotated Sub-Corpus of American English",
-  LREC 2008. Used as training data for `pos_en.bin`; no MASC text is redistributed. The model is a
-  derived work of the annotations and is distributed with this attribution.
+  LREC 2008. Used as training data for `pos_en.bin` and, as word frequencies, for the language
+  prior `data/lang/lang_prior.tsv`; no MASC text is redistributed. Both are derived works and are
+  distributed with this attribution.
 - **brawddegau-tagiedig** (Welsh tagged sentences), Uned Technolegau Iaith, Prifysgol Bangor,
-  https://github.com/techiaith/brawddegau-tagiedig — CC0-1.0. Training data for `pos_cy.bin`.
+  https://github.com/techiaith/brawddegau-tagiedig — CC0-1.0. Training data for `pos_cy.bin` and,
+  as word frequencies, for `data/lang/lang_prior.tsv`.
 
 No accent or pronunciation data in this package is derived from either corpus; they contribute
 part-of-speech tags only.

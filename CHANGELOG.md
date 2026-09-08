@@ -2,6 +2,127 @@
 
 All notable changes to `techiaith-g2p` are documented in this file.
 
+## [1.4.0] — unreleased (2026-09-07 → 2026-09-08; one release for the whole text-structure programme)
+
+`data_version` **moves**: `e015a51f4373ef2b` → `718542836d1dcbdd`. The per-word language prior
+`data/lang/lang_prior.tsv` joins the hash and the emission policy goes to v5 (`route=prior+excl`),
+because the prior decides which lexicon a shared word reads from. Every consumer — the API's
+`techiaith-g2p` pin, the HF model config's `phonemizer.data_version`, and each app distro's
+bundled config — must move together; they hard-fail on mismatch by design. The C sources AND the
+new data file must be vendored together.
+
+### Added
+- **Text structure: segments, boundary kinds and the pauses the model can realise.** Measured on
+  the release model, only `, ; :` are pauses; a mid-utterance full stop is 80 ms of silence
+  against 124 for a plain space, brackets, dashes, ellipses and quotes nothing, and a newline was
+  collapsed before anything saw it — so headings ran into the next line and multi-sentence text
+  "smashed together" on device and API alike. `BangorG2P.segments(text)` (C `cyp_segments`) now
+  returns the utterance as rendering units — sentence, heading, list line — each with the boundary
+  that follows it (`sentence` at `. ! ? …` before whitespace when an upper-case letter, digit,
+  quote or the end follows; `line` at a newline; `paragraph` at a blank line) and its own number
+  and phone language, carried forward into a segment with no evidence. A line without terminal
+  punctuation takes a full stop, so a heading gets the sentence-final fall. Consumers render one
+  model pass per segment and insert `BOUNDARY_GAP_MS` / `cyp_boundary_gap_ms(kind)` of silence
+  (250 / 350 / 600 ms, tuned by ear) between passes, the same constants everywhere. `text_to_ids`
+  is DEFINED as the concatenation of the segments' phones, so a whole-text caller and a
+  per-segment caller agree by construction; single-sentence text is byte-identical to before.
+- **Structure punctuation becomes the pause the model honours** (normaliser, both languages,
+  mirrored in C): brackets, spaced dashes, em/en dashes and a bullet between words → a comma pause;
+  an ellipsis (`…` or `...`) → a full stop at the end, a comma inside; `?!?` → `?`; a list marker
+  (`- * • ‣ ◦ ▪`) at the start of a line is dropped — the owner heard the bullet read as "bwled"
+  (CLDR) and the ellipsis voiced. Two pauses in a row collapse to the second; nothing pauses before
+  the first word or after the last. The phone-number pass keeps its brackets ("(01248) 382000").
+- `segments_golden.tsv` (168 rows) holds `cyp_segments` to Python; the fuzz corpus gained headings,
+  lists, brackets, dashes, ellipses and quotes.
+
+### Changed
+- **A word's routing weight is its corpus weight PLUS lexicon exclusivity** (was: corpus weight,
+  or exclusivity only for a word neither corpus contains). The owner's phone read a Messages banner
+  "2 unread messages" as *dau unread messages*: "unread" carried +7 from a single Welsh tweet and
+  "messages" only −12, so the banner was Welsh. The English lexicon knows "unread"; adding ±16 for a
+  word only one lexicon holds outvotes that noise. Held-out (`scripts/gen_lang_prior.py` split):
+  English sentences 98.6% → 99.2%, Welsh 99.7% unchanged. Side effect, accepted: lone English UI
+  words the corpus barely saw ("Cancel", "Skip", "keyboard") are now decided English instead of
+  falling to the Welsh default, and "a BBC" alone reads the "a" as English.
+- **A soft wrap must continue with a word.** A line of ≥40 characters without terminal punctuation
+  followed by one newline was always joined to the next line; a message followed by its timestamp
+  ("…this afternoon or not⏎15:44") therefore ran straight into the time with no pause, unlike the
+  system voice. The join now also requires the next line to start with a letter, so a time, a
+  number or an emoji on the next line is a line boundary (350 ms) and takes the message's language.
+- **Abbreviated dates read as dates.** TalkBack sends a widget's date literally, "Tue 8 Sept", which
+  read as *tue eight sept* (VoiceOver expands its own labels, so the iPhone said "Tuesday the 8th of
+  September" and the Pixel did not). A title-case weekday abbreviation before the date (Mon, Tue,
+  Tues, Wed, Thu, Thur, Thurs, Fri, Sat, Sun; Llun, Maw, Mer, Iau, Gwe, Sad, Sul) is read as the
+  full day name, a title-case month abbreviation (Jan…Dec, Sep and Sept; Ion, Chwe, Chwef, Maw, Ebr,
+  Meh, Gor, Gorff, Hyd, Tach, Rhag) as the month, and English also comes month-first ("Sep 8",
+  "Tuesday, September 8, 2026" → "tuesday, the eighth of september twenty twenty six"). The day
+  may carry an ordinal suffix in either order ("8th Sept", "Jan 1st", "1af Ionawr"). Abbreviations
+  and the month-first month are case-sensitive because "mar", "sat", "sun", "dec", "hyd", "iau" and
+  "llun" are words: "5 hyd 7" and "may 5 people" are untouched. Full month names stay
+  case-insensitive. A year may now follow after a comma ("8 Sept, 2026").
+- **The ratio colon (U+2236) and the fullwidth colon (U+FF1A) fold to ":"** in the typographic pass,
+  so a clock time written with either is still a clock time rather than two bare numbers.
+- **Sentence language is decided by a corpus-derived word prior, not an exclusive-word count.**
+  The owner heard "Learn more" as *learn mor-eh* on both phones and the API: "more" is a loan in
+  the Welsh dictionary, so it was a *shared* word, and the old rule wanted two English-only words
+  making up a third of the utterance before it would route English. Measured on 26 everyday English
+  labels, 18 routed Welsh. `data/lang/lang_prior.tsv` (`scripts/gen_lang_prior.py`) now scores
+  every word the router can see by 16 × the log-odds of its frequency in Welsh text
+  (corpws-brawddegau-tagiedig, CC0, sentence records) versus English text (MASC 3.0.0, CC BY 3.0
+  US, as NLTK's `masc_tagged`), tokenised exactly as the router tokenises, damped for rare words,
+  quantised to an int8 (33,777 words, 359 KB). A sentence's language is the sign of the sum, with
+  half a nat of evidence required either way; a word in neither corpus falls back to dictionary
+  exclusivity; letter names weigh nothing except Welsh "o" and "y". Held-out sentences: Welsh 99.6%
+  / English 99.1% (old rule 99.6% / 94.6%); every one of the 18 labels now routes English; "Un
+  taxi", "Y BBC", "c, a, th." stay Welsh. Numbers and phones share the one score, so the 1.3.x
+  function-word lists are gone. The rows of the frozen pre-lang oracle that move ("the", "action",
+  "AB", "ab·cd") each carry their dictionary readings as literals. C mirrors the table (binary
+  search) and the scoring in `phonemize_flat_ex` and `number_score`.
+
+- **`techiaith`** gets a pinned Welsh pronunciation (`ˈt e x | j ai th`) — see below under 1.3.1's
+  items, folded into this release.
+
+### Fixed
+- **Capitalised words no longer spell out unless they are initialisms.** The owner read a GitLab
+  project page and heard "r·e·a·d·m·e" and "c·h·a·n·g·e·l·o·g"; typical labels showed the same:
+  6 of 20 common Welsh labels (CAU, AGOR, IAWN, CADW, WEDI), 7 of 10 app names in caps, and
+  pronounceable words CMUdict lacks (LOGIN, WIFI, OFCOM). Cause: the vocabulary gate read an
+  all-caps token as a word only if the English tables knew it, or the Welsh table knew it AND it
+  had five letters (the 1.2.0 fix for DWP/NHS), and it never consulted the native English
+  lexicon. The gate now has four rules, in `welsh_normalize._acronym_reads_as_word` and its C
+  mirror: (1) an explicit always-spell list of 36 initialisms — the Welsh-headword collisions
+  (DWP, NHS, RAC, PHD…) and the vowel-bearing ones still said letter by letter (GCSE, HDMI, RSPCA,
+  WJEC, FTSE, JPEG…), measured over ~250 UK/tech initialisms as the complete exception set;
+  (2) English/foreign tables **including `cmudict_native.dict`** read as their entry; (3) a Welsh
+  headword of three or more letters reads as the word — two-letter caps tokens (OS, AR, CI, EU)
+  are initialisms; (4) an unknown token with four or more letters and a vowel reads through
+  letter-to-sound, without a vowel (HMRC, GDPR, HTML, GPS, USB) it spells. On the probe: Welsh
+  labels spelled 6 → 0, app names 7 → 0, initialisms unchanged.
+- **readme, changelog, devops, gitlab, kubernetes** get explicit English pronunciations (the
+  first four as two words, like the brand entries), since no dictionary has them and
+  letter-to-sound gave "reed-meh" and "chan-ge-lodge".
+- **The number language is decided per sentence, not per utterance.** "1 o 1. 1 of 1" read
+  every digit in English because one "of" anywhere decided the whole text. Sentences end at a
+  run of `. ! ?` before whitespace, or a newline — not after a single-letter word ("e.e.",
+  "y.b.", "a.m.") or a title (Dr., Mr.). A sentence with evidence for BOTH languages is split
+  again at `, ; :` before whitespace or a dash between spaces ("Tudalen 1 o 3, Page 1 of 3"
+  — bilingual-signage style), and a span with no evidence takes the language of the span
+  before it, the first defaulting to Welsh. When every span agrees the text is normalised in
+  one pass exactly as before, so single-language utterances are byte-identical. Welsh "o"
+  and "y" now count as Welsh evidence (their only English homograph is a letter name) unless
+  an apostrophe follows ("o'clock"). `BangorG2P._number_spans` and C `number_spans`.
+- **Sentence routing counts words, not punctuation tokens.** Python's `_sentence_lang` counted a
+  dash between spaces as a word of the utterance (C never made a token for it), so
+  "Croeso - Welcome, 1 o 3 – 1 of 3" routed Welsh in Python and English in C, and C in turn
+  counted an en dash (which survives its ASCII punctuation peel as a core) while dropping a
+  hyphen — the only Python-vs-C divergence found in this round, and a pre-existing one. Both
+  sides now count only cores with a letter or digit, the rule's wording. Texts without
+  standalone punctuation are unaffected.
+- **A comma after a number is kept.** `_INTEGER` and `_CURRENCY` accepted `[0-9,]*`, so
+  "1, 1" was "un un" and "£5, diolch" lost its pause; a comma is now part of the number only
+  when a digit follows (`(?:,?[0-9])*`, and the two C loops), which also stops "1,,2" reading
+  as twelve.
+
 ## [1.3.0] — 2026-09-07
 
 `data_version` does **not** move (`e015a51f4373ef2b`): the phone inventory, emission policy,
@@ -40,6 +161,22 @@ hash. The API can take this pin with no HF config change; the apps re-vendor the
   section of English screen-reader strings and Welsh sentences with the same constructs.
 
 ### Changed
+- **Phone routing is decided per sentence, not per utterance.** "1 of 1. 1 o 1" said the right
+  words after the number-language fix but spoke "un o un" with English phones, and "Techiaith TTS"
+  came out *tetch-ee-ayth* whenever an English sentence preceded it in the same utterance — one
+  `_sentence_lang` decision covered everything. Each sentence (the same spans as the number
+  language) is now scored on its own words by today's rule: meets the English bar → English; has
+  Welsh-only evidence → Welsh; no exclusive word either way ("un o un" — both are in both
+  dictionaries) → the number language's evidence for that sentence ("o", "y", "mae" / "of",
+  "the"…); none of that → the utterance's decision, so "I agree." inside an English text does
+  not flip. Single-sentence utterances keep the utterance rule unchanged. When every sentence agrees the text is phonemized in one pass with
+  that language, byte-identical to before; only a mixed utterance is phonemized sentence by
+  sentence. C: `phonemize_sentences`, with a count-only mode of the phonemizer so a sentence is
+  scored by the same tokeniser that emits it. Clause-level (comma) routing is deliberately not
+  done: a clause boundary is a pause, not a language boundary, and the number language already
+  handles digits at that level.
+- **`techiaith`** gets a pinned Welsh pronunciation (`ˈt e x | j ai th`), the organisation's own
+  name being in no dictionary.
 - `english_numbers.cardinal` reads more than twelve significant digits digit by digit, the
   floor the Welsh path already had, so no digit run can raise.
 

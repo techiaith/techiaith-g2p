@@ -110,6 +110,22 @@ NORMALIZE = [
     ("S4C a'r BBC.", "s pedwar c a'r bbc."),     # _deshout must not swallow S4C; pence must not read "4c"
     ("A55", "a pum deg pump"),
     ("OK", "ok"),                                # in cmudict: read as the word
+    # 1.3.1 gate (see welsh_normalize._VOCAB_DICTS_EN): short Welsh words read, unknown
+    # pronounceable names read, listed initialisms and vowel-less codes still spell.
+    ("CAU", "cau"), ("AGOR", "agor"), ("IAWN", "iawn"), ("WEDI", "wedi"),
+    ("DWP", "d·w·p"), ("NHS", "n·h·s"),              # Welsh headwords that are initialisms: listed
+    ("HMRC", "h·m·r·c"), ("GDPR", "g·d·p·r"),          # no vowel: spell
+    ("HDMI", "h·d·m·i"), ("GCSE", "g·c·s·e"),          # vowel-bearing initialisms: listed
+    ("README", "readme"), ("CHANGELOG", "changelog"), ("OFCOM", "ofcom"),   # unknown, pronounceable
+    ("WHATSAPP", "whatsapp"), ("SPOTIFY", "spotify"), ("LOGIN", "login"),   # cmudict_native joins the pool
+    ("ESTYN", "estyn"),                              # said as the word, so NOT listed
+    ("OS", "os"), ("AR", "ar"),                      # two letters: English tables carry the letter names
+    ("CI", "c·i"),                                   # two-letter Welsh-only headword: an initialism
+    ("EU", "eu"),                                    # cmudict_native: "eu  ˈ ii j uu" -- the letter names
+    ("Set up CI/CD", "set up c·i cd"),
+    # a comma belongs to a number only when a digit follows (2026-09-07): the pause survives
+    ("1, 1", "un, un"), ("Rhif 1, Rhif 2", "rhif un, rhif dau"), ("1,000, 2,000", "un mil, dwy fil"),
+    ("£5, diolch", "pum punt, diolch"), ("1,,2", "un,dau"),          # two pauses collapse to one
     # a one-letter Welsh word beside an acronym token must stay its own token
     ("y BBC", "y bbc"),
     ("i BBC Cymru", "i bbc cymru"),
@@ -121,6 +137,15 @@ NORMALIZE = [
     ("Dw i’n mynd", "dw i'n mynd"),
     ("i’w dŷ", "i'w dŷ"),
     ("ʼn awr", "'n awr"),
+    # the ratio and fullwidth colons fold to ASCII so a clock time is still a clock time
+    ("15∶45", "chwarter i bedwar y prynhawn"),
+    # abbreviated UI dates: title-case weekday and month abbreviations (2026-09-08)
+    ("Maw 8 Medi", "mawrth yr wythfed o fedi"), ("8 Maw", "yr wythfed o fawrth"),
+    ("Llun 1 Ion 2026", "llun y cyntaf o ionawr dwy fil a dau ddeg chwech"),
+    ("Iau 4 Gorff", "iau y pedwerydd o orffennaf"), ("Sul 7 Chwef", "sul y seithfed o chwefror"),
+    ("5 hyd 7", "pump hyd saith"),                    # lower-case "hyd" is the preposition, not Hydref
+    ("1af Ionawr 2026", "y cyntaf o ionawr dwy fil a dau ddeg chwech"), ("Gwe 31ain Rhag", "gwener yr unfed ar ddeg ar hugain o ragfyr"),
+    ("am 9：30", "am hanner awr wedi naw"),
     # dates & ordinals
     ("17/07/2026", "yr ail ar bymtheg o orffennaf dwy fil a dau ddeg chwech"),
     ("1/1/2000", "y cyntaf o ionawr dwy fil"),
@@ -1190,6 +1215,9 @@ def test_mil_and_fil_take_the_long_vowel_everywhere_they_appear():
         "iphone", "ipad", "android",
         # concatenated, in no dictionary, emitted as two words
         "onedrive", "chromebook", "firestick", "fitbit", "tiktok", "deliveroo",
+        # developer / interface vocabulary in no dictionary (1.3.1, docs/brand-pronunciation-overrides.md 3c)
+        "readme", "changelog", "devops", "gitlab", "kubernetes",
+        "techiaith",   # the organisation's name (3d)
     }
     assert set(_CY_PRON_OVERRIDE) == _VOWEL_LENGTH | _BRANDS, (
         "the override table changed without a recorded sign-off; if that is intended, update "
@@ -1217,7 +1245,10 @@ def test_mil_and_fil_take_the_long_vowel_everywhere_they_appear():
     # If this assertion fires again, it is a regression unless you meant it: an override
     # leaking into the hashed dictionary files, or a hashed data file regenerated without the
     # model configs (HF, API, every distro) being bumped in the same move.
-    assert g.data_version() == "e015a51f4373ef2b", (
+    # 1.4.0 (2026-09-08): the per-word language prior data/lang/lang_prior.tsv joined the hash and
+    # the emission policy went to v5 (route=prior) -- a deliberate bump, moved in lockstep with
+    # the HF model config and the app configs. Before: e015a51f4373ef2b (1.2.0-1.3.x).
+    assert g.data_version() == "718542836d1dcbdd", (
         "data_version moved: either the override has leaked into the hashed dictionary "
         "files, or the hashed English lexicon changed without a deliberate bump. The API "
         "will hard-fail at startup until the model config's phonemizer block matches")

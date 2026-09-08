@@ -124,6 +124,7 @@ struct CyPhonemizer {
     int english_mode;          /* 0 = accented, 1 = native */
     CyPos *pos_cy;             /* POS taggers; NULL when the model is not installed, */
     CyPos *pos_en;             /* which is supported -- heteronyms take the fallback. */
+    char *lp_pool; const char **lp_words; signed char *lp_w; int lp_n;   /* language prior (data/lang/lang_prior.tsv) */
     int nfold;
     int fold_from[32];
     int32_t fold_to[32][8];
@@ -153,6 +154,11 @@ static int tok_lookup(const CyPhonemizer *p, const char *sym) { return tnode_get
 static void tok_put(CyPhonemizer *p, const char *sym, int id) { tnode_put(p->tok, sym, id); }
 /* IPA spelling (1-2 codepoints) -> phone-token id; -1 when it has no Bangor equivalent. */
 static int ipa_lookup(const CyPhonemizer *p, const char *sym) { return tnode_get(p->ipa, sym); }
+static int nl_utf8_next(const unsigned char *s, long *cp);   /* defined with number_score below */
+static void lang_prior_load(CyPhonemizer *p, const char *core_dir);   /* defined with lang_weight below */
+static int lang_weight(const CyPhonemizer *p, const char *low);
+static int letterlike(const char *w);
+#define LP_MIN 8   /* bangor_g2p._PRIOR_MIN: |score| below half a nat is no decision */
 static const WNode *wmap_lookup(WNode *const *buckets, const char *w) {
     for (const WNode *n = buckets[djb2(w) & ((1 << WBITS) - 1)]; n; n = n->next)
         if (strcmp(n->word, w) == 0) return n;
@@ -445,6 +451,16 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
         /* "deliver" + "ww": "deliver oo" gives Welsh 'oo|o and "uu" gives 'yy|y, both
          * worse. Carries a /w/ onset, so "deliver-WOO" -- best this phoneset offers. */
         {"deliveroo",  {"d", "i", "l", "'i", "v", "@r", " ", "'w", "uu", NULL}},
+        /* Developer / interface vocabulary in NO dictionary (1.3.1). Mirrors the Python
+         * entries; the rest of that vocabulary is in cmudict_native already. */
+        {"readme",     {"ɹ", "'ii", "d", " ", "m", "'ii", NULL}},
+        {"changelog",  {"ch", "'ei", "n", "jh", " ", "l", "'oo", "g", NULL}},
+        {"devops",     {"d", "'e", "v", " ", "'aa", "p", "s", NULL}},
+        {"gitlab",     {"g", "'i", "t", " ", "l", "'æ", "b", NULL}},
+        {"kubernetes", {"k", "uu", "b", "@r", "n", "'e", "t", "ii", "z", NULL}},
+        /* The organisation's own name: Welsh LTS reading pinned ("-" is the syllable
+         * boundary), so it does not depend on the utterance's routing (1.3.1). */
+        {"techiaith",  {"'t", "e", "x", "-", "j", "ai", "th", NULL}},
 
         /* NOT HERE, deliberately: camera, signal, telegram. Same mechanism, but each is an
          * ordinary Welsh loanword as well as a brand, so an override would break Welsh
@@ -482,6 +498,10 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
     snprintf(path, sizeof(path), "%s/data/pos", core_dir);
     p->pos_cy = cy_pos_load(path, "cy");
     p->pos_en = cy_pos_load(path, "en");
+    /* The per-word language prior (mirrors bangor_g2p._load_lang_prior). Absent: every word
+     * falls back to dictionary exclusivity, which Python never does -- a distro without the
+     * file is not the same G2P, and data_version says so. */
+    lang_prior_load(p, core_dir);
 
     /* native English lexicon + fold map */
     snprintf(path, sizeof(path), "%s/data/english/cmudict_native.dict", core_dir);
@@ -506,7 +526,8 @@ CyPhonemizer *cyp_create(const char *core_dir, const char *english_mode) {
 }
 
 void cyp_destroy(CyPhonemizer *p) {
-    if (p) { cy_pos_free(p->pos_cy); cy_pos_free(p->pos_en); p->pos_cy = p->pos_en = NULL; }
+    if (p) { cy_pos_free(p->pos_cy); cy_pos_free(p->pos_en); p->pos_cy = p->pos_en = NULL;
+             free(p->lp_pool); free((void *)p->lp_words); free(p->lp_w); p->lp_pool = NULL; p->lp_words = NULL; p->lp_w = NULL; p->lp_n = 0; }
     if (!p) return;
     for (int i = 0; i < (1 << TBITS); i++) {
         for (TNode *n = p->tok[i]; n;) { TNode *x = n->next; free(n->sym); free(n); n = x; }
@@ -946,6 +967,8 @@ HETERONYM[] = {
         {"estimate", "VPAST",  {"'e", "s", "t", "@", "m", "ei", "t", NULL}},
         {"live",     NULL,     {"l", "'i", "v", NULL}},
         {"live",     "ADJ",    {"l", "'ai", "v", NULL}},
+        {"live",     "ADV",    {"l", "'ai", "v", NULL}},    /* "go live" */
+        {"live",     "PROPN",  {"l", "'ai", "v", NULL}},    /* "Live Recognition": a label's Live is the adjective sense */
         {"live",     "VERB",   {"l", "'i", "v", NULL}},
         {"object",   NULL,     {"@", "b", "jh", "'e", "k", "t", NULL}},
         {"object",   "NOUN",   {"'aa", "b", "jh", "e", "k", "t", NULL}},
@@ -1087,8 +1110,11 @@ static int word_ids(CyPhonemizer *p, const char *s, int lang_en, const char *pos
  * because _segment's own .lower() is folded into that pass here.
  * lang: CYP_LANG_AUTO (sentence-level routing), CYP_LANG_CY, or CYP_LANG_EN.
  * Returns the token count, or -1 on overflow / bad lang. */
-static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
-                          int32_t *flat, int cap) {
+/* flat == NULL: SCORE ONLY -- tokenize, put the routing score into *score_out, emit nothing.
+ * That is how segments_flat scores one sentence with exactly the tokeniser the emission
+ * uses (mirrors BangorG2P._routing_words + _lang_counts). */
+static int phonemize_flat_ex(CyPhonemizer *p, const char *ntext, int lang,
+                             int32_t *flat, int cap, int *score_out) {
     if (lang < CYP_LANG_AUTO || lang > CYP_LANG_EN) return -1;
     static char buf[65536];
     snprintf(buf, sizeof(buf), "%s", ntext);
@@ -1249,19 +1275,39 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
      * outright, exactly as Python's `lang = lang or self._sentence_lang(words)`: the
      * automatic routing is then not consulted at all (it has no side effects). */
     int lang_en = 0;
-    if (lang != CYP_LANG_AUTO) {
-        lang_en = (lang == CYP_LANG_EN);
-    } else {
-        int en_only = 0, cy_only = 0;
+    {
+        /* Mirrors bangor_g2p._lang_score over _routing_words: the sum of the prior's weights
+         * of every core with a letter or digit (an en dash between spaces survives the ASCII
+         * punctuation peel as its own core and is not a word). */
+        int score = 0;
         for (int i = 0; i < nt; i++) {
             if (!*toks[i].core) continue;
-            int in_w = wmap_lookup(p->welsh, toks[i].core) != NULL;
-            int in_e = wmap_lookup(p->eng, toks[i].core) != NULL;
-            if (in_e && !in_w) en_only++;
-            else if (in_w && !in_e) cy_only++;
+            /* An ACRONYM_JOIN-marked core ("ab·cd") is emitted as its parts, so it is scored
+             * as its parts too -- mirrors Python's _routing_words_of. */
+            const char *core = toks[i].core;
+            while (*core) {
+                const char *end = strstr(core, AJOIN);
+                size_t L = end ? (size_t)(end - core) : strlen(core);
+                char part[512];
+                if (L && L < sizeof(part)) {
+                    memcpy(part, core, L); part[L] = 0;
+                    int alnum = 0;
+                    for (const unsigned char *q = (const unsigned char *)part; *q && !alnum; ) {
+                        long cp; q += nl_utf8_next(q, &cp);
+                        if (cyp__cp_is_alnum(cp)) alnum = 1;
+                    }
+                    if (alnum) score += lang_weight(p, part);
+                }
+                if (!end) break;
+                core = end + 2;                              /* past the two-byte U+00B7 */
+            }
         }
-        int n = nt > 0 ? nt : 1;
-        lang_en = (en_only > cy_only && en_only >= 2 && en_only * 3 >= n);
+        if (score_out) *score_out = score;
+        if (!flat) return 0;                                  /* score-only call */
+        /* An explicit lang is an author override (SSML <lang xml:lang="...">) and wins
+         * outright, exactly as Python's `lang or self._sentence_lang(words)`. */
+        if (lang != CYP_LANG_AUTO) lang_en = (lang == CYP_LANG_EN);
+        else lang_en = score <= -LP_MIN;
     }
 
     /* solo vowel: the whole utterance is a single vowel keystroke (mirrors
@@ -1369,6 +1415,17 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
             } else {
                 const char *tpos = (have_pos && tok_widx[ti] < n_wordlist)
                                  ? pos_tags[tok_widx[ti]] : NULL;
+                /* "go live" is a fixed expression: this "live" is the adjective (mirrors _GO_FORMS) */
+                if (strcmp(s, "live") == 0 && tok_widx[ti] > 0 && tok_widx[ti] < n_wordlist) {
+                    const char *pw = wordlist[tok_widx[ti] - 1];
+                    if (!strcmp(pw, "go") || !strcmp(pw, "goes") || !strcmp(pw, "went") || !strcmp(pw, "going") || !strcmp(pw, "gone")) tpos = "ADJ";
+                }
+                /* "live" is intransitive: directly before a noun it is the attributive adjective */
+                if (strcmp(s, "live") == 0 && have_pos && (!tpos || strcmp(tpos, "ADJ") != 0) &&
+                    tok_widx[ti] + 1 < n_wordlist) {
+                    const char *nt = pos_tags[tok_widx[ti] + 1];
+                    if (nt && (!strcmp(nt, "NOUN") || !strcmp(nt, "PROPN"))) tpos = "ADJ";
+                }
                 wn = word_ids(p, s, lang_en, tpos, wbuf, 2048); wids = wbuf;
             }
             if (wn < 0) wn = 0;
@@ -1385,26 +1442,57 @@ static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang,
     return fn;
 }
 
-/* English function words that are not Welsh words, as English evidence for number_lang.
- * Same list and reasoning as bangor_g2p._EN_FUNCTION_WORDS: bangordict.dict carries "of",
- * "the", "for", "it", "not" as English loans with Welsh phonology, so dictionary
- * exclusivity sees them as shared and "Tab 1 of 4" has no evidence; the genuinely Welsh
- * homographs ("at", "is", "to", "was", "her", "be", "can", "had", "call") are absent.
- * Sorted (strcmp order) for the binary search. */
-static const char *EN_FUNCTION_WORDS[] = {
-    "also", "and", "any", "are", "been", "but", "by", "could", "for", "from", "has", "have",
-    "he", "here", "his", "how", "in", "it", "its", "more", "most", "my", "not", "of", "on",
-    "our", "she", "should", "some", "than", "that", "the", "their", "then", "there", "these",
-    "they", "this", "those", "we", "were", "what", "when", "where", "which", "who", "why",
-    "will", "with", "would", "you", "your"};
-static int en_function_word(const char *w) {
-    int lo = 0, hi = (int)(sizeof(EN_FUNCTION_WORDS) / sizeof(EN_FUNCTION_WORDS[0])) - 1;
+/* ---- the per-word language prior (mirrors bangor_g2p._load_lang_prior / _word_weight) ----
+ * data/lang/lang_prior.tsv: "word<TAB>weight", weight = 16 x log-odds Welsh:English, sorted by
+ * byte order (Python sorted the UTF-8 bytes, so strcmp order). Loaded once into a pool; looked
+ * up by binary search. A word in neither corpus falls back to +-16 from dictionary exclusivity. */
+static void lang_prior_load(CyPhonemizer *p, const char *core_dir) {
+    char path[4096];
+    snprintf(path, sizeof(path), "%s/data/lang/lang_prior.tsv", core_dir);
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    size_t cap = 1u << 20, len = 0; int n = 0, ncap = 4096;
+    char *pool = (char *)malloc(cap);
+    size_t *offs = (size_t *)malloc((size_t)ncap * sizeof *offs);
+    signed char *w = (signed char *)malloc((size_t)ncap);
+    char line[4096];
+    while (pool && offs && w && fgets(line, sizeof(line), f)) {
+        if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
+        char *tab = strchr(line, '\t');
+        if (!tab) continue;
+        *tab = 0;
+        int v = atoi(tab + 1);
+        size_t L = strlen(line);
+        if (len + L + 1 > cap) { cap *= 2; char *np = (char *)realloc(pool, cap); if (!np) break; pool = np; }
+        if (n == ncap) {
+            ncap *= 2;
+            size_t *no = (size_t *)realloc(offs, (size_t)ncap * sizeof *no); if (!no) break; offs = no;
+            signed char *nw = (signed char *)realloc(w, (size_t)ncap); if (!nw) break; w = nw;
+        }
+        memcpy(pool + len, line, L + 1);
+        offs[n] = len; w[n] = (signed char)v; n++; len += L + 1;
+    }
+    fclose(f);
+    const char **words = (const char **)malloc((size_t)(n ? n : 1) * sizeof *words);
+    if (!pool || !offs || !w || !words) { free(pool); free(offs); free(w); free(words); return; }
+    for (int i = 0; i < n; i++) words[i] = pool + offs[i];
+    free(offs);
+    p->lp_pool = pool; p->lp_words = words; p->lp_w = w; p->lp_n = n;
+}
+static int lang_weight(const CyPhonemizer *p, const char *low) {
+    /* A letter name ("c", "th", "B.") is not a word -- English text is full of letters as list
+     * markers and initials -- except Welsh "o" (of) and "y" (the). Mirrors _word_weight. */
+    if (letterlike(low) && strcmp(low, "o") != 0 && strcmp(low, "y") != 0) return 0;
+    int v = 0, lo = 0, hi = p->lp_n - 1;
     while (lo <= hi) {
-        int mid = (lo + hi) / 2, c = strcmp(EN_FUNCTION_WORDS[mid], w);
-        if (c == 0) return 1;
+        int mid = (lo + hi) / 2, c = strcmp(p->lp_words[mid], low);
+        if (c == 0) { v = p->lp_w[mid]; break; }
         if (c < 0) lo = mid + 1; else hi = mid - 1;
     }
-    return 0;
+    /* corpus weight PLUS dictionary exclusivity (bangor_g2p._word_weight, 2026-09-08) */
+    int in_w = wmap_lookup(p->welsh, low) != NULL;
+    int in_e = wmap_lookup(p->eng, low) != NULL;
+    return v + ((in_w && !in_e) ? 16 : (in_e && !in_w) ? -16 : 0);
 }
 static int nl_utf8_next(const unsigned char *s, long *cp) {   /* one code point; bad byte = itself */
     unsigned char c = s[0];
@@ -1418,60 +1506,334 @@ static int nl_utf8_next(const unsigned char *s, long *cp) {   /* one code point;
     }
     *cp = v; return n;
 }
-/* Language for DIGIT verbalisation -- mirrors bangor_g2p._number_lang. Maximal runs of
- * alphabetic code points of the raw text, lowercased, scored by dictionary exclusivity
- * over the same two maps the sentence routing uses, plus the function-word list; one
- * English-only word and no Welsh-only word is enough ("Page 3"), because a Welsh "tri"
- * inside an English interface is unintelligible where an English "three" inside Welsh is
- * not. No evidence -> Welsh, the voice's own language. Separate from, and a lower bar
- * than, the phone routing (_sentence_lang), exactly as in Python. */
-static int number_lang(CyPhonemizer *p, const char *text) {
-    const unsigned char *s = (const unsigned char *)text;
-    int en_only = 0, cy_only = 0;
-    size_t i = 0;
-    while (s[i]) {
+/* One code point, or one of the eight Welsh digraph letters: a letter name, not a word. */
+static int letterlike(const char *w) {
+    long cp; int n = nl_utf8_next((const unsigned char *)w, &cp);
+    if (!w[n]) return 1;
+    static const char *const DIGRAPHS[] = {"ch", "dd", "ff", "ng", "ll", "ph", "rh", "th", NULL};
+    for (int k = 0; DIGRAPHS[k]; k++) if (!strcmp(w, DIGRAPHS[k])) return 1;
+    return 0;
+}
+/* The number language's evidence over s[0..len) -- mirrors bangor_g2p._number_weights: maximal
+ * alphabetic runs joined across an apostrophe ("mae'r", "o'clock"), lowercased, each weighed by
+ * the prior. Returns the sum and whether any word is
+ * strong evidence (|w| >= 32) for each language, which decides clause splitting. */
+static int nl_apos(const unsigned char *s, size_t i, size_t len) {
+    if (i < len && s[i] == '\'') return 1;
+    if (i + 2 < len && s[i] == 0xE2 && s[i + 1] == 0x80 && s[i + 2] == 0x99) return 3;
+    return 0;
+}
+static void number_score(CyPhonemizer *p, const unsigned char *s, size_t len, int *score, int *strong_cy, int *strong_en) {
+    size_t i = 0; int sc = 0, scy = 0, sen = 0;
+    while (i < len) {
         long cp; int n = nl_utf8_next(s + i, &cp);
         if (!cyp__cp_is_alpha(cp)) { i += (size_t)n; continue; }
         size_t start = i;
-        while (s[i] && (n = nl_utf8_next(s + i, &cp), cyp__cp_is_alpha(cp))) i += (size_t)n;
+        for (;;) {
+            while (i < len && (n = nl_utf8_next(s + i, &cp), cyp__cp_is_alpha(cp))) i += (size_t)n;
+            int a = nl_apos(s, i, len);
+            if (a && i + (size_t)a < len && (nl_utf8_next(s + i + a, &cp), cyp__cp_is_alpha(cp))) { i += (size_t)a; continue; }
+            break;
+        }
         char raw[512], low[512];
         size_t L = i - start;
         if (L >= sizeof(raw)) continue;                 /* no dictionary word is this long */
         memcpy(raw, s + start, L); raw[L] = 0;
         cyp__lower_strip(raw, low, (int)sizeof(low));
-        if (en_function_word(low)) { en_only++; continue; }
-        int in_w = wmap_lookup(p->welsh, low) != NULL;
-        int in_e = wmap_lookup(p->eng, low) != NULL;
-        if (in_e && !in_w) en_only++;
-        else if (in_w && !in_e) cy_only++;
+        int w = lang_weight(p, low);
+        sc += w;
+        if (w >= 32) scy = 1;
+        if (w <= -32) sen = 1;
     }
-    return en_only > cy_only ? CYP_LANG_EN : CYP_LANG_CY;
+    *score = sc; *strong_cy = scy; *strong_en = sen;
 }
-int cyp_text_to_ids_lang(CyPhonemizer *p, const char *text, int lang,
-                         int32_t *out, int max_out) {
-    if (!p || !text || !out) return -1;
-    static char nbuf[65536];
-    /* Number language: an explicit lang is the caller's word (Python: `lang or
-     * self._number_lang(text)`); CYP_LANG_AUTO detects it from the letters. */
-    int num_lang = lang != CYP_LANG_AUTO ? lang : number_lang(p, text);
-    cyp_normalize_lang(text, num_lang, nbuf, sizeof(nbuf));  /* numbers/%/abbrev/acronyms/de-shout -> lowercased */
-    int32_t flat[8192];
-    int fn = phonemize_flat(p, nbuf, lang, flat, (int)(sizeof(flat) / sizeof(flat[0])));
-    if (fn < 0) return -1;
-
-    /* interleave: [BOS] + [PAD,id]* + [PAD,EOS] */
+/* Number-language spans -- mirrors bangor_g2p._split_sentences / _split_clauses /
+ * _number_spans, code point by code point. A sentence ends at a run of . ! ? followed by
+ * ASCII whitespace or the end (not after a single-letter word: "e.e.", "y.b.", "a.m."), or
+ * at a newline; inside a sentence with evidence for BOTH languages, clauses end at , ; :
+ * before whitespace or at a dash between spaces. A span with no evidence takes the language
+ * of the span before it; the first defaults to Welsh. */
+enum { NL_MAX_SPANS = 2048 };
+typedef struct { size_t start, end, dend; int lang; int kind; } NlSpan;   /* kind: CYP_BOUNDARY_* */
+static int nl_ws(unsigned char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
+/* bangor_g2p._NL_TITLES: a "." after Dr/Mr/Mrs/Ms is not a sentence end. The word before
+ * position i is the run of ASCII letters ending there (the titles are ASCII), bounded by a
+ * non-alphanumeric byte or the span start. */
+static int nl_title_before(const unsigned char *s, size_t start, size_t i) {
+    size_t k = i;
+    while (k > start && isalpha(s[k - 1])) k--;
+    if (k > start && (isalnum(s[k - 1]) || s[k - 1] >= 0x80)) return 0;
+    size_t L = i - k; char w[8];
+    if (L == 0 || L > 3) return 0;
+    for (size_t t = 0; t < L; t++) w[t] = (char)tolower(s[k + t]);
+    w[L] = 0;
+    return !strcmp(w, "dr") || !strcmp(w, "mr") || !strcmp(w, "mrs") || !strcmp(w, "ms");
+}
+static int nl_term(const unsigned char *s, size_t i, size_t n) {   /* . ! ? or … : byte length, or 0 */
+    if (i >= n) return 0;
+    if (s[i] == '.' || s[i] == '!' || s[i] == '?') return 1;
+    if (i + 2 < n && s[i] == 0xE2 && s[i + 1] == 0x80 && s[i + 2] == 0xA6) return 3;
+    return 0;
+}
+static int nl_kind(const unsigned char *s, size_t a, size_t b) {   /* newlines in the delimiter */
+    int nl = 0; for (size_t t = a; t < b; t++) nl += s[t] == '\n';
+    return nl >= 2 ? CYP_BOUNDARY_PARAGRAPH : nl == 1 ? CYP_BOUNDARY_LINE : CYP_BOUNDARY_SENTENCE;
+}
+/* What may follow a sentence end (bangor_g2p._split_sentences `follows`): the end, a digit, a
+ * quote, or an upper-case letter -- a letter whose str.lower() differs, via cyp__lower_strip. */
+static int nl_follows(const unsigned char *s, size_t m, size_t n) {
+    if (m >= n) return 1;
+    long cp; int len = nl_utf8_next(s + m, &cp);
+    if (cyp__cp_is_alnum(cp) && !cyp__cp_is_alpha(cp)) return 1;               /* digit */
+    if (cp == '"' || cp == '\'' || cp == 0xAB || cp == 0x2018 || cp == 0x201C) return 1;   /* " ' « ‘ “ */
+    if (!cyp__cp_is_alpha(cp)) return 0;
+    char one[8], low[16]; memcpy(one, s + m, (size_t)len); one[len] = 0;
+    cyp__lower_strip(one, low, (int)sizeof(low));
+    return strcmp(one, low) != 0;
+}
+static int nl_sentences(const unsigned char *s, size_t n, NlSpan *out, int max) {
+    int k = 0; size_t i = 0, start = 0; int cls_prev = 0, cls_prev2 = 0;
+    while (i < n) {
+        unsigned char ch = s[i];
+        int tl = nl_term(s, i, n);
+        if (tl) {
+            size_t j = i;
+            for (int t; (t = nl_term(s, j, n)); ) j += (size_t)t;
+            int single = cls_prev == 1 && cls_prev2 != 2 && cls_prev2 != 1;
+            size_t m = j; while (m < n && nl_ws(s[m])) m++;
+            if ((j == n || nl_ws(s[j])) && nl_follows(s, m, n) && !single && !nl_title_before(s, start, i)) {
+                out[k].start = start; out[k].end = i; out[k].dend = m; out[k].kind = nl_kind(s, j, m); k++;
+                start = i = m; cls_prev = cls_prev2 = 0;
+                if (k == max) break;
+                continue;
+            }
+            cls_prev2 = cls_prev; cls_prev = 0; i = j; continue;
+        }
+        if (ch == '\n') {
+            size_t j = i;
+            while (j < n && nl_ws(s[j])) j++;
+            int kind = nl_kind(s, i, j);
+            if (kind == CYP_BOUNDARY_LINE) {
+                /* a soft wrap (bangor_g2p._SOFT_WRAP_MIN_CHARS): a long line with no terminal
+                 * punctuation followed by one newline is whitespace, not a boundary */
+                size_t e = i; while (e > start && nl_ws(s[e - 1])) e--;
+                int cps = 0; for (size_t t = start; t < e; ) { long cp; t += (size_t)nl_utf8_next(s + t, &cp); cps++; }
+                int terminal = e > start && (strchr(".!?:;", s[e - 1]) ||
+                               (e - start >= 3 && s[e - 3] == 0xE2 && s[e - 2] == 0x80 && s[e - 1] == 0xA6));
+                long ncp = 0; if (j < n) nl_utf8_next(s + j, &ncp);   /* the wrap must continue with a word */
+                if (cps >= 40 && !terminal && j < n && cyp__cp_is_alpha(ncp)) { i = j; cls_prev = cls_prev2 = 0; continue; }
+            }
+            out[k].start = start; out[k].end = i; out[k].dend = j; out[k].kind = kind; k++;
+            start = i = j; cls_prev = cls_prev2 = 0;
+            if (k == max) break;
+            continue;
+        }
+        long cp; int len = nl_utf8_next(s + i, &cp);
+        cls_prev2 = cls_prev;
+        cls_prev = cyp__cp_is_alpha(cp) ? 1 : cyp__cp_is_alnum(cp) ? 2 : 0;
+        i += (size_t)len;
+    }
+    if (start < n || k == 0) { out[k].start = start; out[k].end = n; out[k].dend = n; out[k].kind = CYP_BOUNDARY_END; k++; }
+    return k;
+}
+static int nl_clauses(const unsigned char *s, size_t start, size_t end, NlSpan *out, int max) {
+    int k = 0; size_t i = start, cstart = start;
+    while (i < end) {
+        unsigned char ch = s[i];
+        if ((ch == ',' || ch == ';' || ch == ':') && (i + 1 == end || nl_ws(s[i + 1]))) {
+            size_t j = i + 1;
+            while (j < end && nl_ws(s[j])) j++;
+            out[k].start = cstart; out[k].end = i; out[k].dend = j; k++;
+            cstart = i = j;
+            if (k == max) break;
+            continue;
+        }
+        int dash = 0, dl = 1;
+        if (ch == '-') dash = 1;
+        else if (ch == 0xE2 && i + 2 < end && s[i + 1] == 0x80 && (s[i + 2] == 0x93 || s[i + 2] == 0x94)) { dash = 1; dl = 3; }
+        else if (ch == 0xE2 && i + 2 < end && ((s[i + 1] == 0x80 && (s[i + 2] == 0xA2 || s[i + 2] == 0xA3)) ||
+                                              (s[i + 1] == 0x97 && (s[i + 2] == 0xA6 || s[i + 2] == 0x8F)) ||
+                                              (s[i + 1] == 0x96 && (s[i + 2] == 0xAA || s[i + 2] == 0xAB || s[i + 2] == 0xA0 || s[i + 2] == 0xA1)))) { dash = 1; dl = 3; }   /* bullets */
+        if (dash && i > cstart && s[i - 1] == ' ' && i + dl < end && s[i + dl] == ' ') {
+            size_t j = i + dl;
+            while (j < end && nl_ws(s[j])) j++;
+            out[k].start = cstart; out[k].end = i - 1; out[k].dend = j; k++;
+            cstart = i = j;
+            if (k == max) break;
+            continue;
+        }
+        i += (size_t)nl_utf8_next(s + i, &(long){0});
+    }
+    if (cstart < end || k == 0) { out[k].start = cstart; out[k].end = end; out[k].dend = end; k++; }
+    return k;
+}
+static int number_spans(CyPhonemizer *p, const char *text, NlSpan *out, int max, int default_lang) {
+    const unsigned char *s = (const unsigned char *)text;
+    size_t n = strlen(text);
+    static NlSpan sents[NL_MAX_SPANS];
+    int ns = nl_sentences(s, n, sents, NL_MAX_SPANS);
+    int k = 0, lang = default_lang;
+    for (int a = 0; a < ns && k < max; a++) {
+        int sc = 0, strong_cy = 0, strong_en = 0;
+        number_score(p, s + sents[a].start, sents[a].end - sents[a].start, &sc, &strong_cy, &strong_en);
+        if (strong_cy && strong_en) {
+            NlSpan cl[64];
+            int nc = nl_clauses(s, sents[a].start, sents[a].end, cl, 64);
+            for (int b = 0; b < nc && k < max; b++) {
+                int s2 = 0, x1, x2;
+                number_score(p, s + cl[b].start, cl[b].end - cl[b].start, &s2, &x1, &x2);
+                if (s2 <= -LP_MIN || s2 >= LP_MIN) lang = s2 < 0 ? CYP_LANG_EN : CYP_LANG_CY;
+                out[k] = cl[b]; out[k].dend = (b == nc - 1) ? sents[a].dend : cl[b].dend; out[k].lang = lang; k++;
+            }
+        } else {
+            if (sc <= -LP_MIN || sc >= LP_MIN) lang = sc < 0 ? CYP_LANG_EN : CYP_LANG_CY;
+            out[k] = sents[a]; out[k].lang = lang; k++;
+        }
+    }
+    return k;
+}
+/* AUTO number language: normalise per span when the spans disagree, whole when they agree
+ * (byte-identical to a single normalize call, as Python). */
+static void number_normalize(CyPhonemizer *p, const char *text, char *nbuf, size_t max, int default_lang, int *last_lang) {
+    static NlSpan sp[NL_MAX_SPANS];
+    int ns = number_spans(p, text, sp, NL_MAX_SPANS, default_lang);
+    if (last_lang) *last_lang = ns ? sp[ns - 1].lang : default_lang;
+    int uniform = 1;
+    for (int k = 1; k < ns; k++) if (sp[k].lang != sp[0].lang) uniform = 0;
+    if (uniform) { cyp_normalize_lang(text, ns ? sp[0].lang : default_lang, nbuf, (int)max); return; }
+    static char chunk[65536], obuf[65536];
+    size_t o = 0;
+    for (int k = 0; k < ns; k++) {
+        size_t L = sp[k].end - sp[k].start;
+        if (L >= sizeof(chunk)) L = sizeof(chunk) - 1;
+        memcpy(chunk, text + sp[k].start, L); chunk[L] = 0;
+        cyp_normalize_lang(chunk, sp[k].lang, obuf, (int)sizeof(obuf));
+        size_t ol = strlen(obuf), dl = sp[k].dend - sp[k].end;
+        if (o + ol + dl + 1 >= max) break;
+        memcpy(nbuf + o, obuf, ol); o += ol;
+        memcpy(nbuf + o, text + sp[k].end, dl); o += dl;
+    }
+    nbuf[o] = 0;
+    /* the delimiters were re-inserted verbatim and have not seen the late pause pass (a clause
+     * dash); Python runs _pause_punct once more on the joined text -- so does this. */
+    { static char pp[65536]; cyp__pause_late(nbuf, pp); snprintf(nbuf, max, "%s", pp); }
+    /* re.sub(r"\s+", " ", out).strip(): only ASCII whitespace can remain -- each chunk is
+     * already collapsed and the delimiters are ASCII -- so an ASCII collapse is exact. */
+    size_t r = 0, w = 0; int pend = 0;
+    while (nbuf[r]) {
+        if (nl_ws((unsigned char)nbuf[r])) { pend = w > 0; r++; continue; }
+        if (pend) { nbuf[w++] = ' '; pend = 0; }
+        nbuf[w++] = nbuf[r++];
+    }
+    nbuf[w] = 0;
+}
+static int phonemize_flat(CyPhonemizer *p, const char *ntext, int lang, int32_t *flat, int cap) {
+    return phonemize_flat_ex(p, ntext, lang, flat, cap, NULL);
+}
+void cyp_normalize_auto(CyPhonemizer *p, const char *text, char *out, int max_out) {
+    if (!p || !text || !out || max_out <= 0) return;
+    number_normalize(p, text, out, (size_t)max_out, CYP_LANG_CY, NULL);
+}
+/* [BOS] + [PAD,id]* + [PAD,EOS] -- the interleaving the model was trained with. */
+static int interleave(const int32_t *flat, int fn, int32_t *out, int max_out) {
     int k = 0;
     if (k >= max_out) return -1;
     out[k++] = BOS;
     for (int i = 0; i < fn; i++) {
-        if (k + 1 >= max_out) return -1;
+        if (k + 2 > max_out) return -1;
         out[k++] = PAD; out[k++] = flat[i];
     }
-    if (k + 1 >= max_out) return -1;
+    if (k + 2 > max_out) return -1;
     out[k++] = PAD; out[k++] = EOS;
     return k;
 }
-
+int cyp_boundary_gap_ms(int boundary) {
+    switch (boundary) {
+    case CYP_BOUNDARY_SENTENCE: return 250;
+    case CYP_BOUNDARY_LINE: return 350;
+    case CYP_BOUNDARY_PARAGRAPH: return 600;
+    default: return 0;
+    }
+}
+/* The utterance as rendering units -- mirrors BangorG2P.segments. Returns the segment count;
+ * each segment's phones (flat, no BOS/EOS) are written into flat_all[seg.start .. +seg.count).
+ * -1 on overflow. */
+static int segments_flat(CyPhonemizer *p, const char *text, int lang, CypSegment *segs, int max_segs,
+                         int32_t *flat_all, int cap) {
+    static NlSpan sp[NL_MAX_SPANS];
+    static char pool[1 << 20];           /* the normalised segments */
+    static size_t noff[NL_MAX_SPANS];
+    static int nlang[NL_MAX_SPANS], score[NL_MAX_SPANS], kinds[NL_MAX_SPANS];
+    static char seg[65536], nbuf[65536];
+    const unsigned char *s = (const unsigned char *)text;
+    size_t n = strlen(text), used = 0;
+    int ns = nl_sentences(s, n, sp, NL_MAX_SPANS), nseg = 0, num = CYP_LANG_CY, total = 0;
+    for (int k = 0; k < ns && nseg < max_segs; k++) {
+        size_t a = sp[k].start, e = sp[k].dend;
+        while (a < e && nl_ws(s[a])) a++;
+        while (e > a && nl_ws(s[e - 1])) e--;
+        if (e == a) continue;
+        size_t L = e - a; if (L >= sizeof(seg) - 2) L = sizeof(seg) - 2;
+        memcpy(seg, s + a, L); seg[L] = 0;
+        if ((sp[k].kind == CYP_BOUNDARY_LINE || sp[k].kind == CYP_BOUNDARY_PARAGRAPH) &&
+            !strchr(".!?:;,", seg[L - 1]) && !(L >= 3 && (unsigned char)seg[L - 3] == 0xE2 && (unsigned char)seg[L - 2] == 0x80 && (unsigned char)seg[L - 1] == 0xA6)) {
+            seg[L++] = '.'; seg[L] = 0;                              /* a heading or list line: sentence-final fall */
+        }
+        if (lang != CYP_LANG_AUTO) { cyp_normalize_lang(seg, lang, nbuf, (int)sizeof(nbuf)); num = lang; }
+        else number_normalize(p, seg, nbuf, sizeof(nbuf), num, &num);
+        size_t nl = strlen(nbuf);
+        if (used + nl + 1 > sizeof(pool)) return -1;
+        memcpy(pool + used, nbuf, nl + 1); noff[nseg] = used; used += nl + 1;
+        nlang[nseg] = num; kinds[nseg] = sp[k].kind;
+        int sc = 0; phonemize_flat_ex(p, nbuf, CYP_LANG_AUTO, NULL, 0, &sc);
+        score[nseg] = sc; total += sc;
+        nseg++;
+    }
+    int whole = total <= -LP_MIN ? CYP_LANG_EN : CYP_LANG_CY, prev = whole, fn = 0;
+    for (int k = 0; k < nseg; k++) {
+        int pl = lang != CYP_LANG_AUTO ? lang : score[k] <= -LP_MIN ? CYP_LANG_EN : score[k] >= LP_MIN ? CYP_LANG_CY : prev;
+        prev = pl;
+        int m = phonemize_flat(p, pool + noff[k], pl, flat_all + fn, cap - fn);
+        if (m < 0) return -1;
+        segs[k].start = fn; segs[k].count = m; segs[k].boundary = kinds[k];
+        segs[k].number_lang = nlang[k]; segs[k].phone_lang = pl;
+        fn += m;
+    }
+    return nseg;
+}
+int cyp_segments(CyPhonemizer *p, const char *text, int lang, CypSegment *segs, int max_segs,
+                 int32_t *ids, int max_ids) {
+    if (!p || !text || !segs || !ids || max_segs <= 0) return -1;
+    if (lang < CYP_LANG_AUTO || lang > CYP_LANG_EN) return -1;
+    static int32_t flat[8192];
+    int nseg = segments_flat(p, text, lang, segs, max_segs, flat, (int)(sizeof(flat) / sizeof(flat[0])));
+    if (nseg < 0) return -1;
+    int o = 0;
+    for (int k = 0; k < nseg; k++) {
+        int m = interleave(flat + segs[k].start, segs[k].count, ids + o, max_ids - o);
+        if (m < 0) return -1;
+        segs[k].start = o; segs[k].count = m; o += m;      /* now offsets into ids */
+    }
+    return nseg;
+}
+int cyp_text_to_ids_lang(CyPhonemizer *p, const char *text, int lang,
+                         int32_t *out, int max_out) {
+    if (!p || !text || !out) return -1;
+    if (lang < CYP_LANG_AUTO || lang > CYP_LANG_EN) return -1;
+    /* The segments' phones joined by SPACE -- mirrors BangorG2P.text_to_ids. */
+    static CypSegment segs[NL_MAX_SPANS];
+    static int32_t flat[8192], joined[8192];
+    int nseg = segments_flat(p, text, lang, segs, NL_MAX_SPANS, flat, (int)(sizeof(flat) / sizeof(flat[0])));
+    if (nseg < 0) return -1;
+    int fn = 0;
+    for (int k = 0; k < nseg; k++) {
+        if (segs[k].count == 0) continue;
+        if (fn > 0) { if (fn >= 8192) return -1; joined[fn++] = SPACE; }
+        if (fn + segs[k].count > 8192) return -1;
+        memcpy(joined + fn, flat + segs[k].start, (size_t)segs[k].count * sizeof(int32_t)); fn += segs[k].count;
+    }
+    return interleave(joined, fn, out, max_out);
+}
 int cyp_text_to_ids(CyPhonemizer *p, const char *text, int32_t *out, int max_out) {
     return cyp_text_to_ids_lang(p, text, CYP_LANG_AUTO, out, max_out);
 }

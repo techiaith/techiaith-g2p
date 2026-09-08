@@ -188,6 +188,9 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
     CHANGED["k"] = list(_CY_LETTER_NAMES["k"])
     CHANGED["K"] = list(_CY_LETTER_NAMES["k"])
     CHANGED["K."] = list(_CY_LETTER_NAMES["k"]) + ["."]
+    # 2026-09-08 (1.4.0): a dash between spaces is a comma pause (welsh_normalize._pause_punct);
+    # the dictated letters keep their Welsh names, with the pause token between them.
+    CHANGED["b - c"] = list(_CY_LETTER_NAMES["b"]) + [",", " "] + list(_CY_LETTER_NAMES["c"])
 
     # NOTE, and the frozen oracle earned its keep here: the number register was moved to
     # vigesimal and back on 2026-07-27, so "Mae 25 o gathod", "yn 2026" and "A55." briefly
@@ -232,8 +235,30 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
         # not in the native file: the accented tables serve it (cmudict.dict
         # "tts (foreign,en,cmu) t 'ii - t ii - ' e s")
         "tts": ["t", "ii", "|", "t", "ii", "|", "ˈ", "e", "s"],
-        # a Welsh headword, not an acronym at all: bangordict.dict "ab a b /ab/"
-        "ab":  ["a", "b"],
+        # 2026-09-08 (1.4.0): the corpus prior routes a lone "ab" English (-22: MASC uses it,
+        # modern Welsh does not), so it reads from cmudict_native.dict "ab	ˈ æ b" rather than
+        # the Welsh headword (bangordict.dict "ab a b /ab/", the 1.2.0 reading).
+        "ab":  ["ˈ", "æ", "b"],
+        # 2026-09-07 (1.3.1): the gate now consults data/english/cmudict_native.dict too:
+        # "api	ei p ii ˈ ai" -- the letter names, as a lexicon entry
+        "api": ["ei", "p", "ii", "ˈ", "ai"],
+    }
+    # 2026-09-08 (1.4.0): sentence routing is a corpus-frequency prior (bangor_g2p._lang_score),
+    # so a shared LOANWORD alone reads from the English lexicon where the exclusive-word count
+    # defaulted to the Welsh dictionary. Old span = the bangordict.dict row, new span = the
+    # cmudict_native.dict row, both quoted as literals: verifiable by eye against the data files.
+    SPLICE_LEX = {
+        # bangordict.dict "the": ['ˈ', 'th', 'ee']  ->  cmudict_native.dict "the": ['dh', '@']
+        "the": (['ˈ', 'th', 'ee'], ['dh', '@']),
+        # the same lone "ab", typed with a marker: bangordict.dict "ab" -> cmudict_native.dict "ab"
+        "ab\u00b7cd": (["a", "b"], ["ˈ", "æ", "b"]),
+        # bangordict.dict "action": ['ˈ', 'a', 'k', '|', 't', 'j', 'o', 'n']  ->  cmudict_native.dict "action": ['ˈ', 'æ', 'k', 'sh', '@', 'n']
+        "action": (['ˈ', 'a', 'k', '|', 't', 'j', 'o', 'n'], ['ˈ', 'æ', 'k', 'sh', '@', 'n']),
+        # 2026-09-08 (1.4.0, lexicon exclusivity ADDED to the corpus weight): "bbc" is in
+        # cmudict_native.dict only, so the two-word label routes English and its "a" reads
+        # bangordict.dict "a": ['a']  ->  cmudict_native.dict "a": ['@']. Applied ON TOP of the
+        # SPLICE_VOCAB swap of the spelled B-B-C for the dictionary word (below).
+        "a BBC": (['a'], ['@']),
     }
     SPLICE_VOCAB = {
         "Mae'r BBC yn dda": "bbc", "S4C a'r BBC": "bbc", "BBC.": "bbc",
@@ -242,6 +267,7 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
         "BBC y dydd": "bbc", "Mae y BBC yn dda": "bbc",
         "OK.": "ok", "USA.": "usa", "TTS.": "tts", "y TTS": "tts",
         "y CD newydd": "cd", "AB": "ab",
+        "API.": "api", "Mae'r API yn barod.": "api",
     }
 
     def _inner_span(tokens):
@@ -262,7 +288,7 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
     assert len(rows) >= PRE_LANG_ROWS, (
         f"expected at least the {PRE_LANG_ROWS} pre-lang golden rows, got {len(rows)} "
         f"(file truncated?)")
-    assert set(CHANGED) | SUBST_I_TO_II | set(SPLICE_VOCAB) <= {text for text, _ in rows}, (
+    assert set(CHANGED) | SUBST_I_TO_II | set(SPLICE_VOCAB) | set(SPLICE_LEX) <= {text for text, _ in rows}, (
         "the frozen oracle no longer contains the rows the exception list is about; "
         "it has been replaced rather than frozen")
     for text, ids_str in rows:
@@ -297,6 +323,17 @@ def test_lang_none_reproduces_golden_and_consults_sentence_lang():
                 f"pin. Restore it from git (05d9436 / d0e019b), do not refresh it.")
         else:
             expected_ids = frozen_ids
+        if text in SPLICE_LEX:      # a lexicon swap, alone or on top of a SPLICE_VOCAB row
+            base = expected_ids
+            old_span, new_span = (_inner_span(x) for x in SPLICE_LEX[text])
+            hits = [k for k in range(len(base) - len(old_span) + 1)
+                    if base[k:k + len(old_span)] == old_span]
+            assert len(hits) == 1, (
+                f"the Welsh-dictionary span occurs {len(hits)} times in the frozen row for "
+                f"{text!r}, so the splice is ambiguous; identify the span by hand instead")
+            k = hits[0]
+            expected_ids = base[:k] + new_span + base[k + len(old_span):]
+            assert expected_ids != base
         got_ids = g.text_to_ids(text)  # lang omitted entirely
         assert got_ids == expected_ids, (
             f"lang-omitted text_to_ids diverged from the pre-lang golden for {text!r}: "

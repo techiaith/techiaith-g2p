@@ -17,19 +17,20 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, NamedTuple
 
 from .bangor_lts import lts
 from .canonical import decimal_value
 from .english_g2p import EnglishG2P, _LEX as _ENGLISH_LEXICON
 from . import pos_tagger
 from .lang_id import classify_word
-from .welsh_normalize import ACRONYM_JOIN, WelshNormalizer
+from .welsh_normalize import ACRONYM_JOIN, WelshNormalizer, _pause_punct, _pause_punct_early
 
 _HERE = Path(__file__).resolve().parent
 _DEFAULT_IDMAP = _HERE / "bangor_phoneme_id_map.json"
 _DEFAULT_DATA = _HERE / "data" / "geiriadur-ynganu-bangor"
 _POS_DATA = _HERE / "data" / "pos"
+_LANG_PRIOR = _HERE / "data" / "lang" / "lang_prior.tsv"
 
 # Lookup priority: native Welsh, then proper nouns, then English, then CMUdict.
 _DICT_ORDER = ["bangordict.dict", "bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict"]
@@ -52,22 +53,62 @@ WORD_SEP = " "
 _PUNCT = ".,;:!?()\"…—"
 # Alphabetic runs for _number_lang: str.isalpha() as a class -- letters only, so no digit
 # or apostrophe can be part of a token. Mirrored in C by cyp__cp_is_alpha over code points.
-_ALPHA_RUN = re.compile(r"[^\W\d_]+")
-# English function words that are not Welsh words, as English evidence for _number_lang.
-# Dictionary exclusivity alone cannot see them: bangordict.dict carries "of", "the", "for",
-# "it", "not" as English loans with Welsh phonology ("of" -> oo|v), so they read as SHARED
-# and a screen-reader string like "Tab 1 of 4" has no evidence at all. The list is the
-# high-frequency English closed class MINUS every word that is also a Welsh word: "at" (to),
-# "is" (below), "to" (roof), "was" (servant), "her" (challenge), "be" (beth), "can" (cant),
-# "had" (seed), "call" (wise), "an", "all" and "or" are deliberately absent; the tagger's
-# Welsh training features (pos_cy.bin, brawddegau-tagiedig) confirmed which of the
-# candidates occur in Welsh text (2026-09-07). Same list, same order, in cy_phonemize.c.
-# This feeds the NUMBER language only; the phone routing (_sentence_lang) is unchanged.
-_EN_FUNCTION_WORDS = frozenset("""
-    the of and in on for it not with from by this that these those your you its are were
-    been have has will would could should my our their we they he she his what which when
-    where why any some also then there here more most than who how but
-""".split())
+_ALPHA_RUN = re.compile(r"[^\W\d_]+(?:['\u2019][^\W\d_]+)*")   # "mae'r", "o'clock" are one word
+# Per-word language prior (data/lang/lang_prior.tsv, scripts/gen_lang_prior.py): how Welsh or how
+# English each word is, as 16 x the log-odds of its frequency in Welsh text (corpws-brawddegau-
+# tagiedig, CC0) versus English text (MASC 3.0.0, CC BY 3.0 US). Positive is Welsh. A sentence's
+# language is the SIGN of the sum over its words; 0 is no evidence (Welsh, or the surrounding
+# decision). This replaces the exclusive-word count and the hand-made function-word lists of 1.3.x
+# (owner, 2026-09-08: "Learn more" read "mor-eh" because "more" is a Welsh-dictionary loan and one
+# English-only word was not enough). Measured on held-out sentences: Welsh 99.6% / English 99.1%
+# against 99.6% / 94.6% for the old rule; 18 of 26 everyday English labels that routed Welsh now
+# route English. Details: docs/text-structure-programme.md §3.7.
+_PRIOR_FALLBACK = 16       # a word in neither corpus: +-1 nat (x16) from dictionary exclusivity
+_PRIOR_STRONG = 32         # |weight| from which a word is strong evidence (clause splitting)
+_PRIOR_MIN = 8             # |score| below this (half a nat) is no decision: "ab" at -6 must not flip
+_WELSH_LETTERS = frozenset({"ch", "dd", "ff", "ng", "ll", "ph", "rh", "th"})
+_LETTER_WORDS = frozenset({"o", "y"})   # the letters that are words: Welsh "of", "the"
+# Text STRUCTURE (docs/text-structure-programme.md §3). A sentence ends at a run of . ! ? … before
+# whitespace when an upper-case letter, a digit, a quote or the end follows (the apps' guard); a
+# newline is a LINE boundary, a blank line a PARAGRAPH. The model realises none of these as a pause
+# (measured: a mid-utterance "." is 80 ms of silence, a plain space 124), so consumers render each
+# segment as its own pass and insert silence by boundary kind -- these constants, shared by the API
+# and the apps through cyp_boundary_gap_ms, so device and API sound the same. Tuned by ear.
+BOUNDARY_GAP_MS = {"sentence": 250, "line": 350, "paragraph": 600, "end": 0}
+_QUOTES = "\"'«‘“"
+_SENT_END = ".!?…"
+_NO_FULL_STOP_AFTER = ".!?…:;,"   # a heading or list line ending in one of these keeps its own pause
+# A single newline after a LONG line with no terminal punctuation is a soft wrap (text copied
+# from a phone-width layout), not a heading: "...or use the Live⏎Recognition Rotor." is one
+# sentence. Headings and list lines are short; wrapped lines are not.
+_SOFT_WRAP_MIN_CHARS = 40
+_LINE_TERMINAL = ".!?…:;"
+
+
+class Segment(NamedTuple):
+    """One rendering unit of an utterance: a sentence, a heading, a list line."""
+    text: str            # the segment as normalised (structure punctuation already applied)
+    tokens: List[str]    # phones, WORD_SEP-separated, no BOS/EOS
+    ids: List[int]       # the interleaved ids of THIS segment alone (BOS ... EOS)
+    boundary: str        # what follows it: "sentence" | "line" | "paragraph" | "end"
+    number_lang: str     # the language its digits were read in
+    phone_lang: str      # the language its phones were routed to
+
+
+def _load_lang_prior(path: Path) -> Dict[str, int]:
+    table: Dict[str, int] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line or line[0] == "#":
+            continue
+        w, _, v = line.partition("\t")
+        table[w] = int(v)
+    return table
+# Whitespace for the sentence/clause splitter: ASCII only, so the C mirror is exact.
+_NL_WS = " \t\r\n"
+_NL_MAX_SPANS = 2048
+# Title abbreviations the normaliser expands with an optional dot: a "." after one is not a
+# sentence end ("Dr. Jones"). Same set in cy_phonemize.c (nl_title_before).
+_NL_TITLES = frozenset({"dr", "mr", "mrs", "ms"})
 # An interior run of _PUNCT members, for _segment's split. The capturing group keeps
 # the runs in re.split's output so they can be re-attached as lead/trail punctuation.
 _INTERIOR_PUNCT = re.compile("([" + re.escape(_PUNCT) + "]+)")
@@ -84,7 +125,7 @@ _INTERIOR_PUNCT = re.compile("([" + re.escape(_PUNCT) + "]+)")
 # transcriptions and audibly worse than the deployed API, and was withdrawn; the model was
 # trained with these labels and they are what sounds right. The POS models and the lexicon
 # are hashed below so a change to either moves data_version.
-_EMISSION_POLICY = "v4:stress=on;syllable=on;wordsep=on;punct=on;letters=cy-names;acronyms=en-runs;pos=on;interleave=bos-pad-id-pad-eos"
+_EMISSION_POLICY = "v5:stress=on;syllable=on;wordsep=on;punct=on;letters=cy-names;acronyms=en-runs;pos=on;route=prior+excl;interleave=bos-pad-id-pad-eos"
 
 # Welsh letter names for isolated consonant letters and digraphs, as phone tokens
 # (sources: the dictionaries' shadowed (nmcy) entries + the reference alphabet in
@@ -337,6 +378,7 @@ def _parse_line(line: str):
 # and only these -- a typo anywhere else still fails loudly.
 _CY_PRON_ADDITIONS = frozenset({
     "onedrive", "chromebook", "firestick", "fitbit", "tiktok", "deliveroo",
+    "readme", "changelog", "devops", "gitlab", "kubernetes", "techiaith",
 })
 
 # --- HETERONYMS ---------------------------------------------------------------------------
@@ -391,9 +433,12 @@ _HETERONYM: Dict[str, Dict[Optional[str], List[str]]] = {
     "use": _het(default="verb",
                 verb=(_VERB_ALL, ["j", STRESS, "uu", "z"]),
                 noun=(_NOUN_FORMS, ["j", STRESS, "uu", "s"])),             # verb 167 / noun 130
+    # A capitalised label-initial "Live" is tagged PROPN ("Live Recognition", "Live Text", "Live
+    # Photos", "Live Captions" -- the owner heard /lɪv/ Recognition on VoiceOver, 2026-09-08), and
+    # a proper-noun or adverbial "live" ("go live") is always the adjective sense: /laɪv/.
     "live": _het(default="verb",
                  verb=(_VERB_FORMS, ["l", STRESS, "i", "v"]),
-                 adj=(("ADJ",), ["l", STRESS, "ai", "v"])),                 # verb 106 / adj 4
+                 adj=(("ADJ", "ADV", "PROPN"), ["l", STRESS, "ai", "v"])),  # verb 106 / adj 4
     "close": _het(default="verb",
                   verb=(_VERB_ALL, ["k", "l", STRESS, "ou", "z"]),
                   adj=(("ADJ", "ADV"), ["k", "l", STRESS, "ou", "s"])),      # verb 37 / adj 36
@@ -430,6 +475,8 @@ _HETERONYM: Dict[str, Dict[Optional[str], List[str]]] = {
 #   lead (metal / to guide)   bow (ribbon / to bend)   tear (droplet / to rip)
 #   sow  (to plant / a pig)   row (a line / a quarrel) bass (fish / low register)
 # Out of scope for this mechanism and deliberately left alone.
+_GO_FORMS = frozenset({"go", "goes", "went", "going", "gone"})   # "go live": see phonemize
+
 _HETERONYM_NOT_POS_SEPARABLE = frozenset({
     "lead", "bow", "tear", "sow", "row", "bass", "wound",
 })
@@ -476,6 +523,20 @@ _CY_PRON_OVERRIDE: Dict[str, List[str]] = {
     # "deliver uu" gives ˈyy|y, both worse. It does carry a /w/ onset, so this is
     # "deliver-WOO" rather than "deliver-OO" -- accepted as the best this phoneset offers.
     "deliveroo":  ["d", "i", "l", STRESS, "i", "v", "@r", WORD_SEP, STRESS, "w", "uu"],
+    # Developer / interface vocabulary in NO dictionary (2026-09-07; the owner heard a
+    # GitLab project page). Same two-word convention as the brands above; "kubernetes" is
+    # one word. Everything else on that page (login, wiki, wifi, whatsapp, gmail, github,
+    # spotify, netflix...) is already in cmudict_native and needed only the acronym gate to
+    # consult it.
+    "readme":     ["ɹ", STRESS, "ii", "d", WORD_SEP, "m", STRESS, "ii"],
+    "changelog":  ["ch", STRESS, "ei", "n", "jh", WORD_SEP, "l", STRESS, "oo", "g"],
+    "devops":     ["d", STRESS, "e", "v", WORD_SEP, STRESS, "aa", "p", "s"],
+    "gitlab":     ["g", STRESS, "i", "t", WORD_SEP, "l", STRESS, "æ", "b"],
+    "kubernetes": ["k", "uu", "b", "@r", "n", STRESS, "e", "t", "ii", "z"],
+    # The organisation's own name (owner heard "tetch-ee-ayth" when an English sentence
+    # preceded it in one utterance, 2026-09-08). In no dictionary; the Welsh LTS reading,
+    # pinned so it does not depend on which language the utterance around it routes to.
+    "techiaith":  [STRESS, "t", "e", "x", "|", "j", "ai", "th"],
 
     # DELIBERATELY ABSENT: camera, signal, telegram. Mispronounced by the same mechanism,
     # but each is an ordinary Welsh loanword as well as a brand, and an override applies
@@ -554,6 +615,7 @@ class BangorG2P:
         self.id_map: Dict[str, List[int]] = spec["phoneme_id_map"]
         self.control = spec["control"]
         self.lexicon = BangorLexicon(self.id_map, data_dir)
+        self.lang_prior = _load_lang_prior(_LANG_PRIOR)
         self.normalizer = WelshNormalizer()
         self.english_mode = english_mode
         self._english: Optional[EnglishG2P] = None
@@ -722,40 +784,168 @@ class BangorG2P:
         """Normalise text, verbalising numbers in the utterance's language.
 
         `lang` is an explicit override ("cy"/"en": SSML <lang>, a client's requested voice
-        language). When None, the NUMBER language is detected from the letters of the raw
-        text -- see _number_lang -- so "Home screen 1 of 3" says "one of three" and
-        "Mae 25 o gathod" says "pump ar hugain". This used to be impossible: normalize ran
-        before any language decision and expanded every digit in Welsh, and the Welsh
-        number words then pushed the sentence router further toward Welsh. Detection here
-        is a *number* decision only; phoneme routing in phonemize keeps its own, stricter
-        rule, so the deployed voice's sound on shared words does not move."""
-        return self.normalizer.normalize(text, lang=lang or self._number_lang(text))
+        language) and applies to the whole text. When None, the NUMBER language is detected
+        per sentence -- and per clause inside a sentence that carries evidence for both
+        languages -- from the letters of the raw text (see _number_spans), so
+        "Home screen 1 of 3" says "one of three", "1 o 1. 1 of 1" says "un o un. one of one"
+        and "Tudalen 1 o 3, Page 1 of 3" keeps each half in its own language. When every span
+        agrees, the text is normalised in one pass exactly as before, so a single-language
+        utterance is byte-identical to what it was. Detection here is a *number* decision
+        only; phoneme routing in phonemize keeps its own, stricter rule, so the deployed
+        voice's sound on shared words does not move."""
+        return self._normalize_carry(text, lang)[0]
+
+    def _normalize_carry(self, text: str, lang: Optional[str], default: str = "cy") -> Tuple[str, str]:
+        """(normalised text, the number language in force at its end). `default` is the language
+        a span with no evidence takes -- the previous segment's, when segments() calls this."""
+        if lang:
+            return self.normalizer.normalize(text, lang=lang), lang
+        spans = self._number_spans(text, default=default)
+        langs = {sp[3] for sp in spans}
+        last = spans[-1][3] if spans else default
+        if len(langs) <= 1:
+            return self.normalizer.normalize(text, lang=next(iter(langs), default)), last
+        out = []
+        for start, end, dend, l in spans:
+            out.append(self.normalizer.normalize(text[start:end], lang=l))
+            out.append(text[end:dend])                  # the delimiter, verbatim ...
+        # ... which the pause passes have not seen (a clause dash or bullet), so they run once
+        # more here; both are idempotent on the already-normalised chunks.
+        return re.sub(r"\s+", " ", _pause_punct(_pause_punct_early("".join(out)))).strip(), last
+
+    def _number_weights(self, text: str) -> List[int]:
+        """The prior's weight for each word of the RAW text (apostrophe-joined alphabetic runs,
+        lowercased -- digits are not yet words here)."""
+        return [self._word_weight(w) for w in _ALPHA_RUN.findall(text.lower())]
 
     def _number_lang(self, text: str) -> str:
-        """Language for digit verbalisation, from the alphabetic words of the RAW text.
+        """Language for digit verbalisation over one span: one English-only word and no
+        Welsh-only word is enough ("Page 3", "Tab 1 of 4"), because the cost of the two
+        errors is asymmetric -- an English "three" inside Welsh is intelligible, a Welsh "tri"
+        inside an English interface is not. No evidence: Welsh, the voice's own language."""
+        return "en" if sum(self._number_weights(text)) <= -_PRIOR_MIN else "cy"
 
-        Same dictionary-exclusivity evidence as _sentence_lang, lower bar: one English-only
-        word and no Welsh-only word is enough ("Page 3", "Tab 1 of 4"), because the cost of
-        the two errors is asymmetric -- an English "three" inside Welsh is intelligible, a
-        Welsh "tri" inside an English interface is not. With no evidence either way (a bare
-        "1 2 3") the voice's own language, Welsh, is the default; a client that knows better
-        passes lang explicitly.
+    @staticmethod
+    def _split_sentences(text: str) -> List[Tuple[int, int, int, str]]:
+        """[(start, end, delimiter_end, boundary)] over the raw text.
 
-        Tokenisation is deliberately primitive so C can match it exactly: maximal runs of
-        alphabetic code points (str.isalpha), lowercased with the same str.lower the C port
-        mirrors. Tokens containing digits never exist by construction."""
-        en_only = cy_only = 0
-        for w in _ALPHA_RUN.findall(text.lower()):
-            if w in _EN_FUNCTION_WORDS:          # loanword entries in the Welsh table
-                en_only += 1                     # must not hide "of" / "the" / "for"
+        A sentence ends at a run of . ! ? … followed by ASCII whitespace or the end, when what
+        follows the whitespace is an upper-case letter, a digit, a quote or the end -- so
+        "learn more... link" stays one sentence -- and not after a single-letter word ("e.e.",
+        "y.b.", "a.m.", "U.S.A.") or a title (Dr., Mr.). A newline is a "line" boundary, a blank
+        line a "paragraph"; a run of punctuation followed by a newline takes the newline's kind.
+        Procedural, code point by code point, so cy_phonemize.c (nl_sentences) walks the same
+        bytes to the same answer."""
+        spans = []
+        n = len(text)
+        i = start = 0
+        cls_prev = cls_prev2 = 0                 # 1 letter, 2 other alnum, 0 anything else
+
+        def kind_of(a: int, c: int) -> str:
+            nl = text.count("\n", a, c)
+            return "paragraph" if nl >= 2 else "line" if nl == 1 else "sentence"
+
+        while i < n:
+            ch = text[i]
+            if ch in _SENT_END:
+                j = i
+                while j < n and text[j] in _SENT_END:
+                    j += 1
+                single = cls_prev == 1 and cls_prev2 != 2 and cls_prev2 != 1
+                k = i
+                while k > start and text[k - 1].isalpha():
+                    k -= 1
+                title = text[k:i].lower() in _NL_TITLES and (k == start or not text[k - 1].isalnum())
+                m = j
+                while m < n and text[m] in _NL_WS:
+                    m += 1
+                nxt = text[m] if m < n else ""
+                follows = (m == n or nxt.isdigit() or nxt in _QUOTES
+                           or (nxt.isalpha() and nxt.lower() != nxt))
+                if (j == n or text[j] in _NL_WS) and follows and not single and not title:
+                    spans.append((start, i, m, kind_of(j, m)))
+                    start = i = m
+                    cls_prev = cls_prev2 = 0
+                    if len(spans) == _NL_MAX_SPANS:
+                        break
+                    continue
+                cls_prev2, cls_prev = cls_prev, 0
+                i = j
                 continue
-            in_welsh = self.lexicon.lookup_welsh(w) is not None
-            in_english = self.english.lookup(w) is not None
-            if in_english and not in_welsh:
-                en_only += 1
-            elif in_welsh and not in_english:
-                cy_only += 1
-        return "en" if en_only > cy_only else "cy"
+            if ch == "\n":
+                j = i
+                while j < n and text[j] in _NL_WS:
+                    j += 1
+                line = text[start:i].rstrip(_NL_WS)
+                if (kind_of(i, j) == "line" and len(line) >= _SOFT_WRAP_MIN_CHARS
+                        and line and line[-1] not in _LINE_TERMINAL
+                        and j < n and text[j].isalpha()):    # a wrap continues with a word, never
+                    i = j                                    # "message\n15:44": a soft wrap is whitespace
+                    cls_prev = cls_prev2 = 0
+                    continue
+                spans.append((start, i, j, kind_of(i, j)))
+                start = i = j
+                cls_prev = cls_prev2 = 0
+                if len(spans) == _NL_MAX_SPANS:
+                    break
+                continue
+            cls_prev2, cls_prev = cls_prev, (1 if ch.isalpha() else 2 if ch.isalnum() else 0)
+            i += 1
+        if start < n or not spans:
+            spans.append((start, n, n, "end"))
+        return spans
+
+    @staticmethod
+    def _split_clauses(text: str, start: int, end: int) -> List[Tuple[int, int, int]]:
+        """Clause ends inside text[start:end]: , ; : followed by ASCII whitespace or the end,
+        or a dash or bullet between spaces."""
+        spans = []
+        i = cstart = start
+        while i < end:
+            ch = text[i]
+            if ch in ",;:" and (i + 1 == end or text[i + 1] in _NL_WS):
+                j = i + 1
+                while j < end and text[j] in _NL_WS:
+                    j += 1
+                spans.append((cstart, i, j))
+                cstart = i = j
+                continue
+            if ch in "-\u2013\u2014•‣◦▪▫●■□" and i > cstart and text[i - 1] == " " and i + 1 < end and text[i + 1] == " ":
+                j = i + 1
+                while j < end and text[j] in _NL_WS:
+                    j += 1
+                spans.append((cstart, i - 1, j))
+                cstart = i = j
+                continue
+            i += 1
+        if cstart < end or not spans:
+            spans.append((cstart, end, end))
+        return spans
+
+    def _number_spans(self, text: str, default: str = "cy") -> List[Tuple[int, int, int, str]]:
+        """[(start, end, delimiter_end, lang)]: the number language of each sentence, or of
+        each clause where a sentence carries evidence for BOTH languages ("Tudalen 1 o 3,
+        Page 1 of 3"). A span with no evidence takes the language of the span before it
+        (reading order); the first defaults to Welsh. Owner, 2026-09-07: "the language
+        detection is not respecting sentence boundaries" -- it ran once over the utterance."""
+        out = []
+        lang = default
+        for s_start, s_end, s_dend, _kind in self._split_sentences(text):
+            ws = self._number_weights(text[s_start:s_end])
+            # strong evidence for BOTH languages in one sentence: bilingual-signage style
+            if any(w >= _PRIOR_STRONG for w in ws) and any(w <= -_PRIOR_STRONG for w in ws):
+                clauses = self._split_clauses(text, s_start, s_end)
+                for k, (c_start, c_end, c_dend) in enumerate(clauses):
+                    s = sum(self._number_weights(text[c_start:c_end]))
+                    if abs(s) >= _PRIOR_MIN:
+                        lang = "en" if s < 0 else "cy"
+                    out.append((c_start, c_end, s_dend if k == len(clauses) - 1 else c_dend, lang))
+            else:
+                s = sum(ws)
+                if abs(s) >= _PRIOR_MIN:
+                    lang = "en" if s < 0 else "cy"
+                out.append((s_start, s_end, s_dend, lang))
+        return out
 
     # --- normalization (minimal for P1; P2 adds the full verbaliser) ---
     def _segment(self, text: str):
@@ -865,6 +1055,24 @@ class BangorG2P:
                   lang: Optional[str] = None) -> List[str]:
         if lang not in (None, "cy", "en"):
             raise ValueError(f"lang {lang!r} is not supported; use 'cy' or 'en'")
+        if lang is None:
+            # Route per sentence. When every sentence agrees the whole text goes through in
+            # one pass with that language, so single-sentence and single-language text is
+            # byte-identical to a plain call; only a genuinely mixed utterance is phonemized
+            # sentence by sentence (WORD_SEP between the pieces, as between any two words).
+            spans = self._split_sentences(text)
+            if len(spans) > 1:
+                langs = self._route_sentences(text, spans)
+                if len(set(langs)) > 1:
+                    tokens = []
+                    for (start, end, dend, _kind), l in zip(spans, langs):
+                        chunk = text[start:dend].rstrip(_NL_WS)
+                        piece = self.phonemize(chunk, on_oov, lang=l) if chunk else []
+                        if piece and tokens:
+                            tokens.append(WORD_SEP)
+                        tokens.extend(piece)
+                    return tokens
+                lang = langs[0]
         segments = list(self._segment(text))
         segments = self._split_unknown_hyphen_compounds(segments)
         words = [core for _lead, core, _trail in segments if core]  # == the removed _words(text)
@@ -874,7 +1082,12 @@ class BangorG2P:
         # lang, so under the default accented mode the override is inert — accepted,
         # validated, and then ignored, because that mode has one set of tables and no
         # per-word language choice to make.
-        lang = lang or self._sentence_lang(words)
+        # Routing counts WORDS: a core with no letter or digit (a dash between spaces, a lone
+        # "/") is punctuation and must not dilute the one-third ratio. C never makes a token
+        # for such a core, so this filter is what keeps the two sides on the same count
+        # (found 2026-09-07 on "Croeso - Welcome, 1 o 3 – 1 of 3": two dashes flipped Python
+        # to Welsh while C said English).
+        lang = lang or self._sentence_lang(self._routing_words_of(segments))
         # a single isolated vowel keystroke (the whole utterance is one vowel letter)
         solo_vowel = len(words) == 1 and words[0] in _CY_VOWEL_SOLO
 
@@ -911,6 +1124,15 @@ class BangorG2P:
             if core and any(c.isalpha() for c in core):
                 pos = (pos_tags[word_i]
                        if pos_tags is not None and 0 <= word_i < len(pos_tags) else None)
+                # "go live" is a fixed expression (a streaming UI's Go Live button): the tagger
+                # calls both words verbs, but this "live" is the adjective /laɪv/.
+                if core == "live" and word_i > 0 and words[word_i - 1] in _GO_FORMS:
+                    pos = "ADJ"
+                # "live" is intransitive: directly before a noun it is the attributive adjective
+                # ("start Live Recognition", "live music"), whatever the tagger called it.
+                elif (core == "live" and pos_tags is not None and word_i + 1 < len(pos_tags)
+                      and pos_tags[word_i + 1] in ("NOUN", "PROPN")):
+                    pos = "ADJ"
                 word_toks = self._word_tokens(core, on_oov, lang, solo_vowel=solo_vowel,
                                               pos=pos)
                 if word_toks:
@@ -989,18 +1211,65 @@ class BangorG2P:
         "ok") from flipping a Welsh utterance built from shared words — which would
         corrupt every shared Welsh word (banc -> /bæŋk/). Individual code-switched
         words still resolve per-word inside the chosen context (see _word_tokens)."""
-        en_only = cy_only = 0
-        for w in words:
-            in_welsh = self.lexicon.lookup_welsh(w) is not None
-            in_english = self.english.lookup(w) is not None
-            if in_english and not in_welsh:
-                en_only += 1
-            elif in_welsh and not in_english:
-                cy_only += 1
-        n = max(len(words), 1)
-        if en_only > cy_only and en_only >= 2 and en_only * 3 >= n:
-            return "en"
-        return "cy"
+        return "en" if self._lang_score(words) <= -_PRIOR_MIN else "cy"
+
+    def _word_weight(self, w: str) -> int:
+        """The prior's weight for one (lowercased) word: the table, or +-1 nat from dictionary
+        exclusivity added, or 0."""
+        # A letter name ("c", "th", "B.") is not a word: English text is full of letters as list
+        # markers and initials, which would route "Z." English. The only letters that ARE words
+        # here are Welsh "o" (of) and "y" (the); "a" and "i" are words in both languages and
+        # cancel, so they are left neutral too.
+        if (len(w) == 1 or w in _WELSH_LETTERS) and w not in _LETTER_WORDS:
+            return 0
+        # Corpus weight PLUS dictionary exclusivity (2026-09-08; was "table, else exclusivity").
+        # A rare word's corpus weight is noise ("unread" +7 from one Welsh tweet made "2 unread
+        # messages" Welsh); the lexicon knows it is English. Held-out (scripts/gen_lang_prior.py
+        # split): English 98.6% -> 99.2%, Welsh 99.7% unchanged.
+        v = self.lang_prior.get(w, 0)
+        in_welsh = self.lexicon.lookup_welsh(w) is not None
+        in_english = self.english.lookup(w) is not None
+        if in_welsh and not in_english:
+            return v + _PRIOR_FALLBACK
+        if in_english and not in_welsh:
+            return v - _PRIOR_FALLBACK
+        return v
+
+    def _lang_score(self, words: List[str]) -> int:
+        """Sum of the words' weights; positive Welsh, negative English, 0 no evidence. Letter
+        names ("c, a, th") weigh nothing (_word_weight)."""
+        return sum(self._word_weight(w) for w in words)
+
+    def _routing_words(self, text: str) -> List[str]:
+        """The words _sentence_lang scores for `text`: every non-empty core with a letter or
+        digit, after the same segmentation and hyphen splitting phonemize applies."""
+        return self._routing_words_of(self._split_unknown_hyphen_compounds(list(self._segment(text))))
+
+    @staticmethod
+    def _routing_words_of(segments) -> List[str]:
+        words = []
+        for _lead, core, _trail in segments:
+            # an ACRONYM_JOIN-marked core ("ab·cd") is emitted as its parts, so it is scored
+            # as its parts too (the C tokeniser splits it before routing)
+            for part in core.split(ACRONYM_JOIN) if core else ():
+                if part and any(ch.isalnum() for ch in part):
+                    words.append(part)
+        return words
+
+    def _route_sentences(self, text: str, spans) -> List[str]:
+        """Phone routing per SENTENCE (owner, 2026-09-08: "surely it's possible to have an
+        English sentence followed by a Welsh sentence and get the correct phonemes").
+
+        Each sentence takes the sign of its own prior score; a sentence with no evidence takes
+        the whole utterance's decision, so a short "I agree." inside English text does not flip.
+        The same spans as the number language (_split_sentences), so the two decisions never
+        disagree on where a sentence ends."""
+        whole = self._sentence_lang(self._routing_words(text))
+        langs = []
+        for start, end, dend, _kind in spans:
+            s = self._lang_score(self._routing_words(text[start:dend].rstrip(_NL_WS)))
+            langs.append("en" if s <= -_PRIOR_MIN else "cy" if s >= _PRIOR_MIN else whole)
+        return langs
 
     def _word_tokens(self, word: str, on_oov: str, lang: str = "cy",
                      solo_vowel: bool = False,
@@ -1078,10 +1347,56 @@ class BangorG2P:
         ids += [pad, eos]
         return ids
 
+    def segments(self, text: str, on_oov: str = "lts",
+                 lang: Optional[str] = None) -> List[Segment]:
+        """The utterance as rendering units (docs/text-structure-programme.md §3.1).
+
+        Each segment is a sentence, a heading or a list line, with the boundary that follows it.
+        A line without terminal punctuation takes a full stop, so a heading gets the sentence-final
+        fall. Numbers and phones are decided per segment with the previous segment's language as
+        the fallback for a segment with no evidence (the first falls back to the whole utterance's
+        decision). An explicit `lang` applies to every segment. Consumers synthesise one pass per
+        segment and insert BOUNDARY_GAP_MS[boundary] of silence between them; text_to_ids is the
+        concatenation, so a whole-text caller and a per-segment caller agree by construction."""
+        raw: List[Tuple[str, str]] = []
+        for start, end, dend, kind in self._split_sentences(text):
+            seg = text[start:dend].strip(_NL_WS)      # with its own terminal punctuation
+            if not seg:
+                continue
+            if kind in ("line", "paragraph") and seg[-1] not in _NO_FULL_STOP_AFTER:
+                seg += "."
+            raw.append((seg, kind))
+        if not raw:
+            return []
+        norms: List[Tuple[str, str]] = []
+        num = "cy"
+        for seg, _kind in raw:
+            norm, num = self._normalize_carry(seg, lang, default=num)
+            norms.append((norm, num))
+        words_per: List[List[str]] = [self._routing_words(norm) for norm, _ in norms]
+        whole = self._sentence_lang([w for ws in words_per for w in ws])
+        prev = whole
+        out: List[Segment] = []
+        for (seg, kind), (norm, nl), ws in zip(raw, norms, words_per):
+            if lang:
+                pl = lang
+            else:
+                s = self._lang_score(ws)
+                pl = "en" if s <= -_PRIOR_MIN else "cy" if s >= _PRIOR_MIN else prev
+            prev = pl
+            toks = self.phonemize(norm, on_oov=on_oov, lang=pl)
+            out.append(Segment(norm, toks, self.phonemes_to_ids(toks), kind, nl, pl))
+        return out
+
     def text_to_ids(self, text: str, on_oov: str = "lts",
                     lang: Optional[str] = None) -> List[int]:
-        return self.phonemes_to_ids(
-            self.phonemize(self.normalize(text, lang=lang), on_oov=on_oov, lang=lang))
+        """The whole utterance as one id sequence: the segments' phones joined by WORD_SEP."""
+        toks: List[str] = []
+        for seg in self.segments(text, on_oov=on_oov, lang=lang):
+            if seg.tokens and toks:
+                toks.append(WORD_SEP)
+            toks.extend(seg.tokens)
+        return self.phonemes_to_ids(toks)
 
     # --- integrity ---
     def _compute_data_version(self, id_map_raw: str) -> str:
@@ -1110,6 +1425,11 @@ class BangorG2P:
             h.update(name.encode())
             f = _POS_DATA / name
             h.update(f.read_bytes() if f.exists() else b"<absent>")
+        # The language prior, hashed from 2026-09-08: it decides which lexicon a shared word
+        # reads from ("banc", "more", "un"), so it is emission-relevant data on the same footing
+        # as the POS models.
+        h.update(b"lang_prior.tsv")
+        h.update(_LANG_PRIOR.read_bytes())
         return h.hexdigest()[:16]
 
     def data_version(self) -> str:

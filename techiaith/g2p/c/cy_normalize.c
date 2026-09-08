@@ -652,11 +652,10 @@ static void pass_abbrev(const char *in, char *out, const Abbrev *ab) {
  * usa, cd), so a token they know reads as a word at any length. The native Welsh table holds
  * Welsh WORDS, and a short all-caps token only it knows is almost always an English acronym
  * colliding with one ("DWP" is not the adjective dwp); native-only headwords gate from
- * AVOCAB_CY_SHOUT_MIN_LEN letters, where the token is a shouted word (ADRODDIAD). */
+ * three letters, where the token is a shouted word (ADRODDIAD, CAU); see avocab_reads_as_word. */
 typedef struct { char *pool; const char **ptrs; int n; } AVocab;
 static AVocab g_avocab_en = {0, 0, 0};
 static AVocab g_avocab_cy = {0, 0, 0};
-#define AVOCAB_CY_SHOUT_MIN_LEN 5
 
 static int avocab_cmp(const void *a, const void *b) {
     return strcmp(*(const char *const *)a, *(const char *const *)b);
@@ -681,7 +680,7 @@ static long avocab_load(AVocab *v, const char *core_dir, const char *const *dict
     char line[65536];
     for (int d = 0; d < ndicts; d++) {
         char path[4096];
-        snprintf(path, sizeof(path), "%s/data/geiriadur-ynganu-bangor/%s", core_dir, dicts[d]);
+        snprintf(path, sizeof(path), "%s/data/%s", core_dir, dicts[d]);
         FILE *f = fopen(path, "r");
         if (!f) { free(pool); free(offs); return -1; }
         while (fgets(line, sizeof(line), f)) {
@@ -722,9 +721,14 @@ static long avocab_load(AVocab *v, const char *core_dir, const char *const *dict
 }
 
 long cyp_normalize_load_vocab(const char *core_dir) {
-    static const char *const en[] = {"bangordict.xx.dict", "bangordict.en.dict", "cmudict.dict"};
-    static const char *const cy[] = {"bangordict.dict"};
-    long a = avocab_load(&g_avocab_en, core_dir, en, 3);
+    /* Mirrors welsh_normalize._VOCAB_DICTS_EN / _CY: the native English lexicon joined the
+     * English pool in 1.3.1 (it knows whatsapp, gmail, spotify, wifi, login...). */
+    static const char *const en[] = {"geiriadur-ynganu-bangor/bangordict.xx.dict",
+                                     "geiriadur-ynganu-bangor/bangordict.en.dict",
+                                     "geiriadur-ynganu-bangor/cmudict.dict",
+                                     "english/cmudict_native.dict"};
+    static const char *const cy[] = {"geiriadur-ynganu-bangor/bangordict.dict"};
+    long a = avocab_load(&g_avocab_en, core_dir, en, 4);
     long b = avocab_load(&g_avocab_cy, core_dir, cy, 1);
     if (a < 0 || b < 0) { avocab_free(&g_avocab_en); avocab_free(&g_avocab_cy); return -1; }
     return a + b;
@@ -741,10 +745,27 @@ static int avocab_in(const AVocab *v, const char *w) {
     return 0;
 }
 
-/* Mirrors welsh_normalize._acronym_reads_as_word. */
+/* welsh_normalize._ALWAYS_SPELL, lowercased and sorted (strcmp order) for the binary search:
+ * the initialisms the rules in avocab_reads_as_word would otherwise read as words. */
+static const char *ALWAYS_SPELL[] = {"adhd", "asap", "btec", "dod", "dvsa", "dwp", "epa", "ftse", "gcse", "hdmi", "iaas", "iiss", "imdb", "iod", "isbn", "jcvi", "jpeg", "ldap", "mhra", "nhs", "nvme", "ocr", "oecd", "paas", "phd", "phe", "rac", "rnid", "rnli", "rspca", "ukca", "ukhsa", "undp", "unep", "usda", "wjec"};
+static int always_spell(const char *low) {
+    int lo = 0, hi = (int)(sizeof(ALWAYS_SPELL) / sizeof(ALWAYS_SPELL[0])) - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2, cmp = strcmp(ALWAYS_SPELL[mid], low);
+        if (cmp == 0) return 1;
+        if (cmp < 0) lo = mid + 1; else hi = mid - 1;
+    }
+    return 0;
+}
+/* Mirrors welsh_normalize._acronym_reads_as_word; the numbered rules and the measurements
+ * live in the comment above welsh_normalize._VOCAB_DICTS_EN. */
 static int avocab_reads_as_word(const char *low, int len) {
-    if (avocab_in(&g_avocab_en, low)) return 1;
-    return avocab_in(&g_avocab_cy, low) && len >= AVOCAB_CY_SHOUT_MIN_LEN;
+    if (always_spell(low)) return 0;
+    if (avocab_in(&g_avocab_en, low)) return 1;                  /* spoken form is the entry */
+    if (avocab_in(&g_avocab_cy, low)) return len >= 3;           /* shouted Welsh word; 2 = initialism */
+    if (len < 4) return 0;
+    for (int t = 0; t < len; t++) if (strchr("aeiouwy", low[t])) return 1;   /* pronounceable unknown */
+    return 0;
 }
 
 
@@ -1303,9 +1324,22 @@ static const char *ROMAN_STRUCTURAL[] = {
 static int roman_prev_is_structural(const char *s, int i) {
     int e = i;
     while (e > 0 && (s[e - 1] == ' ' || s[e - 1] == '\t')) e--;
+    /* Python: ([A-Za-zÀ-ÿ'\u2019]+)\s*$ -- ASCII letters, Latin-1 letters, the two apostrophes.
+     * Walk back one code point at a time; a curly quote (U+201C) or any other non-letter above
+     * 0x7F ends the word (it used to be swallowed: "“Chapter VI”" read "the sixth"). */
     int b = e;
-    while (b > 0 && (isalpha((unsigned char)s[b - 1]) || (unsigned char)s[b - 1] >= 0x80
-                     || s[b - 1] == '\'')) b--;
+    while (b > 0) {
+        int k = b - 1;
+        while (k > 0 && ((unsigned char)s[k] & 0xC0) == 0x80) k--;
+        unsigned char c0 = (unsigned char)s[k]; long cp;
+        if (c0 < 0x80) cp = c0;
+        else if ((c0 & 0xE0) == 0xC0 && b - k == 2) cp = ((c0 & 0x1F) << 6) | ((unsigned char)s[k + 1] & 0x3F);
+        else if ((c0 & 0xF0) == 0xE0 && b - k == 3) cp = ((c0 & 0x0F) << 12) | (((unsigned char)s[k + 1] & 0x3F) << 6) | ((unsigned char)s[k + 2] & 0x3F);
+        else break;
+        int letter = (cp >= 'A' && cp <= 'Z') || (cp >= 'a' && cp <= 'z') || (cp >= 0xC0 && cp <= 0xFF) || cp == '\'' || cp == 0x2019;
+        if (!letter) break;
+        b = k;
+    }
     int len = e - b;
     if (len <= 0 || len > 24) return 0;
     char w[32];
@@ -1465,7 +1499,8 @@ static void pass_integer(const char *in, char *out) {
     while (in[i]) {
         if (isdigit((unsigned char)in[i])) {
             int j = i;
-            while (isdigit((unsigned char)in[j]) || in[j] == ',') j++;
+            /* a comma stays in the run only when a digit follows -- mirrors _INTEGER's (?:,?[0-9])* */
+            while (isdigit((unsigned char)in[j]) || (in[j] == ',' && isdigit((unsigned char)in[j + 1]))) j++;
             if (g_en) { en_integer_run(out + o, in + i, j - i); o += (int)strlen(out + o); }
             else o += num_words_run_commas(in + i, j - i, out + o);
             i = j;
@@ -1737,60 +1772,132 @@ static void pass_date_num(const char *in, char *out) {
     out[o] = 0;
 }
 
-static int match_month(const char *s, int *mnum) {  /* longest month name at s (ci); return len or 0 */
-    for (int m = 0; m < 12; m++) {
-        int L = (int)strlen(MONTHS[m]);
-        if (strncasecmp(s, MONTHS[m], L) == 0 && !(word_after(s, L))) {
-            *mnum = m + 1; return L;
-        }
-    }
-    return 0;
-}
-static int match_month_en(const char *s, int *mnum) {   /* _DATE_MONTH_EN's alternation */
-    for (int m = 0; m < 12; m++) {
-        int L = (int)strlen(EN_MONTHS[m]);
-        if (strncasecmp(s, EN_MONTHS[m], L) == 0 && !(word_after(s, L))) {
-            *mnum = m + 1; return L;
-        }
-    }
-    return 0;
-}
+/* ---- dates with a month name (mirrors welsh_normalize._DATE_MONTH / _DATE_MONTH_EN /
+ * _DATE_MONTH_FIRST_EN, 2026-09-08). A title-case weekday abbreviation may precede the date and
+ * a title-case month abbreviation may stand in it; English also comes month-first. The full month
+ * names match case-insensitively, the abbreviations (and, month-first, the full months) exactly,
+ * because "mar", "sat", "sun", "dec", "hyd", "iau", "llun" are words. Each alternative is tried
+ * with its continuation, which is what the regex engine's backtracking does. */
+typedef struct { const char *abbr; const char *name; } WdAbbr;
+typedef struct { const char *abbr; int m; } MonAbbr;
+static const WdAbbr WD_EN[] = {{"Thurs", "thursday"}, {"Thur", "thursday"}, {"Tues", "tuesday"},
+    {"Fri", "friday"}, {"Mon", "monday"}, {"Sat", "saturday"}, {"Sun", "sunday"}, {"Thu", "thursday"},
+    {"Tue", "tuesday"}, {"Wed", "wednesday"}, {NULL, NULL}};
+static const WdAbbr WD_CY[] = {{"Llun", "llun"}, {"Gwe", "gwener"}, {"Iau", "iau"}, {"Maw", "mawrth"},
+    {"Mer", "mercher"}, {"Sad", "sadwrn"}, {"Sul", "sul"}, {NULL, NULL}};
+static const MonAbbr MON_EN[] = {{"Sept", 9}, {"Apr", 4}, {"Aug", 8}, {"Dec", 12}, {"Feb", 2}, {"Jan", 1},
+    {"Jul", 7}, {"Jun", 6}, {"Mar", 3}, {"Nov", 11}, {"Oct", 10}, {"Sep", 9}, {NULL, 0}};
+static const MonAbbr MON_CY[] = {{"Chwef", 2}, {"Gorff", 7}, {"Chwe", 2}, {"Rhag", 12}, {"Tach", 11},
+    {"Ebr", 4}, {"Gor", 7}, {"Hyd", 10}, {"Ion", 1}, {"Maw", 3}, {"Meh", 6}, {NULL, 0}};
+static const char *EN_MONTHS_TITLE[12] = {"January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"};
 
-static void pass_date_month(const char *in, char *out) {
+/* the optional ordinal suffix after the day digits: (?:st|nd|rd|th)? (ci) in English,
+ * (?:af|il|ydd|edd|ed|fed|eg|ain)? (ci, the pattern's flag) in Welsh; returns the end index */
+static int skip_ord_suffix(const char *s, int j) {
+    static const char *EN[] = {"st", "nd", "rd", "th", NULL};
+    static const char *CY[] = {"ydd", "edd", "fed", "ain", "af", "il", "ed", "eg", NULL};   /* longest first */
+    for (const char **t = g_en ? EN : CY; *t; t++) {
+        int L = (int)strlen(*t);
+        if (strncasecmp(s + j, *t, (size_t)L) == 0) return j + L;
+    }
+    return j;
+}
+/* \s+ from j: the end index, or -1 when there is no whitespace at all */
+static int skip_ws1(const char *s, int j) {
+    int k = j; for (int sl; (sl = re_space_len(s, k)); ) k += sl;
+    return k > j ? k : -1;
+}
+/* (?:,?\s+([0-9]{4})(?![word]))? after `end`: sets *y and returns the new end, or `end` */
+static int opt_year(const char *s, int end, long *y) {
+    int k = end; if (s[k] == ',') k++;
+    k = skip_ws1(s, k); if (k < 0) return end;
+    int ys = k; while (isdigit((unsigned char)s[ys])) ys++;
+    if (ys - k != 4 || word_after(s, ys)) return end;
+    *y = atoin(s + k, 4); return ys;
+}
+/* the month alternation at s: full name (ci; `exact` for the month-first pattern) or a title-case
+ * abbreviation; each candidate must satisfy `after`, the pattern's continuation, which receives
+ * the index just past the month and returns 1 if the rest of the pattern matches there */
+typedef int (*MonCont)(const char *s, int k, void *ctx);
+static int month_alt(const char *s, int i, int exact, MonCont after, void *ctx, int *mnum) {
+    const char **full = g_en ? (exact ? EN_MONTHS_TITLE : EN_MONTHS) : MONTHS;
+    for (int m = 0; m < 12; m++) {
+        int L = (int)strlen(full[m]);
+        int hit = exact ? strncmp(s + i, full[m], (size_t)L) == 0 : strncasecmp(s + i, full[m], (size_t)L) == 0;
+        if (hit && after(s, i + L, ctx)) { *mnum = m + 1; return 1; }
+    }
+    for (const MonAbbr *a = g_en ? MON_EN : MON_CY; a->abbr; a++) {
+        int L = (int)strlen(a->abbr);
+        if (strncmp(s + i, a->abbr, (size_t)L) == 0 && after(s, i + L, ctx)) { *mnum = a->m; return 1; }
+    }
+    return 0;
+}
+typedef struct { int d, m, end; long y; } DateHit;
+static int cont_wb(const char *s, int k, void *ctx) {            /* day-first: \b after the month */
+    DateHit *h = (DateHit *)ctx;
+    if (word_after(s, k)) return 0;
+    h->y = -1; h->end = opt_year(s, k, &h->y); return 1;
+}
+/* ([0-9]{1,2})\s+(month)\b(?:,?\s+(YYYY)(?![word]))? at i, i at a digit on a word boundary */
+static int date_dayfirst(const char *s, int i, DateHit *h) {
+    int j = i; while (isdigit((unsigned char)s[j])) j++;
+    int dl = j - i; if (dl < 1 || dl > 2) return 0;
+    int ws = skip_ws1(s, skip_ord_suffix(s, j)); if (ws < 0) return 0;
+    if (!month_alt(s, ws, 0, cont_wb, h, &h->m)) return 0;
+    h->d = atoin(s + i, dl); return 1;
+}
+static int cont_day(const char *s, int k, void *ctx) {   /* month-first: \s+([0-9]{1,2})(?![word])(?![:.][0-9]) */
+    DateHit *h = (DateHit *)ctx;
+    int ds = skip_ws1(s, k); if (ds < 0) return 0;
+    int j = ds; while (isdigit((unsigned char)s[j])) j++;
+    int dl = j - ds; if (dl < 1 || dl > 2) return 0;
+    j = skip_ord_suffix(s, j);
+    if (word_after(s, j)) return 0;
+    if ((s[j] == ':' || s[j] == '.') && isdigit((unsigned char)s[j + 1])) return 0;
+    h->d = atoin(s + ds, dl); h->y = -1; h->end = opt_year(s, j, &h->y); return 1;
+}
+static int date_monthfirst_en(const char *s, int i, DateHit *h) {
+    return month_alt(s, i, 1, cont_day, h, &h->m);
+}
+/* (?:(WD)\.?,?\s+)? then `date` at the position after the whitespace; returns 1 with *name set */
+typedef int (*DateFn)(const char *s, int i, DateHit *h);
+static int weekday_then(const char *s, int i, DateFn date, DateHit *h, const char **name) {
+    for (const WdAbbr *w = g_en ? WD_EN : WD_CY; w->abbr; w++) {
+        int L = (int)strlen(w->abbr);
+        if (strncmp(s + i, w->abbr, (size_t)L) != 0) continue;
+        int k = i + L; if (s[k] == '.') k++; if (s[k] == ',') k++;
+        k = skip_ws1(s, k); if (k < 0) continue;
+        if (date(s, k, h)) { *name = w->name; return 1; }
+    }
+    return 0;
+}
+static void emit_date(char *out, int *o, const char *wd, const DateHit *h) {
+    char db[512];
+    if (g_en) en_date(db, h->d, h->m, h->y); else date_words(db, h->d, h->m, h->y);
+    if (wd) { strcpy(out + *o, wd); *o += (int)strlen(wd); out[(*o)++] = ' '; }
+    strcpy(out + *o, db); *o += (int)strlen(db);
+}
+static void date_pass(const char *in, char *out, DateFn date, int digit_start) {
     int i = 0, o = 0;
     while (in[i]) {
-        int wb = !word_before(in, i);
-        if (wb && isdigit((unsigned char)in[i])) {
-            int j = i, ds = i;
-            while (isdigit((unsigned char)in[j])) j++;
-            int dl = j - ds;
-            /* \s+ (>=1) then the skip loops: Unicode via re_space_len -- the sweep */
-            if (dl >= 1 && dl <= 2 && re_space_len(in, j)) {
-                int ws = j; for (int sl; (sl = re_space_len(in, ws)); ) ws += sl;
-                int mnum;
-                int ml = g_en ? match_month_en(in + ws, &mnum) : match_month(in + ws, &mnum);
-                if (ml) {
-                    int k = ws + ml;
-                    long y = -1;
-                    int save = k;
-                    int ws2 = k; for (int sl; (sl = re_space_len(in, ws2)); ) ws2 += sl;
-                    int ys = ws2; while (isdigit((unsigned char)in[ys])) ys++;
-                    if (ys - ws2 == 4 && !(word_after(in, ys))) {
-                        y = atoin(in + ws2, 4); save = ys;
-                    }
-                    int d = atoin(in + ds, dl);
-                    if (d >= 1 && d <= 31) {
-                        char db[512];
-                        if (g_en) en_date(db, d, mnum, y); else date_words(db, d, mnum, y);
-                        strcpy(out + o, db); o += (int)strlen(db); i = save; continue;
-                    }
-                }
+        if (!word_before(in, i)) {
+            DateHit h; const char *wd = NULL;
+            unsigned char c = (unsigned char)in[i];
+            int hit = 0;
+            if (c >= 'A' && c <= 'Z') {
+                hit = weekday_then(in, i, date, &h, &wd) || (!digit_start && date(in, i, &h));
+            } else if (digit_start && isdigit(c)) {
+                hit = date(in, i, &h);
             }
+            if (hit && h.d >= 1 && h.d <= 31) { emit_date(out, &o, wd, &h); i = h.end; continue; }
         }
         out[o++] = in[i++];
     }
     out[o] = 0;
 }
+static void pass_date_month(const char *in, char *out) { date_pass(in, out, date_dayfirst, 1); }
+static void pass_date_month_first_en(const char *in, char *out) { date_pass(in, out, date_monthfirst_en, 0); }
 
 static const char *ORD_SUF[] = {"af", "il", "ydd", "edd", "ed", "fed", "eg", "ain", 0};
 static void pass_ordinal(const char *in, char *out) {
@@ -2386,8 +2493,8 @@ static void pass_currency(const char *in, char *out) {
             j += re_space_len(in, j);              /* optional single whitespace codepoint */
             if (isdigit((unsigned char)in[j])) {
                 int ds = j;
-                while (isdigit((unsigned char)in[j]) || in[j] == ',') j++;
-                int de = j;                        /* end of the \d[\d,]* run */
+                while (isdigit((unsigned char)in[j]) || (in[j] == ',' && isdigit((unsigned char)in[j + 1]))) j++;
+                int de = j;                        /* end of the [0-9](?:,?[0-9])* run */
                 int ps = -1, pe = -1;              /* the optional .(\d{1,2}) */
                 if (in[j] == '.' && isdigit((unsigned char)in[j + 1])) {
                     ps = j + 1; pe = ps;
@@ -2898,11 +3005,116 @@ static void pass_typographic(const char *in, char *out) {
         } else if (c == 0xCA && (unsigned char)in[i + 1] == 0xBC) {
             out[o++] = '\'';
             i += 2;
+        } else if (c == 0xE2 && (unsigned char)in[i + 1] == 0x88 && (unsigned char)in[i + 2] == 0xB6) {
+            out[o++] = ':';   /* U+2236 RATIO, seen in clock times */
+            i += 3;
+        } else if (c == 0xEF && (unsigned char)in[i + 1] == 0xBC && (unsigned char)in[i + 2] == 0x9A) {
+            out[o++] = ':';   /* U+FF1A FULLWIDTH COLON */
+            i += 3;
         } else {
             out[o++] = in[i++];
         }
     }
     out[o] = 0;
+}
+
+/* ---- structure punctuation -> the pauses the model realises (mirrors welsh_normalize
+ * _pause_punct_early / _pause_punct; the measurements are in docs/text-structure-programme.md §2).
+ * Early, before the emoji pass (which would name U+2022 "bwled"): a list marker at the start is
+ * dropped, a bullet between words is a comma pause. Late, after the number passes (which need their
+ * brackets): brackets and dashes -> a comma pause, an ellipsis -> a full stop at the end and a comma
+ * inside, repeated ! ? collapse, two pauses in a row collapse to the second, nothing pauses before
+ * the first word. Each step emulates one regex, in the regex's order. */
+static int pp_hs(char ch) { return ch == ' ' || ch == '\t'; }
+static int pp_bullet(const char *s, int i) {   /* • ‣ ◦ ▪ ▫ ● ■ □ : 3 bytes, or 0 */
+    unsigned char a = (unsigned char)s[i], b2 = (unsigned char)s[i + 1], c2 = (unsigned char)s[i + 2];
+    if (a != 0xE2) return 0;
+    if (b2 == 0x80 && (c2 == 0xA2 || c2 == 0xA3)) return 3;
+    if (b2 == 0x97 && (c2 == 0xA6 || c2 == 0x8F)) return 3;
+    if (b2 == 0x96 && (c2 == 0xAA || c2 == 0xAB || c2 == 0xA0 || c2 == 0xA1)) return 3;
+    return 0;
+}
+static int pp_dash(const char *s, int i) {     /* – — : 3 bytes, or 0 */
+    return ((unsigned char)s[i] == 0xE2 && (unsigned char)s[i + 1] == 0x80 &&
+            ((unsigned char)s[i + 2] == 0x93 || (unsigned char)s[i + 2] == 0x94)) ? 3 : 0;
+}
+static int pp_ellipsis(const char *s, int i) { /* … : 3 bytes, or 0 */
+    return ((unsigned char)s[i] == 0xE2 && (unsigned char)s[i + 1] == 0x80 && (unsigned char)s[i + 2] == 0xA6) ? 3 : 0;
+}
+static void pp_comma_sep(char *out, int *o) {  /* [ \t]*X[ \t]* -> ", " : drop the hs already copied */
+    while (*o > 0 && pp_hs(out[*o - 1])) (*o)--;
+    out[(*o)++] = ','; out[(*o)++] = ' ';
+}
+static void pass_pause_early(const char *in, char *out) {
+    int i = 0, o = 0;
+    int j = 0; while (pp_hs(in[j])) j++;          /* ^[ \t]*[-*–—•...][ \t]+ */
+    int ml = (in[j] == '-' || in[j] == '*') ? 1 : pp_dash(in, j) ? 3 : pp_bullet(in, j);
+    if (ml && pp_hs(in[j + ml])) { i = j + ml; while (pp_hs(in[i])) i++; }
+    while (in[i]) {
+        int bl = pp_bullet(in, i);
+        if (bl) { pp_comma_sep(out, &o); i += bl; while (pp_hs(in[i])) i++; continue; }
+        out[o++] = in[i++];
+    }
+    out[o] = 0;
+}
+static int pp_ellipsis_run(const char *s, int i) {   /* … or 2+ dots at i: length, or 0 */
+    if (pp_ellipsis(s, i)) return 3;
+    if (s[i] == '.' && s[i + 1] == '.') { int k = i; while (s[k] == '.') k++; return k - i; }
+    return 0;
+}
+static void pass_pause_late(const char *in, char *out) {
+    static char t1[65536], t2[65536], t3[65536];
+    int i = 0, o = 0;
+    /* 1. [ \t]*[—–][ \t]* | [ \t]+-[ \t]+  -> ", " */
+    while (in[i]) {
+        int dl = pp_dash(in, i);
+        if (dl) { pp_comma_sep(t1, &o); i += dl; while (pp_hs(in[i])) i++; continue; }
+        if (in[i] == '-' && i > 0 && pp_hs(in[i - 1]) && pp_hs(in[i + 1])) { pp_comma_sep(t1, &o); i++; while (pp_hs(in[i])) i++; continue; }
+        t1[o++] = in[i++];
+    }
+    t1[o] = 0;
+    /* 2. [ \t]*[()][ \t]* -> ", " */
+    i = o = 0;
+    while (t1[i]) {
+        if (t1[i] == '(' || t1[i] == ')') { pp_comma_sep(t2, &o); i++; while (pp_hs(t1[i])) i++; continue; }
+        t2[o++] = t1[i++];
+    }
+    t2[o] = 0;
+    /* 3. (…|\.{2,}) -> "." before [ \t]*$, else ","   4. ([!?])[!?]+ -> \1 */
+    i = o = 0;
+    while (t2[i]) {
+        int el = pp_ellipsis_run(t2, i);
+        if (el) {
+            int k = i + el; while (pp_hs(t2[k])) k++;
+            t3[o++] = t2[k] ? ',' : '.';
+            i += el; continue;
+        }
+        if ((t2[i] == '!' || t2[i] == '?') && (t2[i + 1] == '!' || t2[i + 1] == '?')) {
+            t3[o++] = t2[i]; while (t2[i] == '!' || t2[i] == '?') i++; continue;
+        }
+        t3[o++] = t2[i++];
+    }
+    t3[o] = 0;
+    /* 5. ,[ \t]*(?=[,.!?;:]) -> ""   6. (?<=[.!?;:])[ \t]*, -> ""   7. ^[ \t]*,[ \t]* -> "" */
+    i = o = 0;
+    while (t3[i]) {
+        if (t3[i] == ',') {
+            int k = i + 1; while (pp_hs(t3[k])) k++;
+            if (t3[k] && strchr(",.!?;:", t3[k])) { i = k; continue; }          /* 5 */
+            int b2 = o; while (b2 > 0 && pp_hs(out[b2 - 1])) b2--;
+            if (b2 > 0 && strchr(".!?;:", out[b2 - 1])) { o = b2; i++; continue; }   /* 6 */
+        }
+        out[o++] = t3[i++];
+    }
+    while (o > 0 && pp_hs(out[o - 1])) o--;                                                   /* [ \t]*,[ \t]*$ -> "" */
+    if (o > 0 && out[o - 1] == ',') { o--; while (o > 0 && pp_hs(out[o - 1])) o--; }
+    out[o] = 0;
+    int k = 0; while (pp_hs(out[k])) k++;
+    if (out[k] == ',') { k++; while (pp_hs(out[k])) k++; memmove(out, out + k, strlen(out + k) + 1); }   /* 7 */
+}
+
+void cyp__pause_late(const char *in, char *out) {   /* for number_normalize's joined chunks: both passes */
+    static char t[65536]; pass_pause_early(in, t); pass_pause_late(t, out);
 }
 
 void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
@@ -2914,6 +3126,7 @@ void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
     static char a[65536], b[65536];
     snprintf(a, sizeof(a), "%s", in);
     pass_typographic(a, b); memcpy(a, b, strlen(b) + 1);
+    pass_pause_early(a, b); memcpy(a, b, strlen(b) + 1);
     /* Emoji first: their names are ordinary Welsh words and must go through every pass
      * below exactly as typed text would. */
     pass_emoji(a, b); memcpy(a, b, strlen(b) + 1);
@@ -2927,6 +3140,7 @@ void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
     pass_acronym(a, b); memcpy(a, b, strlen(b) + 1);
     pass_date_num(a, b); memcpy(a, b, strlen(b) + 1);
     pass_date_month(a, b); memcpy(a, b, strlen(b) + 1);
+    if (g_en) { pass_date_month_first_en(a, b); memcpy(a, b, strlen(b) + 1); }
     pass_ordinal(a, b); memcpy(a, b, strlen(b) + 1);
     pass_fraction(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     /* CURRENCY BEFORE UNIT, and the order is load-bearing (Python does the same, and
@@ -2956,6 +3170,7 @@ void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
     pass_integer(a, b); memcpy(a, b, strlen(b) + 1);
     pass_amp(a, b); memcpy(a, b, strlen(b) + 1);
     pass_symbols(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
+    pass_pause_late(a, b); memcpy(a, b, strlen(b) + 1);
     pass_lower_collapse(a, out);
     g_en = 0;
 }

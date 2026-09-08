@@ -1706,6 +1706,23 @@
 50%	fifty percent
 100 %	one hundred percent
 25%	twenty five percent
+Maw 8 Medi	maw eight medi
+8 Maw	eight maw
+Llun 1 Ion 2026	llun one ion twenty twenty six
+Iau 4 Gorff	iau four gorff
+Sul 7 Chwef	sul seven chwef
+5 hyd 7	five hyd seven
+Gwe 31 Rhag	gwe thirty one rhag
+Sad 2 Tach 2027	sad two tach twenty twenty seven
+Mer 9 Ebr	mer nine ebr
+3 Hyd	three hyd
+Ion 5	ion five
+Tue 8 Sept	tuesday the eighth of september
+Sep 8	the eighth of september
+1af Ionawr 2026	one af ionawr twenty twenty six
+2il Chwef	two il chwef
+Gwe 31ain Rhag	gwe thirty one ain rhag
+99fed Medi	ninety nine fed medi
 mae 100 o bobl	mae one hundred o bobl
 ci & chath	ci and chath
 ci & aderyn	ci and aderyn
@@ -1739,19 +1756,19 @@ NATO	nato
 DVLA	dvla
 US	us
 WJEC	w·j·e·c
-USB	u·s·b
-KGB	k·g·b
-HTML	h·t·m·l
+USB	usb
+KGB	kgb
+HTML	html
 y BBC	y bbc
 i BBC Cymru	i bbc cymru
 o BBC Radio	o bbc radio
 a BBC	a bbc
 BBC y dydd	bbc y dydd
 y CD	y cd
-API	a·p·i
+API	api
 TTS	tts
-URL	u·r·l
-PDF	p·d·f
+URL	url
+PDF	pdf
 A55 a'r M4	a pum deg pump a'r m pedwar
 1/2	one half
 1/4	one quarter
@@ -1842,7 +1859,7 @@ ganwyd hi ar 2/2/2022	ganwyd hi ar the second of february twenty twenty two
 e-bost @ y safle	e-bost at y safle
 a = b + c	a equals b plus c
 £20 a 50p	twenty pounds a fifty pence
-ci - cath	ci - cath
+ci - cath	ci, cath
 £5m	five million pounds
 £1m	one million pounds
 £2m	two million pounds
@@ -1984,6 +2001,75 @@ C++	c++
 A+	a+
 A+ grade	a+ grade
 a+ b	a+ b
+README	readme
+CHANGELOG	changelog
+CONTRIBUTING	contributing
+LICENSE	license
+CI/CD	c·i cd
+Set up CI/CD	set up c·i cd
+Add README	add readme
+WHATSAPP	whatsapp
+GMAIL	gmail
+SPOTIFY	spotify
+NETFLIX	netflix
+FACEBOOK	facebook
+INSTAGRAM	instagram
+WIFI	wifi
+LOGIN	login
+CAU	cau
+AGOR	agor
+IAWN	iawn
+CADW	cadw
+WEDI	wedi
+NÔL	nôl
+GOSODIADAU	gosodiadau
+DWP	d·w·p
+NHS	n·h·s
+HMRC	h·m·r·c
+HDMI	h·d·m·i
+GCSE	g·c·s·e
+ESTYN	estyn
+CBAC	cbac
+FTSE	f·t·s·e
+OS	os
+AR	ar
+CI	c·i
+EU	eu
+YAML	yaml
+JSON	json
+ASDA	asda
+IKEA	ikea
+GITLAB	gitlab
+KUBERNETES	kubernetes
+DEVOPS	devops
+BAFTA	bafta
+OFCOM	ofcom
+RSPCA	r·s·p·c·a
+MiB	mib
+54 MiB	fifty four mib
+GWP	g·w·p
+WWW	w·w·w
+HTTPS	h·t·t·p·s
+SQL	sql
+GIF	g·i·f
+JPEG	j·p·e·g
+UKIP	ukip
+y DWP a'r NHS	y dwp a'r nhs
+“Chapter VI” Bank	“chapter six” bank
+«Pennod IV»	«pennod four»
+'Chapter IV'	'chapter the fourth'
+(Pennod VI)	pennod six
+‘Henry VIII’	‘henry the eighth'
+Chapter’ VI	chapter' the sixth
+Ŵ VI	ŵ the sixth
+ŵr II	ŵr the second
+1, 1	one, one
+Rhif 1, Rhif 2	rhif one, rhif two
+1,000, 2,000	one thousand, two thousand
+£5, diolch	five pounds, diolch
+1,,2	one,two
+3, 4 a 5	three, four a five
+£1,000, os	one thousand pounds, os
 Home screen 1 of 3	home screen one of three
 Page 3 of 10	page three of ten
 Tab 1 of 4	tab one of four
@@ -2020,7 +2106,7 @@ In 2026 and 1999	in twenty twenty six and nineteen ninety nine
 112th	one hundred and twelfth
 120th	one hundred and twentieth
 1000th	one thousandth
-1,000th	onezeroth
+1,000th	one,zeroth
 3RD	tri r·d
 31 January	the thirty first of january
 12 March 2026	the twelfth of march twenty twenty six
@@ -2125,7 +2211,7 @@ Older state pensioners set for automatic bonus from DWP	older state pensioners s
 Read 3 new messages	read three new messages
 You have 1 new notification	you have one new notification
 Alarm set for 6:45 am	alarm set for six forty five a·m
-Meeting at 14:00 on 3rd April	meeting at fourteen o'clock on third april
+Meeting at 14:00 on 3rd April	meeting at fourteen o'clock on the third of april
 The 2nd of 3 steps	the second of three steps
 Version 2.0	version two point zero
 iPhone 15 Pro	iphone fifteen pro
@@ -2135,3 +2221,24 @@ No.10	no.ten
 1 January 2026x	the first of january twenty twenty six x
 25 December 1999abc	the twenty fifth of december nineteen ninety nine abc
 1 Ionawr 2026	one ionawr twenty twenty six
+Tue Sep 8	tuesday the eighth of september
+Tuesday, September 8, 2026	tuesday, the eighth of september twenty twenty six
+Sat 12 Dec	saturday the twelfth of december
+Tues 9 Sept	tuesday the ninth of september
+Thurs 1 Aug	thursday the first of august
+may 5 people	may five people
+sat on 8 Sept	sat on the eighth of september
+March 3rd	the third of march
+Sep 8:30	sep eight thirty
+Sep 8.5	sep eight point five
+Mon 32 Jan	mon thirty two jan
+Fri. 3 Oct	friday the third of october
+Wed, 15 Nov 2025	wednesday the fifteenth of november twenty twenty five
+September 99	september ninety nine
+Dec 25	the twenty fifth of december
+Jan 1st	the first of january
+8 Sept, 2026	the eighth of september twenty twenty six
+8 Sept. 2026	the eighth of september. twenty twenty six
+8th Sept 2026	the eighth of september twenty twenty six
+Dec 25th, 2025	the twenty fifth of december twenty twenty five
+99th September	ninety ninth september
