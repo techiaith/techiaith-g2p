@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-enum { N_SEGMENT_ROWS = 177 };
+enum { N_SEGMENT_ROWS = 192 };
 
 static void unescape(char *s) {
     char *w = s;

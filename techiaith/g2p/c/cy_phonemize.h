@@ -73,7 +73,9 @@ int cyp_lts(CyPhonemizer *p, const char *word, int32_t *out, int max_out);
  * the headword count, <=0 on failure). With no vocab loaded, every all-caps token is
  * letter-spelled -- which the normalize golden corpus fails loudly on. */
 long cyp_normalize_load_vocab(const char *core_dir);
-void cyp_num_to_welsh(long n, char *out, int max_out);        /* cardinal 0..999,999,999 */
+/* Cardinal; above 18 nines (welsh_normalize._CARDINAL_CEILING) digit by digit. int64_t, not
+ * long: long is 32 bits on Windows (LLP64), where it wrapped every number of 2^31 and up. */
+void cyp_num_to_welsh(int64_t n, char *out, int max_out);
 void cyp_normalize(const char *utf8_text, char *out, int max_out);
 /* The same, with the language the NUMBERS are read in: CYP_LANG_CY (what cyp_normalize
  * does) or CYP_LANG_EN (British English: "one hundred and twenty three", "the twelfth of
@@ -99,6 +101,52 @@ typedef struct { int start, count, boundary, number_lang, phone_lang; } CypSegme
 int cyp_segments(CyPhonemizer *p, const char *utf8_text, int lang, CypSegment *segs, int max_segs,
                  int32_t *ids, int max_ids);
 int cyp_boundary_gap_ms(int boundary);              /* 250 / 350 / 600 / 0 -- BOUNDARY_GAP_MS */
+/* Where each segment and each spoken word came from in the source text -- word and sentence
+ * highlighting (mirrors BangorG2P.segment_spans / word_marks / word_starts). Offsets are UTF-8
+ * BYTE offsets into utf8_text, end exclusive; Python's are code points. Convert them to the
+ * platform's index (UTF-16 for Android, NSRange and SAPI) on the caller's side. Like every
+ * cyp_* call that takes a handle, these use process-global buffers and are not reentrant: hold
+ * the lock that already guards cyp_segments around them too.
+ *
+ * cyp_segment_spans: the source span [src_start, src_end) of each segment, parallel to
+ * cyp_segments (same text and lang, same order, same count): the sentence/line span with the
+ * ASCII whitespace around it trimmed, before any heading '.' is appended. The spans do not depend
+ * on lang (it is validated only), so this is cheap -- no normalisation runs -- and pairs with a
+ * cyp_segments call that succeeded. Returns the count, -1 on a bad lang or when there are more
+ * than max_segs segments (where cyp_segments would truncate to max_segs instead). A text has at
+ * most 2049 segments (2048 boundaries plus the tail): size max_segs at 2049 for both calls, or a
+ * text past the smaller size is spoken with no sentence or word events. */
+int cyp_segment_spans(CyPhonemizer *p, const char *utf8_text, int lang,
+                      int *src_start, int *src_end, int max_segs);
+/* cyp_word_marks: one mark per source word that starts a new spoken word in its segment. seg is
+ * the segment index (as cyp_segments with the same lang); word is the 0-based phone-word ordinal
+ * inside that segment where the word's speech starts (phone-word k begins after the k-th WORD_SEP,
+ * id 3, of the segment's ids -- cyp_word_starts); src_start/src_end is the source word's byte span.
+ * A source word is a run between whitespace (str.isspace) inside the segment's span. Prefix
+ * counting: a word's count is the phone-words of the segment's text up to the end of that word,
+ * phonemised in the segment's phone_lang, clamped so marks are strictly increasing in `word` and
+ * never reach the segment's phone-word count -- so "£9.50" (several spoken words) gets one mark
+ * and a lone dash none. From a segment's 32nd word on, the prefix is a window of the 16 to 31
+ * words before (same marks on every long text measured), so the cost is linear: one
+ * cyp_text_to_ids_lang call per source word on at most 32 words, measured 0.02-0.035 ms per word
+ * (12-25 ms for a 4 KB paragraph) at -O2 on an M-series Mac; expect several times that on a
+ * phone or a Chromebook. Call it per utterance, off the path to the first audio (after the first
+ * piece is queued). Marks are in segment, then source order. Returns the mark count, -1 on a bad
+ * lang, when cyp_segments (or a prefix) overflows, or when there are more than max_marks marks. */
+typedef struct { int seg, word, src_start, src_end; } CypWordMark;
+int cyp_word_marks(CyPhonemizer *p, const char *utf8_text, int lang, CypWordMark *marks, int max_marks);
+/* cyp_word_starts: the id index at which each phone-word of ONE segment's interleaved ids begins
+ * -- 1 (the PAD after BOS) for word 0, then the index just after each WORD_SEP -- so no platform
+ * re-derives the WORD_SEP layout. With per-id model durations d[], word w starts at frame
+ * sum(d[0 : starts[w]]). A WORD_SEP directly before EOS starts nothing, so a piece cut just after
+ * a WORD_SEP (a segment over the model's id cap, chunked at word boundaries: [..., PAD, 3, EOS])
+ * counts only its own words, and ordinals carry across a segment's pieces -- except after a hard
+ * split inside one phone-word (one longer than the cap), where the next piece's first phone-word
+ * continues the last one and must not be counted again. (A WORD_SEP before [PAD, EOS] does start
+ * one, empty: [1,0,20,0,3,0,2] gives [1,5]; no chunker writes that.) No handle and no statics:
+ * reentrant. Returns the number of phone-words (0 for an empty [BOS,PAD,EOS]), -1 if ids is NULL
+ * or max_starts is too small. */
+int cyp_word_starts(const int32_t *ids, int n_ids, int *starts, int max_starts);
 void cyp__pause_late(const char *in, char *out);    /* internal: the late pause pass, for cy_phonemize.c */
 
 const char *cyp_data_version(const CyPhonemizer *p);  /* matches the model's config */
@@ -109,6 +157,7 @@ int cyp_num_symbols(const CyPhonemizer *p);           /* 256 */
 void cyp__lower_strip(const char *in, char *out, int max_out);   /* str.strip().lower() */
 int cyp__cp_is_alnum(long cp);                                   /* isdecimal() or isalpha() */
 int cyp__cp_is_alpha(long cp);                                   /* str.isalpha() */
+int cyp__cp_numeric(long cp);              /* No/Nl: 2 isdigit() (²), 1 isnumeric() only (½), else 0 */
 int cyp__cp_decimal_value(long cp);                              /* Nd value 0..9, else -1 */
 int cyp__cp_is_space(long cp);                                   /* str.isspace() == re \s */
 int cyp__num_words_for_run(const char *digits, int len, char *out); /* int() + num_to_welsh */

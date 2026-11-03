@@ -299,7 +299,7 @@ def _c_normalizer():
         pytest.skip("libcy_phonemize.so not built (make -C techiaith/g2p/c libcy_phonemize.so)")
     lib = ctypes.CDLL(str(so))
     lib.cyp_normalize.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_int]
-    lib.cyp_num_to_welsh.argtypes = [ctypes.c_long, ctypes.c_char_p, ctypes.c_int]
+    lib.cyp_num_to_welsh.argtypes = [ctypes.c_int64, ctypes.c_char_p, ctypes.c_int]
     # The acronym pass gates on the dictionary headword set; a bare-cyp_normalize
     # harness must load it itself (cyp_create does it for phonemize callers).
     lib.cyp_normalize_load_vocab.argtypes = [ctypes.c_char_p]
@@ -1140,6 +1140,49 @@ def test_long_digit_runs_do_not_overflow_the_c_long():
     # Commas must not change the answer, on either side.
     for t in ("1,000,000,000", "12,345,678,901,234,567,890", "1,234.56"):
         assert norm(t) == N.normalize(t), f"C/Python disagree on {t!r}"
+
+
+def test_c_cardinal_at_the_int64_limits():
+    """cyp_num_to_welsh takes an int64_t, and -n overflows at INT64_MIN.
+
+    C negated and recursed: at INT64_MIN the negation is INT64_MIN again, so it recursed until
+    the stack ran out. Python's -(-2**63) is 2**63, past the ceiling, so it reads digit by digit.
+    """
+    _, num = _c_normalizer()
+    for n in (-2**63, -2**63 + 1, -10**18, -1, 2**63 - 1, 10**18, 999_999_999_999_999_999,
+              2**31, 2**32, -2**31, -2**31 - 1):
+        assert num(n) == num_to_welsh(n), f"C/Python disagree on {n}"
+
+
+def test_c_amount_wrapping_to_int64_min_returns():
+    """A pound or pence amount of 2**63 (mod 2**64) crashed the C normaliser on every host.
+
+    atoin_commas wrapped 19+ digit amounts at 64 bits, and 2**63 wrapped to INT64_MIN, which
+    cyp_num_to_welsh negated and recursed on until the stack overflowed. Run in a child so a
+    regression fails this test instead of killing the session; the words must be the API's.
+    """
+    import subprocess
+    so = REPO / "techiaith" / "g2p" / "c" / "libcy_phonemize.so"
+    if not so.exists():
+        import pytest
+        pytest.skip("libcy_phonemize.so not built (make -C techiaith/g2p/c libcy_phonemize.so)")
+    texts = ["£9223372036854775808", "£9,223,372,036,854,775,808", "£9223372036854775808.50",
+             "9223372036854775808p", "9223372036854775808c", "£27670116110564327424"]
+    child = (
+        "import ctypes, sys\n"
+        "lib = ctypes.CDLL(sys.argv[1])\n"
+        "lib.cyp_normalize_lang.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]\n"
+        "buf = ctypes.create_string_buffer(65536)\n"
+        "for t in sys.argv[2:]:\n"
+        "    for lang in (1, 2):\n"
+        "        lib.cyp_normalize_lang(t.encode(), lang, buf, 65536)\n"
+        "        print(buf.value.decode())\n")
+    r = subprocess.run([sys.executable, "-c", child, str(so)] + texts,
+                       capture_output=True, text=True, timeout=120, encoding="utf-8")
+    assert r.returncode == 0, f"C normaliser died on a 2**63 amount (rc={r.returncode}): {r.stderr[-500:]}"
+    N = WelshNormalizer()
+    want = [N.normalize(t, lang=lang) for t in texts for lang in ("cy", "en")]
+    assert r.stdout.splitlines() == want
 
 
 # test_review_doc_tables_match_the_code is omitted from this public mirror: it

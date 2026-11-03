@@ -1,10 +1,17 @@
 /* Welsh text normalization in C — mirrors welsh_normalize.py (Workstream P / P7).
- * cyp_num_to_welsh (cardinals 0..999,999,999) + cyp_normalize (numbers, %, decimals,
- * &, abbreviations, acronym spell-out). Byte-parity target vs the Python reference. */
+ * cyp_num_to_welsh (cardinals) + cyp_normalize (numbers, %, decimals,
+ * &, abbreviations, acronym spell-out). Byte-parity target vs the Python reference.
+ *
+ * Every number is an int64_t, never a long: long is 32 bits on Windows (LLP64), where each
+ * value of 2^31 and up wrapped -- "£3bn" read "minws un biliwn dau gant naw deg pedwar
+ * miliwn ..." -- while LP64 hosts (macOS, Linux, Android, iOS) computed in 64 bits. The longs
+ * left in this file hold code points and a headword count, which fit in 32 bits. */
 #include "cy_phonemize.h"
 #include "cy_emoji_data.h"
 
 #include <ctype.h>
+#include <inttypes.h>
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,7 +69,7 @@ static int is_compound_numeral(const char *num) {
 /* `cap` is the size of `b`. Hardcoding 700 truncated silently for a numeral built by
  * cyp__num_words_for_run, whose worst case is ~3.6 KB (a pathological digit run read
  * digit-by-digit) -- snprintf is safe, but the result was a clipped word. */
-static void counted_noun(char *b, size_t cap, const char *numeral, long n,
+static void counted_noun(char *b, size_t cap, const char *numeral, int64_t n,
                          const char *singular) {
     if (n >= 11 && is_compound_numeral(numeral)) {
         for (int i = 0; MID_NUMERAL_PLURAL[i].sing; i++)
@@ -183,24 +190,37 @@ static void scale(char *b, int mult, const char *word, const char *(*special)(in
     app(b, body); app(b, word);
 }
 
-void cyp_num_to_welsh(long n, char *out, int max) {
+void cyp_num_to_welsh(int64_t n, char *out, int max) {
     (void)max;
     out[0] = 0;
-    if (n < 0) { strcpy(out, "minws "); char t[512]; cyp_num_to_welsh(-n, t, 512); strcat(out, t); return; }
+    if (n < 0) {
+        char t[512];
+        /* -n overflows at INT64_MIN, which recursed until the stack ran out: "£9223372036854775808"
+         * and "9223372036854775808p" reached it through atoin_commas's old 64-bit wrap. 2^63 is
+         * past the ceiling, so it reads digit by digit, as Python's num_to_welsh(-2**63) does. */
+        if (n == INT64_MIN) {
+            char s[32]; snprintf(s, sizeof(s), "%" PRIu64, (uint64_t)INT64_MAX + 1);
+            t[0] = 0;
+            for (int i = 0; s[i]; i++) app(t, s[i] == '0' ? "dim" : UNITS[s[i] - '0']);
+        } else {
+            cyp_num_to_welsh(-n, t, 512);
+        }
+        strcpy(out, "minws "); strcat(out, t); return;
+    }
     if (n == 0) { strcpy(out, "sero"); return; }
     if (n == 10) { strcpy(out, "deg"); return; }
-    /* 18 nines, mirroring welsh_normalize._CARDINAL_CEILING: the widest run that fits a
-     * long, and what cyp__num_words_for_run already caps digit runs at. Was 999,999,999
+    /* 18 nines, mirroring welsh_normalize._CARDINAL_CEILING: the widest run that fits an
+     * int64_t, and what cyp__num_words_for_run already caps digit runs at. Was 999,999,999
      * until 2026-07-28, which made a literal "1000000000" read "un dim dim dim dim dim dim
      * dim dim dim" -- nine "dim"s -- while "£3bn" said "tri biliwn". Same amount, and only
      * the magnitude-suffix spelling escaped, because only scaled_cardinal named billions. */
-    if (n > 999999999999999999L) {
-        char s[32]; snprintf(s, sizeof(s), "%ld", n);
+    if (n > INT64_C(999999999999999999)) {
+        char s[32]; snprintf(s, sizeof(s), "%" PRId64, n);
         for (int i = 0; s[i]; i++) app(out, s[i] == '0' ? "dim" : UNITS[s[i] - '0']);
         return;
     }
-    long billions = n / 1000000000L, r1 = n % 1000000000L;
-    long millions = r1 / 1000000, r = r1 % 1000000, thousands = r / 1000, rest = r % 1000;
+    int64_t billions = n / 1000000000, r1 = n % 1000000000;
+    int64_t millions = r1 / 1000000, r = r1 % 1000000, thousands = r / 1000, rest = r % 1000;
     if (billions) {
         /* No signed-off Welsh word above "biliwn" -- that one took a GPC attestation (see
          * scaled_cardinal) -- so a multiplier of 1000+ stacks "biliwn" rather than
@@ -259,19 +279,28 @@ static void en_spell(char *b, const char *s, int len) {
     for (int k = 0; k < len; k++)
         if (s[k] >= '0' && s[k] <= '9') app(b, EN_ONES[s[k] - '0']);
 }
-static void en_cardinal(char *out, long n) {            /* english_numbers.cardinal */
+static void en_cardinal(char *out, int64_t n) {         /* english_numbers.cardinal */
     out[0] = 0;
-    if (n < 0) { char t[512]; en_cardinal(t, -n); app(out, "minus"); app(out, t); return; }
-    if (n == 0) { strcpy(out, "zero"); return; }
-    if (n > 999999999999L) {                            /* past the scale words: digitwise */
-        char d[32]; snprintf(d, sizeof d, "%ld", n); en_spell(out, d, (int)strlen(d)); return;
+    if (n < 0) {                                        /* no caller passes one; kept safe */
+        char t[512];
+        if (n == INT64_MIN) {                           /* -n overflows; 2^63 is digitwise */
+            char d[32]; snprintf(d, sizeof d, "%" PRIu64, (uint64_t)INT64_MAX + 1);
+            t[0] = 0; en_spell(t, d, (int)strlen(d));
+        } else {
+            en_cardinal(t, -n);
+        }
+        app(out, "minus"); app(out, t); return;
     }
-    int parts = 0; long g;
-    g = n / 1000000000L; n %= 1000000000L;
+    if (n == 0) { strcpy(out, "zero"); return; }
+    if (n > INT64_C(999999999999)) {                    /* past the scale words: digitwise */
+        char d[32]; snprintf(d, sizeof d, "%" PRId64, n); en_spell(out, d, (int)strlen(d)); return;
+    }
+    int parts = 0; int64_t g;
+    g = n / 1000000000; n %= 1000000000;
     if (g) { en_below_thousand(out, (int)g); app(out, "billion"); parts++; }
-    g = n / 1000000L; n %= 1000000L;
+    g = n / 1000000; n %= 1000000;
     if (g) { en_below_thousand(out, (int)g); app(out, "million"); parts++; }
-    g = n / 1000L; n %= 1000L;
+    g = n / 1000; n %= 1000;
     if (g) { en_below_thousand(out, (int)g); app(out, "thousand"); parts++; }
     /* "one thousand AND five" but "one thousand two hundred and thirty four": the
      * remainder takes a leading "and" only when it has no hundreds of its own. */
@@ -280,7 +309,7 @@ static void en_cardinal(char *out, long n) {            /* english_numbers.cardi
 /* cardinal of a digit run as int(raw.replace(",", "")) sees it: commas and other
  * non-digits skipped, leading zeros dropped, and more than 12 significant digits is
  * beyond cardinal()'s scale words, so those read digit by digit -- computed from the
- * text, never through a long, so no run can overflow. */
+ * text, so no run can overflow. The 12 digits left need 40 bits: an int64_t. */
 static void en_num_run(char *out, const char *s, int len) {
     out[0] = 0;
     int first = -1, nd = 0;
@@ -292,7 +321,7 @@ static void en_num_run(char *out, const char *s, int len) {
     }
     if (nd == 0) { strcpy(out, "zero"); return; }
     if (nd > 12) { en_spell(out, s + first, len - first); return; }
-    long n = 0;
+    int64_t n = 0;
     for (int i = first; i < len; i++) if (s[i] >= '0' && s[i] <= '9') n = n * 10 + (s[i] - '0');
     en_cardinal(out, n);
 }
@@ -304,9 +333,9 @@ static void en_ordinalize(char *b) {                    /* english_numbers.ordin
     if (L >= 2 && last[L - 2] == 't' && last[L - 1] == 'y') { strcpy(last + L - 1, "ieth"); return; }
     strcat(last, "th");                                 /* four -> fourth, hundred -> hundredth */
 }
-static void en_ordinal(char *out, long n) { en_cardinal(out, n); en_ordinalize(out); }
+static void en_ordinal(char *out, int64_t n) { en_cardinal(out, n); en_ordinalize(out); }
 static void en_ordinal_run(char *out, const char *s, int len) { en_num_run(out, s, len); en_ordinalize(out); }
-static void en_year(char *out, long y) {                /* english_numbers.year */
+static void en_year(char *out, int64_t y) {             /* english_numbers.year */
     out[0] = 0;
     if (y >= 2000 && y <= 2099) {
         int r = (int)(y - 2000);
@@ -323,7 +352,7 @@ static void en_year(char *out, long y) {                /* english_numbers.year 
     }
     en_cardinal(out, y);
 }
-static void en_date(char *b, int d, int m, long y) {    /* english_numbers.date; y < 0: none */
+static void en_date(char *b, int d, int m, int64_t y) { /* english_numbers.date; y < 0: none */
     char ob[64]; en_ordinal(ob, d);
     b[0] = 0; app(b, "the"); app(b, ob); app(b, "of"); app(b, EN_MONTHS[m - 1]);
     if (y >= 0) { char yb[512]; en_year(yb, y); app(b, yb); }
@@ -346,7 +375,7 @@ static void en_time(char *b, int h, int mm, const char *mk, int mlen) {   /* eng
  * english_numbers.fraction names). Python's exact ints give None in every saturated
  * case: a saturated denominator is > 20, a saturated numerator is >= any named one. */
 static int en_small(const char *s, int len) {
-    long v = 0;
+    int64_t v = 0;
     for (int i = 0; i < len; i++) { v = v * 10 + (s[i] - '0'); if (v > 20) return -1; }
     return (int)v;
 }
@@ -364,7 +393,7 @@ static const char *en_fraction(int num, int den, char *buf) {   /* english_numbe
     if (num != 1) strcat(buf, "s");
     return buf;
 }
-static void en_pence(char *b, long p) {                 /* english_numbers.pence */
+static void en_pence(char *b, int64_t p) {              /* english_numbers.pence */
     if (p == 1) { strcpy(b, "one penny"); return; }
     en_cardinal(b, p); app(b, "pence");
 }
@@ -382,7 +411,7 @@ static void en_pounds(char *b, const char *digs, int nd, const char *pdigs, int 
     app(b, !strcmp(b, "one") ? "pound" : "pounds");
     if (pv > 0) { char cb[64]; en_cardinal(cb, pv); app(b, cb); }
 }
-static void en_roman(char *nb, long v, int structural) {   /* english_numbers.roman */
+static void en_roman(char *nb, int64_t v, int structural) {   /* english_numbers.roman */
     if (structural || v > 31) { en_cardinal(nb, v); return; }
     char ob[64]; en_ordinal(ob, v);
     nb[0] = 0; app(nb, "the"); app(nb, ob);
@@ -391,7 +420,7 @@ static void en_roman(char *nb, long v, int structural) {   /* english_numbers.ro
  * is a year ("in 2026" -> twenty twenty six); everything else a cardinal. */
 static void en_integer_run(char *out, const char *s, int len) {
     if (len == 4 && !memchr(s, ',', 4)) {
-        long n = 0; for (int t = 0; t < 4; t++) n = n * 10 + (s[t] - '0');
+        int64_t n = 0; for (int t = 0; t < 4; t++) n = n * 10 + (s[t] - '0');
         if (n >= 1100 && n <= 2099) { en_year(out, n); return; }
     }
     en_num_run(out, s, len);
@@ -461,7 +490,7 @@ static int re_space_len(const char *s, int j);
  * digits inside a code read as ONE number (A55 -> "a pum deg pump"), matching
  * welsh_normalize._spell_acronym. Leading zeros strip like Python int() ("007"
  * -> "saith"); a stripped run longer than 18 digits mirrors num_to_welsh's
- * digit-by-digit branch (n > 999,999,999) without overflowing a long.
+ * digit-by-digit branch (n > 999,999,999,999,999,999) without overflowing an int64_t.
  * Non-static: pass_unit below and cy_phonemize.c's cyp_letter_tokens read digit runs
  * the same way, and one shared implementation cannot drift from itself. */
 int cyp__num_words_for_run(const char *s, int len, char *out) {
@@ -473,7 +502,7 @@ int cyp__num_words_for_run(const char *s, int len, char *out) {
         for (int i = 0; i < len; i++) app(out, s[i] == '0' ? "dim" : UNITS[s[i] - '0']);
         return (int)strlen(out);
     }
-    long v = 0;
+    int64_t v = 0;
     for (int i = 0; i < len; i++) v = v * 10 + (s[i] - '0');
     cyp_num_to_welsh(v, out, 512);
     return (int)strlen(out);
@@ -795,17 +824,30 @@ static void pass_acronym(const char *in, char *out) {
                 /* The vocabulary gate (see cyp_normalize_load_vocab above): a pure-letter
                  * token whose lowercase form the dictionaries know is a word merely
                  * capitalised — read it, don't spell it. Digit-bearing tokens (S4C, A55)
-                 * are codes and never reach the gate. The 128 cap is safe, not a parity
-                 * hole: the longest dictionary headword is 58 bytes, so a longer token
-                 * cannot be in the vocabulary on either side. Mirrors the
-                 * tok.lower()-in-_acronym_vocab() branch of _spell_acronym. */
-                if (digits == 0 && len < 128) {
+                 * are codes and never reach the gate. Mirrors the
+                 * tok.lower()-in-_acronym_vocab() branch of _spell_acronym.
+                 *
+                 * A token of 128 letters or more skipped the gate and was SPELLED, which
+                 * was a parity hole: the longest dictionary headword is 58 bytes, so such a
+                 * token is in no vocabulary and on no always-spell list, but the gate's last
+                 * rule -- 4+ letters with a vowel read as a word -- has no length limit in
+                 * Python ("A" x 128: Python reads it, C spelled it, 515 ids against 769).
+                 * Past the buffer only that rule can apply, so it is tested in place. From
+                 * 512 letters the word meets the LTS's own cap (lts_prep's base[512]), a
+                 * documented divergence of any word that long. */
+                if (digits == 0) {
                     char low[128];
-                    for (int t = 0; t < len; t++)
-                        low[t] = (char)tolower((unsigned char)in[i + t]);
-                    low[len] = 0;
-                    if (avocab_reads_as_word(low, len)) {
-                        memcpy(out + o, low, (size_t)len);
+                    int reads = 0;
+                    if (len < 128) {
+                        for (int t = 0; t < len; t++)
+                            low[t] = (char)tolower((unsigned char)in[i + t]);
+                        low[len] = 0;
+                        reads = avocab_reads_as_word(low, len);
+                    } else {
+                        for (int t = i; t < j && !reads; t++) reads = strchr("AEIOUWY", in[t]) != NULL;
+                    }
+                    if (reads) {
+                        for (int t = 0; t < len; t++) out[o + t] = (char)tolower((unsigned char)in[i + t]);
                         o += len;
                         i = j;
                         continue;
@@ -1113,13 +1155,22 @@ static int is_ascii_digit(char c) { return c >= '0' && c <= '9'; }
 /* U+FE0F, U+FE0E and U+200D are presentation marks, not content: "❤️" is "❤" plus FE0F and
  * must find the same name. Length of one at s[i], or 0. */
 static int emoji_skip_len(const char *s, int i) {
+    if (!s[i] || !s[i+1]) return 0;     /* never read past the NUL (a full 64 KB arena: see pp_bullet) */
     unsigned char a = (unsigned char)s[i], b = (unsigned char)s[i+1], c = (unsigned char)s[i+2];
     if (a == 0xEF && b == 0xB8 && (c == 0x8F || c == 0x8E)) return 3;   /* FE0F / FE0E */
     if (a == 0xE2 && b == 0x80 && c == 0x8D) return 3;                  /* ZWJ */
     return 0;
 }
 
-static void pass_emoji(const char *in, char *out) {
+/* Bounded like pass_email_url: it stops (truncating) when the next write would not leave room
+ * for the NUL. It was the steepest expander in the file and unbounded -- one UTF-16 unit, "↪"
+ * (3 bytes), becomes " saeth i’r chwith yn troi i’r dde " (40) -- so 1,725 of them in one segment
+ * ran off cyp_normalize's 64 KB arena, under the digit floor at put_n and inside Android's
+ * 4,000-character request limit (4,000 of them killed the process through the fortified strcpy).
+ * A text whose names fill the arena is far past cyp_segments' 8,192-phone cap, so the cut never
+ * reaches speech. A name that later passes expand again ("botwm AB (grwp gwaed)") can still
+ * overflow THEM, unbounded as they are, from 5,244 UTF-16 units (put_n has the figures). */
+static void pass_emoji(const char *in, char *out, int max) {
     int i = 0, o = 0;
     while (in[i]) {
         int sk = emoji_skip_len(in, i);
@@ -1135,9 +1186,11 @@ static void pass_emoji(const char *in, char *out) {
             /* Spaces on BOTH sides: an emoji sits directly against a word often enough
              * ("Da iawn👍"), and without them the name would glue to it -- the same nonword
              * failure the symbol passes were fixed for. pass_lower_collapse tidies the rest. */
-            out[o++] = ' ';
             const char *w = EMOJI_CY[hit].name;
-            strcpy(out + o, w); o += (int)strlen(w);
+            int wl = (int)strlen(w);
+            if (o + wl + 2 >= max) break;
+            out[o++] = ' ';
+            memcpy(out + o, w, (size_t)wl); o += wl;
             out[o++] = ' ';
             i += (int)strlen(EMOJI_CY[hit].seq);
             continue;
@@ -1148,6 +1201,7 @@ static void pass_emoji(const char *in, char *out) {
          * would otherwise pass through as raw codepoints. */
         if ((unsigned char)in[i] == 0xF3 && (unsigned char)in[i+1] == 0xA0
             && (unsigned char)in[i+2] == 0x80) { i += 4; continue; }
+        if (o + 1 >= max) break;
         out[o++] = in[i++];
     }
     out[o] = 0;
@@ -1192,10 +1246,6 @@ static void pass_math_deg(const char *in, char *out) {
     out[o] = 0;
 }
 
-static int url_label_char(char c) {
-    return isalnum((unsigned char)c) || c == '-' || c == '_' || c == '+' || c == '%';
-}
-
 /* Emit one dot-separated label run, mapping the labels whose spoken form is not the letters.
  * Only "uk" -> "wc", the one the owner gave; any other label is read as written. */
 static void emit_labels(char *out, int *o, const char *s, int a, int b) {
@@ -1223,39 +1273,92 @@ static void emit_labels(char *out, int *o, const char *s, int a, int b) {
     }
 }
 
-/* An email address or a www./http(s):// URL. Anything else containing a dot is left alone --
- * "bangor.ac.uk" with no scheme and no www is indistinguishable from a sentence-final word
- * followed by an abbreviation, and Python draws the same line. */
-static void pass_email_url(const char *in, char *out) {
+static int utf8_len(unsigned char c);   /* below, with pass_lower_collapse */
+static int ascii_alpha(char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
+static int url_host_char(char c) { return ascii_alpha(c) || is_ascii_digit(c) || c == '.' || c == '-'; }
+static int url_local_char(char c) { return url_host_char(c) || c == '_' || c == '%' || c == '+'; }
+/* _EMAIL_OR_URL's host, [A-Za-z0-9.-]+\.[A-Za-z]{2,}, from s[j] as re backtracks it: take the
+ * whole [A-Za-z0-9.-] run, then the LAST dot in it with at least one character before it and two
+ * or more letters after; the match ends after those letters. -1 when no dot qualifies. */
+static int url_host_end(const char *s, int j) {
+    int run = j;
+    while (url_host_char(s[run])) run++;
+    for (int d = run - 1; d > j; d--) {
+        if (s[d] != '.') continue;
+        int q = d + 1;
+        while (ascii_alpha(s[q])) q++;
+        if (q - (d + 1) >= 2) return q;
+    }
+    return -1;
+}
+/* welsh_normalize._EMAIL_OR_URL at s[i], or -1: the end of
+ *   \b(?:[A-Za-z0-9._%+-]+@HOST|(?:www\.|https?://)HOST(?:/\S*)?)
+ * with HOST as url_host_end. \b is Python's: a \w on exactly one side of i. The local part
+ * cannot contain '@', so it must run to the '@' -- no backtracking is possible there. A URL keeps
+ * a path that starts right after its host ("www.bbc.co.uk/cymrufyw"); case-sensitive, as the
+ * pattern carries no re.I. */
+static int email_url_end(const char *s, int i) {
+    int here = is_ascii_digit(s[i]) || ascii_alpha(s[i]) || s[i] == '_';
+    if (here == word_before(s, i)) return -1;
+    int l = i;
+    while (url_local_char(s[l])) l++;
+    if (l > i && s[l] == '@') {
+        int e = url_host_end(s, l + 1);
+        if (e >= 0) return e;
+    }
+    int j = !strncmp(s + i, "www.", 4) ? i + 4 : !strncmp(s + i, "https://", 8) ? i + 8
+          : !strncmp(s + i, "http://", 7) ? i + 7 : -1;
+    if (j < 0) return -1;
+    int e = url_host_end(s, j);
+    if (e < 0 || s[e] != '/') return e;
+    for (e++; s[e] && !re_space_len(s, e); ) {        /* /\S*: up to Unicode whitespace */
+        int L = utf8_len((unsigned char)s[e]), t = 1;
+        while (t < L && s[e + t]) t++;                 /* never past the NUL of a cut sequence */
+        e += t;
+    }
+    return e;
+}
+
+/* An email address or a www./http(s):// URL, read as _email_url_repl reads it: the scheme
+ * dropped, each "@" an "at", each '@'-separated piece's dot-separated labels joined by " dot ".
+ * Anything else containing a dot is left alone -- "bangor.ac.uk" with no scheme and no www is
+ * indistinguishable from a sentence-final word followed by an abbreviation, and Python draws the
+ * same line. Python runs this between the colon clock (_TIME) and the colonless one, after the
+ * roman, acronym, date, currency and unit passes have seen the text; so does cyp_normalize_lang.
+ * A path is part of the match, so in "www.bbc.co.uk/cymrufyw" the last label is "uk/cymrufyw",
+ * not "uk": no "wc" (C used to stop at the "/" and say "wc" where the API does not). */
+static void pass_email_url(const char *in, char *out, int max) {
     int i = 0, o = 0;
     while (in[i]) {
-        if (!word_before(in, i)) {
-            /* scheme, then www. or an authority with at least one dot */
-            int j = i;
-            if (!strncmp(in + j, "https://", 8)) j += 8;
-            else if (!strncmp(in + j, "http://", 7)) j += 7;
-            int body = j, at = -1, dots = 0;
-            while (url_label_char(in[j]) || in[j] == '.' || in[j] == '@') {
-                if (in[j] == '@') { if (at >= 0) break; at = j; }
-                else if (in[j] == '.') dots++;
-                j++;
+        int e = email_url_end(in, i);
+        if (e < 0) {
+            if (o + 1 >= max) break;
+            out[o++] = in[i++];
+            continue;
+        }
+        /* bounded like pass_fraction: a byte of the match becomes at most five (" dot ") */
+        if (o + 5 * (e - i) + 8 >= max) break;
+        int a = i;
+        if (!strncmp(in + a, "https://", 8)) a += 8;
+        else if (!strncmp(in + a, "http://", 7)) a += 7;
+        /* t.replace("@", " at ").split(), then " ".join of the pieces' labels */
+        int first = 1;
+        for (int k = a; k < e; ) {
+            int st = k;
+            while (k < e && in[k] != '@') k++;
+            if (k > st) {
+                if (!first) out[o++] = ' ';
+                emit_labels(out, &o, in, st, k);
+                first = 0;
             }
-            while (j > body && (in[j - 1] == '.' || in[j - 1] == '-')) j--;   /* trailing punctuation */
-            int is_url = (body != i) || (!strncmp(in + body, "www.", 4));
-            int ok = (j - body) > 3 && dots >= 1 && (at >= 0 || is_url);
-            if (ok) {
-                if (at >= 0) {
-                    emit_labels(out, &o, in, body, at);
-                    strcpy(out + o, " at "); o += 4;
-                    emit_labels(out, &o, in, at + 1, j);
-                } else {
-                    emit_labels(out, &o, in, body, j);
-                }
-                i = j;
-                continue;
+            if (k < e) {
+                if (!first) out[o++] = ' ';
+                memcpy(out + o, "at", 2); o += 2;
+                first = 0;
+                k++;
             }
         }
-        out[o++] = in[i++];
+        i = e;
     }
     out[o] = 0;
 }
@@ -1276,8 +1379,8 @@ static const char *ROMAN_NOT[] = {"MIX","DID","MILL","DIM","MI","DI","LI","CI","
  * without a second grammar to maintain. Python does exactly this, and for the same reason:
  * the first attempt encoded the grammar as a regex, every group of which was optional, so it
  * matched the EMPTY STRING and "DID" came out as "serodid". */
-static long roman_value(const char *t, int len) {
-    long total = 0; int prev = 0;
+static int64_t roman_value(const char *t, int len) {
+    int64_t total = 0; int prev = 0;
     for (int k = len - 1; k >= 0; k--) {
         int v = roman_val(t[k]);
         total += (v < prev) ? -v : v;
@@ -1287,7 +1390,7 @@ static long roman_value(const char *t, int len) {
     static const struct { int v; const char *sym; } R[] = {
         {1000,"M"},{900,"CM"},{500,"D"},{400,"CD"},{100,"C"},{90,"XC"},{50,"L"},
         {40,"XL"},{10,"X"},{9,"IX"},{5,"V"},{4,"IV"},{1,"I"},{0,NULL}};
-    char back[32]; int b = 0; long n = total;
+    char back[32]; int b = 0; int64_t n = total;
     for (int r = 0; R[r].sym; r++)
         while (n >= R[r].v) { strcpy(back + b, R[r].sym); b += (int)strlen(R[r].sym); n -= R[r].v; }
     back[b] = 0;
@@ -1367,7 +1470,7 @@ static void pass_roman(const char *in, char *out) {
                 int skip = 0;
                 for (int k = 0; ROMAN_NOT[k]; k++)
                     if ((int)strlen(ROMAN_NOT[k]) == len && !strncmp(ROMAN_NOT[k], in + i, (size_t)len)) { skip = 1; break; }
-                long v = skip ? -1 : roman_value(in + i, len);
+                int64_t v = skip ? -1 : roman_value(in + i, len);
                 if (v > 0) {
                     char nb[512];
                     /* A Roman numeral after a PERSONAL NAME is a regnal number and takes the
@@ -1678,6 +1781,56 @@ int cyp__cp_is_alpha(long cp) {
     if (cp < 0x80) return isalpha((int)cp);
     return cp_is_word(cp);
 }
+/* What str.isnumeric() adds to isdecimal() outside the letters: the No and Nl code points --
+ * superscripts, vulgar fractions, circled, parenthesised and Roman-numeral forms. 2 where
+ * str.isdigit() is true as well (Numeric_Type=Digit: "²", "①"), 1 for the rest ("½", "Ⅳ"), 0
+ * otherwise. With cyp__cp_is_alnum it is str.isalnum() over the Latin domain, which the sentence
+ * splitter needs ("²Mr." is no title in Python: "²" is alphanumeric). A letter with a numeric
+ * value (CJK "三") is isalpha() and stays in the KNOWN GAP above.
+ *
+ * NUMERIC_TABLE_UNICODE_VERSION = 13.0.0 (99 ranges; tests/test_segments.py walks the whole code
+ * point space against the canonical interpreter). REGENERATE with the corpora, under ONE
+ * interpreter:
+ *   python -c "import unicodedata as u; k=lambda c: 0 if c.isdecimal() or c.isalpha() or not
+ *   c.isnumeric() else 2 if c.isdigit() else 1; print([(hex(c), k(chr(c))) for c in
+ *   range(0x110000) if k(chr(c))])"   -- then merge consecutive code points of one kind */
+static const struct { long lo, hi; int kind; } NUMERIC_NO_NL[] = {
+    {0x00B2, 0x00B3, 2}, {0x00B9, 0x00B9, 2}, {0x00BC, 0x00BE, 1}, {0x09F4, 0x09F9, 1},
+    {0x0B72, 0x0B77, 1}, {0x0BF0, 0x0BF2, 1}, {0x0C78, 0x0C7E, 1}, {0x0D58, 0x0D5E, 1},
+    {0x0D70, 0x0D78, 1}, {0x0F2A, 0x0F33, 1}, {0x1369, 0x1371, 2}, {0x1372, 0x137C, 1},
+    {0x16EE, 0x16F0, 1}, {0x17F0, 0x17F9, 1}, {0x19DA, 0x19DA, 2}, {0x2070, 0x2070, 2},
+    {0x2074, 0x2079, 2}, {0x2080, 0x2089, 2}, {0x2150, 0x2182, 1}, {0x2185, 0x2189, 1},
+    {0x2460, 0x2468, 2}, {0x2469, 0x2473, 1}, {0x2474, 0x247C, 2}, {0x247D, 0x2487, 1},
+    {0x2488, 0x2490, 2}, {0x2491, 0x249B, 1}, {0x24EA, 0x24EA, 2}, {0x24EB, 0x24F4, 1},
+    {0x24F5, 0x24FD, 2}, {0x24FE, 0x24FE, 1}, {0x24FF, 0x24FF, 2}, {0x2776, 0x277E, 2},
+    {0x277F, 0x277F, 1}, {0x2780, 0x2788, 2}, {0x2789, 0x2789, 1}, {0x278A, 0x2792, 2},
+    {0x2793, 0x2793, 1}, {0x2CFD, 0x2CFD, 1}, {0x3007, 0x3007, 1}, {0x3021, 0x3029, 1},
+    {0x3038, 0x303A, 1}, {0x3192, 0x3195, 1}, {0x3220, 0x3229, 1}, {0x3248, 0x324F, 1},
+    {0x3251, 0x325F, 1}, {0x3280, 0x3289, 1}, {0x32B1, 0x32BF, 1}, {0xA6E6, 0xA6EF, 1},
+    {0xA830, 0xA835, 1}, {0x10107, 0x10133, 1}, {0x10140, 0x10178, 1}, {0x1018A, 0x1018B, 1},
+    {0x102E1, 0x102FB, 1}, {0x10320, 0x10323, 1}, {0x10341, 0x10341, 1}, {0x1034A, 0x1034A, 1},
+    {0x103D1, 0x103D5, 1}, {0x10858, 0x1085F, 1}, {0x10879, 0x1087F, 1}, {0x108A7, 0x108AF, 1},
+    {0x108FB, 0x108FF, 1}, {0x10916, 0x1091B, 1}, {0x109BC, 0x109BD, 1}, {0x109C0, 0x109CF, 1},
+    {0x109D2, 0x109FF, 1}, {0x10A40, 0x10A43, 2}, {0x10A44, 0x10A48, 1}, {0x10A7D, 0x10A7E, 1},
+    {0x10A9D, 0x10A9F, 1}, {0x10AEB, 0x10AEF, 1}, {0x10B58, 0x10B5F, 1}, {0x10B78, 0x10B7F, 1},
+    {0x10BA9, 0x10BAF, 1}, {0x10CFA, 0x10CFF, 1}, {0x10E60, 0x10E68, 2}, {0x10E69, 0x10E7E, 1},
+    {0x10F1D, 0x10F26, 1}, {0x10F51, 0x10F54, 1}, {0x10FC5, 0x10FCB, 1}, {0x11052, 0x1105A, 2},
+    {0x1105B, 0x11065, 1}, {0x111E1, 0x111F4, 1}, {0x1173A, 0x1173B, 1}, {0x118EA, 0x118F2, 1},
+    {0x11C5A, 0x11C6C, 1}, {0x11FC0, 0x11FD4, 1}, {0x12400, 0x1246E, 1}, {0x16B5B, 0x16B61, 1},
+    {0x16E80, 0x16E96, 1}, {0x1D2E0, 0x1D2F3, 1}, {0x1D360, 0x1D378, 1}, {0x1E8C7, 0x1E8CF, 1},
+    {0x1EC71, 0x1ECAB, 1}, {0x1ECAD, 0x1ECAF, 1}, {0x1ECB1, 0x1ECB4, 1}, {0x1ED01, 0x1ED2D, 1},
+    {0x1ED2F, 0x1ED3D, 1}, {0x1F100, 0x1F10A, 2}, {0x1F10B, 0x1F10C, 1},
+};
+int cyp__cp_numeric(long cp) {
+    int lo = 0, hi = (int)(sizeof(NUMERIC_NO_NL) / sizeof(NUMERIC_NO_NL[0])) - 1;
+    while (lo <= hi) {
+        int mid = (lo + hi) / 2;
+        if (cp < NUMERIC_NO_NL[mid].lo) hi = mid - 1;
+        else if (cp > NUMERIC_NO_NL[mid].hi) lo = mid + 1;
+        else return NUMERIC_NO_NL[mid].kind;
+    }
+    return 0;
+}
 /* (cyp__lower_strip lives below, next to the lowercasing helpers it shares.) */
 
 
@@ -1686,7 +1839,18 @@ static const char *MONTHS[12] = {"ionawr", "chwefror", "mawrth", "ebrill", "mai"
 static const char *MONTH_MUT[12] = {"ionawr", "chwefror", "fawrth", "ebrill", "fai", "fehefin",
                                     "orffennaf", "awst", "fedi", "hydref", "dachwedd", "ragfyr"};
 
-static int atoin(const char *s, int len) { int v = 0; for (int i = 0; i < len; i++) v = v * 10 + (s[i] - '0'); return v; }
+/* Saturates at INT_MAX rather than overflowing (undefined, and UBSan flags it on the committed
+ * goldens). pass_ordinal hands it a whole digit run and tests 1..31, so a wrapped value landed in
+ * range: "4294967297af" read "cyntaf" where Python reads the number. The other callers read at
+ * most four digits. */
+static int atoin(const char *s, int len) {
+    int v = 0;
+    for (int i = 0; i < len; i++) {
+        if (v > (INT_MAX - 9) / 10) return INT_MAX;
+        v = v * 10 + (s[i] - '0');
+    }
+    return v;
+}
 
 /* " a"/" ac" before a year's final element, with the aspirate mutation "a" triggers.
  * Mirrors welsh_normalize._year_join. BTC: 'dwy fil ac un deg un' (vowel -> ac),
@@ -1712,10 +1876,10 @@ static void year_join(char *b, const char *rest) {
 
 /* A year in the register the owner chose ("mil naw wyth deg"). Mirrors
  * welsh_normalize.year_words -- see there for the BTC examples and what is derived. */
-static void year_words(char *b, long y) {
+static void year_words(char *b, int64_t y) {
     b[0] = 0;
     if (y >= 1000 && y <= 1999) {
-        long r = y - 1000; int hundreds = (int)(r / 100), tu = (int)(r % 100);
+        int64_t r = y - 1000; int hundreds = (int)(r / 100), tu = (int)(r % 100);
         app(b, "mil");
         if (hundreds) app(b, UNITS[hundreds]);
         if (tu) two_digit_dec(b, tu);
@@ -1731,7 +1895,7 @@ static void year_words(char *b, long y) {
     cyp_num_to_welsh(y, b, 512);
 }
 
-static void date_words(char *b, int d, int m, long y) {
+static void date_words(char *b, int d, int m, int64_t y) {
     const char *ordw = ORD[d][0];
     b[0] = 0;
     app(b, strchr("aeiouwyh", ordw[0]) ? "yr" : "y");
@@ -1757,12 +1921,17 @@ static void pass_date_num(const char *in, char *out) {
                     int yl = j - ys;
                     if (yl >= 2 && yl <= 4 && !(word_after(in, j))) {
                         int d = atoin(in + ds, dl), m = atoin(in + ms, ml);
-                        long y = atoin(in + ys, yl);
+                        int64_t y = atoin(in + ys, yl);
                         if (d >= 1 && d <= 31 && m >= 1 && m <= 12) {
                             char db[512];
                             if (g_en) en_date(db, d, m, y); else date_words(db, d, m, y);
                             strcpy(out + o, db); o += (int)strlen(db); i = j; continue;
                         }
+                        /* _DATE_NUM matched and _date_num_repl declined it (returned it as
+                         * is): re.sub resumes AFTER the match, so nothing inside it can start
+                         * a date. Stepping one byte instead read "80/12/10/2026" as "80/" and
+                         * the date 12/10/2026, where Python reads no date. */
+                        memcpy(out + o, in + i, (size_t)(j - i)); o += j - i; i = j; continue;
                     }
                 }
             }
@@ -1809,7 +1978,7 @@ static int skip_ws1(const char *s, int j) {
     return k > j ? k : -1;
 }
 /* (?:,?\s+([0-9]{4})(?![word]))? after `end`: sets *y and returns the new end, or `end` */
-static int opt_year(const char *s, int end, long *y) {
+static int opt_year(const char *s, int end, int64_t *y) {
     int k = end; if (s[k] == ',') k++;
     k = skip_ws1(s, k); if (k < 0) return end;
     int ys = k; while (isdigit((unsigned char)s[ys])) ys++;
@@ -1833,7 +2002,7 @@ static int month_alt(const char *s, int i, int exact, MonCont after, void *ctx, 
     }
     return 0;
 }
-typedef struct { int d, m, end; long y; } DateHit;
+typedef struct { int d, m, end; int64_t y; } DateHit;
 static int cont_wb(const char *s, int k, void *ctx) {            /* day-first: \b after the month */
     DateHit *h = (DateHit *)ctx;
     if (word_after(s, k)) return 0;
@@ -2015,6 +2184,25 @@ static int re_space_len(const char *s, int j) {
  * left and the one to bound first when the arena job is picked up; the 8200 floor that
  * plain digits hit through pass_integer is unchanged by any of this.
  *
+ * That was wrong about pass_emoji (2026-10-07): it was the steepest expander in the file and
+ * unbounded. One UTF-16 unit, "↪", is a 38-byte name, so 1,725 of them overflowed -- under every
+ * figure above, and inside Android's 4,000-character request limit. It is bounded now. Re-bisected
+ * through cyp_normalize_lang in BOTH languages (English number words are longer, so the digit
+ * floor is lower than the Welsh-only 8200 above), smallest overflowing input, bytes / UTF-16 units:
+ *
+ *     repeated input        before the bound      with it
+ *     "↪"                    5175 / 1725         none <= 64K
+ *     "😸"                   4600 / 2300         none <= 64K
+ *     "🫰🏾"                  7088 / 3544         none <= 64K
+ *     "🆎"                  10488 / 5244        10488 / 5244   <- later passes re-expand its name
+ *     "123456789 "           6370 / 6370         6370 / 6370   <- the global floor, pass_integer
+ *     "£999m "              10430 / 8940        10430 / 8940
+ *
+ * No construct measured overflows below 6370 bytes or 5244 UTF-16 units: above Android's limit
+ * and the desktop wrappers' 4 KiB cap, so a host with no cap of its own must split long text
+ * before cyp_segments. pass_currency, pass_integer, pass_acronym, pass_abbrev and the pause
+ * passes are still unbounded.
+ *
  * The real fix is bounding the remaining passes, or one saturation check in
  * cyp_normalize; that is pre-existing, spans every pass, and is a separate hardening
  * job. Do not paper over it here. */
@@ -2029,7 +2217,7 @@ static int put_n(char *out, int o, int max, const char *s, int len) {
  * "larger", and saturating means an absurdly long run can never overflow. Leading zeros
  * fall out naturally ("0010" -> 10, matching int()). */
 static int small_value(const char *s, int len) {
-    long v = 0;
+    int64_t v = 0;
     for (int i = 0; i < len; i++) {
         if (s[i] == ',') continue;
         v = v * 10 + (s[i] - '0');
@@ -2238,7 +2426,7 @@ static const struct { int n; const char *numeral; char mut; } BLYNEDD_NUM[] = {
 /* small_value saturates at 10; this table has rows up to 100, so it needs its own.
  * Same saturation trick, so an absurdly long run still cannot overflow. */
 static int blynedd_value(const char *s, int len) {
-    long v = 0;
+    int64_t v = 0;
     for (int i = 0; i < len; i++) {
         if (s[i] == ',') continue;
         v = v * 10 + (s[i] - '0');
@@ -2310,7 +2498,7 @@ static void pass_blynedd(const char *in, char *out, int max) {
                              * between the two and get neither. Mirrors _blynedd_repl. */
                             cyp__num_words_for_run(digs, nd, nb);
                             char cb[sizeof(nb) + 32];   /* room for the longest numeral */
-                            long nv = n < 0 ? 999 : n;
+                            int64_t nv = n < 0 ? 999 : n;
                             if (nv != 2 && nv != 3 && nv != 4 && nv != 6
                                     && !is_compound_numeral(nb))
                                 snprintf(cb, sizeof(cb), "%s %s", nb, BLYNEDD_NOUNS[u].nasal);
@@ -2352,9 +2540,9 @@ done:
  * NO reduce_cant here, deliberately: it fires only where the numeral DIRECTLY touches the
  * noun, and "o" now sits between them. "£1500" is "mil pum cant o bunnoedd", while "£100"
  * is below the threshold with the noun still touching, so it stays "can punt". */
-#define POUNDS_PLURAL_FROM 1000L
+#define POUNDS_PLURAL_FROM 1000
 
-static void pounds_plural(char *b, long n) {
+static void pounds_plural(char *b, int64_t n) {
     char nb[512];
     cyp_num_to_welsh(n, nb, sizeof(nb));
     /* Bare "mil o bunnoedd", the owner's call and a deliberate exception to the "un mil"
@@ -2383,7 +2571,7 @@ static void pounds_plural_str(char *b, size_t cap, const char *digits, int nd) {
     snprintf(b, cap, "%s o bunnoedd", p);
 }
 
-static void pounds(char *b, long n) {
+static void pounds(char *b, int64_t n) {
     switch (n) {
     case 1: strcpy(b, "un bunt"); return;
     case 2: strcpy(b, "dwy bunt"); return;
@@ -2404,7 +2592,7 @@ static void pounds(char *b, long n) {
 /* The singular form for an amount at or above the threshold that CARRIES PENCE. Owner
  * 2026-07-28: "o bunnoedd" mid-phrase is clumsy, so "£1234.56" stays "...tri deg pedwar punt
  * pum deg chwech ceiniog". Only a pounds-only amount takes the plural. */
-static void pounds_with_pence(char *b, long n) {
+static void pounds_with_pence(char *b, int64_t n) {
     char nb[512]; cyp_num_to_welsh(n, nb, 512);
     reduce_cant(nb);
     counted_noun(b, 640, nb, n, "punt");
@@ -2414,7 +2602,7 @@ static void pounds_with_pence(char *b, long n) {
  * and the soft mutation after saith/wyth. Mirrors welsh_normalize._pence_words. Both pence
  * sites go through here -- the currency path used to build its own string, so "£1.07" said
  * "saith ceiniog" while a bare "7c" said "saith geiniog". */
-static void pence_words(char *b, long n) {
+static void pence_words(char *b, int64_t n) {
     char nb[512];
     if (n >= 1 && n <= 10) snprintf(nb, sizeof(nb), "%s", MASC_BEFORE_NOUN[n]);
     else { cyp_num_to_welsh(n, nb, sizeof(nb)); reduce_cant(nb); }
@@ -2422,8 +2610,40 @@ static void pence_words(char *b, long n) {
 }
 
 
-static long atoin_commas(const char *s, int len) {
-    long v = 0; for (int i = 0; i < len; i++) if (s[i] != ',') v = v * 10 + (s[i] - '0'); return v;
+/* Significant digits in a [0-9,] run: commas and leading zeros do not count, as in int(). */
+static int sig_digits(const char *s, int len) {
+    int nd = 0;
+    for (int i = 0; i < len; i++) if (s[i] != ',' && (nd || s[i] != '0')) nd++;
+    return nd;
+}
+
+/* The amount of a [0-9,] run of at most 18 significant digits, exactly. Longer runs go to
+ * long_amount_words: they used to wrap here at 64 bits, so "£10000000000000000000" read "minws
+ * wyth pedwar pedwar chwech ..." and 2^63 crashed, where Python reads the digits. */
+static int64_t atoin_commas(const char *s, int len) {
+    int64_t v = 0; for (int i = 0; i < len; i++) if (s[i] != ',') v = v * 10 + (s[i] - '0'); return v;
+}
+
+/* A pounds or pence amount of 19+ significant digits, as Python's _pounds / _pence_words /
+ * _counted_noun read an int that large: num_to_welsh spells it digit by digit, so there is no
+ * "un mil" to strip and no trailing "cant" to reduce, and a numeral with no joiner is followed by
+ * its noun -- " o bunnoedd" for a pounds-only amount (noun NULL: it is past the plural
+ * threshold), else the singular noun, soft after saith/wyth. Written straight into out, as
+ * num_words_run_commas does an absurd run, so any length fits. Returns the bytes written. */
+static int long_amount_words(char *out, const char *s, int len, const char *noun) {
+    int o = 0, started = 0;
+    for (int i = 0; i < len; i++) {
+        if (s[i] == ',' || (!started && s[i] == '0')) continue;
+        started = 1;
+        const char *w = s[i] == '0' ? "dim" : UNITS[s[i] - '0'];
+        int L = (int)strlen(w);
+        if (o) out[o++] = ' ';
+        memcpy(out + o, w, (size_t)L); o += L;
+    }
+    out[o] = 0;
+    const char *tail = noun ? soft_after_saith_wyth(out, noun) : "o bunnoedd";
+    o += sprintf(out + o, " %s", tail);
+    return o;
 }
 
 /* A magnitude suffix starting at s[j], at a word boundary: its zero count (3/6/9) and,
@@ -2453,9 +2673,8 @@ static int unit_follows(const char *s, int j) {
     return 0;
 }
 
-/* Longest amount pass_currency will scale. Python has no such limit; this is the same
- * class as the `long` in atoin_commas below (which already truncates a plain amount at
- * 19 digits), only ~27x further out. Beyond it the match is copied verbatim. */
+/* Longest amount pass_currency will scale. Python has no such limit; beyond it the match is
+ * copied verbatim. (A plain amount has no such limit: long_amount_words reads any length.) */
 #define CUR_DIGITS 512
 
 /* Cardinal for a scaled currency amount, from its digit string — the C mirror of
@@ -2553,15 +2772,19 @@ static void pass_currency(const char *in, char *out) {
                     if (digit_seq_sep(in, j)) out[o++] = ' ';   /* _sep_if_latin_tail */
                     i = j; continue;
                 }
-                long n = atoin_commas(in + ds, de - ds);
-                char pb[700];
                 /* Pence present and at/above the threshold -> singular (owner 2026-07-28);
                  * a pounds-only amount goes through pounds(), which applies the plural. */
                 int has_pence = 0;
                 if (ps >= 0 && atoin(in + ps, pe - ps) > 0) has_pence = 1;
-                if (has_pence && n >= POUNDS_PLURAL_FROM) pounds_with_pence(pb, n);
-                else pounds(pb, n);
-                strcpy(out + o, pb); o += (int)strlen(pb);
+                if (sig_digits(in + ds, de - ds) > 18) {
+                    o += long_amount_words(out + o, in + ds, de - ds, has_pence ? "punt" : NULL);
+                } else {
+                    int64_t n = atoin_commas(in + ds, de - ds);
+                    char pb[700];
+                    if (has_pence && n >= POUNDS_PLURAL_FROM) pounds_with_pence(pb, n);
+                    else pounds(pb, n);
+                    strcpy(out + o, pb); o += (int)strlen(pb);
+                }
                 if (ps >= 0) {
                     int pv = atoin(in + ps, pe - ps);
                     if (pv > 0) { char cb[700]; pence_words(cb, pv);
@@ -2675,7 +2898,10 @@ static const char *minute_phrase(int n, char *buf, size_t cap) {
     return buf;
 }
 
-static void pass_time(const char *in, char *out, int max) {
+/* which: TIME_COLON (_TIME, "3:45pm") and/or TIME_NOCOLON (_TIME_NOCOLON, "7pm", "7.30pm").
+ * Python runs them as two passes with _EMAIL_OR_URL between, so cyp_normalize_lang does too. */
+enum { TIME_COLON = 1, TIME_NOCOLON = 2 };
+static void pass_time(const char *in, char *out, int max, int which) {
     int i = 0, o = 0;
     while (in[i]) {
         int wb = !word_before(in, i);
@@ -2695,8 +2921,9 @@ static void pass_time(const char *in, char *out, int max) {
                 int matched = 0, mm = 0, mend = 0;
                 const char *mk = NULL;
                 int mlen = 0;
-                if (in[j] == ':' &&
-                    in[j + 1] >= '0' && in[j + 1] <= '5' && isdigit((unsigned char)in[j + 2])) {
+                int colon = in[j] == ':' &&
+                            in[j + 1] >= '0' && in[j + 1] <= '5' && isdigit((unsigned char)in[j + 2]);
+                if (colon && (which & TIME_COLON)) {
                     int end = j + 3;                    /* just past the two minute digits */
                     mend = end;
                     /* (?:\s?(y\.b\.|...|pm))?(?!\w). Greedy: try the marker after one
@@ -2721,7 +2948,8 @@ static void pass_time(const char *in, char *out, int max) {
                         matched = 1;
                         mm = atoin(in + j + 1, 2);
                     }
-                } else if (i == 0 || (in[i - 1] != ':' && in[i - 1] != '.' && in[i - 1] != ',')) {
+                } else if (!colon && (which & TIME_NOCOLON) &&
+                           (i == 0 || (in[i - 1] != ':' && in[i - 1] != '.' && in[i - 1] != ','))) {
                     /* The colonless clock: H(marker) and H.MM(marker), _TIME_NOCOLON's
                      * mirror. The marker is REQUIRED and GLUED (no whitespace try): "am"
                      * is a Welsh preposition, and a spaced allowance turns "5 am ddim"
@@ -2808,6 +3036,8 @@ static void pass_pence(const char *in, char *out) {
             while (isdigit((unsigned char)in[j]) || in[j] == ',') j++;
             if ((in[j] == 'p' || in[j] == 'c') && !(word_after(in, j + 1))) {
                 if (g_en) { en_pence_run(out + o, in + i, j - i); o += (int)strlen(out + o); }
+                else if (sig_digits(in + i, j - i) > 18)
+                    o += long_amount_words(out + o, in + i, j - i, "ceiniog");
                 else { char cb[700]; pence_words(cb, atoin_commas(in + i, j - i));
                        o += sprintf(out + o, "%s", cb); }
                 i = j + 1; continue;
@@ -3027,8 +3257,10 @@ static void pass_typographic(const char *in, char *out) {
  * the first word. Each step emulates one regex, in the regex's order. */
 static int pp_hs(char ch) { return ch == ' ' || ch == '\t'; }
 static int pp_bullet(const char *s, int i) {   /* • ‣ ◦ ▪ ▫ ● ■ □ : 3 bytes, or 0 */
-    unsigned char a = (unsigned char)s[i], b2 = (unsigned char)s[i + 1], c2 = (unsigned char)s[i + 2];
-    if (a != 0xE2) return 0;
+    /* Nothing past the NUL is read: the two bytes after s[i] used to be loaded before the lead
+     * byte was tested, so a 65,535-byte input (a full arena) read one byte past it. */
+    if ((unsigned char)s[i] != 0xE2 || !s[i + 1]) return 0;
+    unsigned char b2 = (unsigned char)s[i + 1], c2 = (unsigned char)s[i + 2];
     if (b2 == 0x80 && (c2 == 0xA2 || c2 == 0xA3)) return 3;
     if (b2 == 0x97 && (c2 == 0xA6 || c2 == 0x8F)) return 3;
     if (b2 == 0x96 && (c2 == 0xAA || c2 == 0xAB || c2 == 0xA0 || c2 == 0xA1)) return 3;
@@ -3129,13 +3361,11 @@ void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
     pass_pause_early(a, b); memcpy(a, b, strlen(b) + 1);
     /* Emoji first: their names are ordinary Welsh words and must go through every pass
      * below exactly as typed text would. */
-    pass_emoji(a, b); memcpy(a, b, strlen(b) + 1);
+    pass_emoji(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
     for (const Abbrev *ab = g_en ? ABBREV_EN : ABBREV; ab->pat; ab++) { pass_abbrev(a, b, ab); memcpy(a, b, strlen(b) + 1); }
     pass_deshout(a, b); memcpy(a, b, strlen(b) + 1);
-    /* Emails/URLs first: their dots and @ must reach no number or symbol pass, and "@" is
-     * the SCHWA in the phone inventory. Then Roman numerals BEFORE pass_acronym, which is
-     * [A-Z0-9]{2,} and would claim "IV" as a code and spell it "i·v". */
-    pass_email_url(a, b); memcpy(a, b, strlen(b) + 1);
+    /* Roman numerals BEFORE pass_acronym, which is [A-Z0-9]{2,} and would claim "IV" as a
+     * code and spell it "i·v". */
     pass_roman(a, b); memcpy(a, b, strlen(b) + 1);
     pass_acronym(a, b); memcpy(a, b, strlen(b) + 1);
     pass_date_num(a, b); memcpy(a, b, strlen(b) + 1);
@@ -3153,7 +3383,12 @@ void cyp_normalize_lang(const char *in, int lang, char *out, int max) {
     /* Before pass_integer, which would otherwise flatten "10 blynedd" to "deg blynedd"
      * and lose both the nasal mutation and the "deng" form. */
     if (!g_en) { pass_blynedd(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1); }  /* "N blynedd" is Welsh */
-    pass_time(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
+    /* Emails/URLs where Python reads them: after the colon clock, before the colonless one
+     * and before every pass that would take their digits or dots (pence, the digit/letter
+     * splitter, decimals, the number passes) -- "@" is the SCHWA in the phone inventory. */
+    pass_time(a, b, (int)sizeof(b), TIME_COLON); memcpy(a, b, strlen(b) + 1);
+    pass_email_url(a, b, (int)sizeof(b)); memcpy(a, b, strlen(b) + 1);
+    pass_time(a, b, (int)sizeof(b), TIME_NOCOLON); memcpy(a, b, strlen(b) + 1);
     pass_pence(a, b); memcpy(a, b, strlen(b) + 1);
     /* The digit/letter splitter -- placement is load-bearing on both edges; the full
      * reasoning lives at the function. Python mirror: _DIGIT_LETTER_BOUNDARY, at the

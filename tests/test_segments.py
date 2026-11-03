@@ -136,3 +136,86 @@ def test_soft_wraps_are_not_boundaries(g2p):
     assert segs[1].text == "fifteen forty four"
     segs = g2p.segments("Wyt ti'n dod i'r cyfarfod yn hwyrach heddiw, neu ddim o gwbl\n15:44")
     assert [(s.boundary, s.number_lang) for s in segs] == [("line", "cy"), ("end", "cy")]
+
+
+def test_c_span_caps_match_python(g2p):
+    """nl_sentences / nl_clauses close the text after their last counted boundary as one more
+    span, as Python does, so they write max + 1 spans. Sized max, that tail was written one past
+    the array: 2,100 short lines (a static buffer) or a bilingual sentence with 64 commas (a stack
+    buffer) overflowed -- seen with AddressSanitizer, 2026-10-07. At the caps C must still agree
+    with Python, and these are the inputs to run under ASan when the buffers change."""
+    so = REPO / "techiaith" / "g2p" / "c" / "libcy_phonemize.so"
+    if not so.exists():
+        pytest.skip("libcy_phonemize.so not built")
+    lib = ctypes.CDLL(str(so))
+    lib.cyp_create.restype = ctypes.c_void_p
+    lib.cyp_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+
+    class Seg(ctypes.Structure):
+        _fields_ = [("start", ctypes.c_int), ("count", ctypes.c_int), ("boundary", ctypes.c_int),
+                    ("number_lang", ctypes.c_int), ("phone_lang", ctypes.c_int)]
+    lib.cyp_segments.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(Seg),
+                                 ctypes.c_int, ctypes.POINTER(ctypes.c_int32), ctypes.c_int]
+    lib.cyp_text_to_ids.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.POINTER(ctypes.c_int32), ctypes.c_int]
+    h = lib.cyp_create(str(REPO / "techiaith" / "g2p").encode(), b"native")
+    assert h
+    segs = (Seg * 4096)()
+    ids = (ctypes.c_int32 * 65536)()
+    for text in ("-\n" * 2100, "-\n" * 2048, "-\n" * 2047 + "x"):      # 2049, 2048, 2048 segments
+        n = lib.cyp_segments(h, text.encode("utf-8"), 0, segs, 4096, ids, 65536)
+        assert [list(ids[s.start:s.start + s.count]) for s in segs[:n]] == [s.ids for s in g2p.segments(text)]
+        m = lib.cyp_text_to_ids(h, text.encode("utf-8"), ids, 65536)
+        assert list(ids[:m]) == g2p.text_to_ids(text)
+    base = "Mae'r tywydd yn braf heddiw the weather is lovely today"   # strong evidence both ways
+    for k in (63, 64, 65, 70):
+        text = base + ", x" * k + " diwedd"
+        m = lib.cyp_text_to_ids(h, text.encode("utf-8"), ids, 65536)
+        assert list(ids[:m]) == g2p.text_to_ids(text), k
+    # pass_emoji wrote each name into the normaliser's 64 KB arena unbounded: "↪" is one UTF-16
+    # unit and 38 bytes of name, so 1,730 of them in one segment overflowed it (ASan, 2026-10-07)
+    # and 4,000 -- inside Android's request limit -- killed the process (the fortified strcpy).
+    # Past the 8,192-phone cap C reports -1; a run that fits still matches Python.
+    lib.cyp_normalize_lang.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+    out = ctypes.create_string_buffer(65536)
+    for n in (1730, 4000, 21845):                                  # 21,845 x 3 bytes: a full arena
+        text = "↪" * n
+        assert lib.cyp_segments(h, text.encode("utf-8"), 0, segs, 4096, ids, 65536) == -1, n
+        assert lib.cyp_text_to_ids(h, text.encode("utf-8"), ids, 65536) == -1, n
+        for lang in (1, 2):
+            lib.cyp_normalize_lang(text.encode("utf-8"), lang, out, 65536)
+            assert 0 < len(out.value) < 65536, n
+    text = "↪" * 40
+    m = lib.cyp_text_to_ids(h, text.encode("utf-8"), ids, 65536)
+    assert list(ids[:m]) == g2p.text_to_ids(text)
+
+
+def test_c_numeric_forms_split_like_python(g2p):
+    """_split_sentences asks str.isalnum() (a title, a single-letter word) and str.isdigit() (what
+    may follow a full stop), and both are true for numeric forms str.isdecimal() rejects: "²" and
+    "①" are digits, "½" and "Ⅳ" numeric. C's predicate knew only decimals and Latin letters, so
+    since the curly-quote fix it read "Daeth ²Mr. Jones" as one sentence where Python reads two.
+    cyp__cp_numeric (cy_normalize.c) is Unicode 13's No/Nl table: checked here over the whole
+    code-point space, on the canonical interpreter only -- str.isnumeric() follows the running
+    interpreter's Unicode version."""
+    import unicodedata
+    so = REPO / "techiaith" / "g2p" / "c" / "libcy_phonemize.so"
+    if not so.exists():
+        pytest.skip("libcy_phonemize.so not built")
+    lib = ctypes.CDLL(str(so))
+    lib.cyp__cp_numeric.argtypes = [ctypes.c_long]
+    lib.cyp__cp_numeric.restype = ctypes.c_int
+    if unicodedata.unidata_version == "13.0.0":
+        want = lambda c: 0 if c.isdecimal() or c.isalpha() or not c.isnumeric() else 2 if c.isdigit() else 1
+        bad = [hex(cp) for cp in range(0x110000) if lib.cyp__cp_numeric(cp) != want(chr(cp))]
+        assert not bad, bad[:20]
+    lib.cyp_create.restype = ctypes.c_void_p
+    lib.cyp_create.argtypes = [ctypes.c_char_p, ctypes.c_char_p]
+    lib.cyp_segment_spans.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_int),
+                                      ctypes.POINTER(ctypes.c_int), ctypes.c_int]
+    h = lib.cyp_create(str(REPO / "techiaith" / "g2p").encode(), b"native")
+    a, e = (ctypes.c_int * 64)(), (ctypes.c_int * 64)()
+    for ch in "²¹½①Ⅳ⁰↉〇":     # ² ¹ ½ ① Ⅳ ⁰ ↉ 〇
+        for text in (f"Daeth {ch}Mr. Jones yma.", f"Mae {ch}a. Bore da.", f"Diwedd. {ch} Bore da."):
+            n = lib.cyp_segment_spans(h, text.encode("utf-8"), 0, a, e, 64)
+            b = lambda i: len(text[:i].encode("utf-8"))
+            assert list(zip(a[:n], e[:n])) == [(b(x), b(y)) for x, y in g2p.segment_spans(text)], text

@@ -2001,6 +2001,24 @@ C++	c++
 A+	a+
 A+ grade	a+ grade
 a+ b	a+ b
+Ewch i www.bbc.co.uk/cymrufyw am y newyddion diweddaraf.	ewch i w·w·w dot bbc dot co dot uk cymrufyw am y newyddion diweddaraf.
+www.bbc.co.uk am	w·w·w dot bbc dot co dot wc am
+http://www.bbc.co.uk/	w·w·w dot bbc dot co dot uk/
+https://s4c.cymru/clic	s pedwar c dot cymru clic
+www.x	www.x
+www.x.y	www.x.y
+a@b.c	a at b.c
+x.y@ab.cd.	x dot y at ab dot cd.
+-ab@cd.ef	-ab at cd dot ef
+evans@thyme	evans at thyme
+www.x.com/@user	w·w·w dot x dot com/ at user
+www.abc.com4/x	w·w·w dot abc dot com pedwar x
+www.BBC.co.uk	w·w·w dot bbc dot co dot wc
+https://s4c.cymru/IV	s pedwar c dot cymru y pedwerydd
+Gwefan: www.s4c.cymru/clic/7pm.	gwefan: w·w·w dot s pedwar c dot cymru clic saith o'r gloch y prynhawn
+www.x.com/7.30pm	w·w·w dot x dot com saith dot tri deg pm
+post@bangor.ac.uk	post at bangor dot ac dot wc
+e-bostiwch help@bangor.ac.uk heddiw am 3:45pm	e-bostiwch help at bangor dot ac dot wc heddiw am chwarter i bedwar y prynhawn
 README	readme
 CHANGELOG	changelog
 CONTRIBUTING	contributing
@@ -2055,6 +2073,68 @@ GIF	g·i·f
 JPEG	j·p·e·g
 UKIP	ukip
 y DWP a'r NHS	y dwp a'r nhs
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY	yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB	b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b
+MAE BCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHE YMA	mae bcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghe yma
+80/12/10/2026	wyth deg un deg dau deg dwy fil dau ddeg chwech
+x:80/12/10/2026	x wyth deg un deg dau deg dwy fil dau ddeg chwech
+rhif 1/26/26/12/2026	rhif un dau ddeg chwech dau ddeg chwech un deg dau dwy fil dau ddeg chwech
+ar 32/00/31/1/00.	ar tri deg dau dim dim tri deg un un dim dim.
+8/12/10/2026	yr wythfed o ragfyr deg dwy fil dau ddeg chwech
+4294967297af	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg saith af
+4294967298il	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg wyth il
+8589934593ain	wyth biliwn pum cant wyth deg naw miliwn naw cant tri deg pedwar mil pum cant naw deg tri ain
+12345678901af	un deg dau biliwn tri chant pedwar deg pump miliwn chwe chant saith deg wyth mil naw cant un af
+2147483648	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth
+2147483649	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg naw
+4294967295	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg pump
+4294967296	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech
+4294967297	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg saith
+6442450944	chwe biliwn pedwar cant pedwar deg dau miliwn pedwar cant pum deg mil naw cant pedwar deg pedwar
+9999999999999	naw mil naw cant naw deg naw biliwn naw cant naw deg naw miliwn naw cant naw deg naw mil naw cant naw deg naw
+999999999999999999	naw cant naw deg naw miliwn naw cant naw deg naw mil naw cant naw deg naw biliwn naw cant naw deg naw miliwn naw cant naw deg naw mil naw cant naw deg naw
+2,147,483,648	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth
+rhif 4294967296 yma	rhif pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech yma
+£2147483648	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth o bunnoedd
+£4294967296	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech o bunnoedd
+£ 4294967296	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech o bunnoedd
+£3000000000	tri biliwn o bunnoedd
+£9999999999999	naw mil naw cant naw deg naw biliwn naw cant naw deg naw miliwn naw cant naw deg naw mil naw cant naw deg naw o bunnoedd
+£2,147,483,648	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth o bunnoedd
+£2147483648.50	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth bunt pum deg ceiniog
+£ 5bn	pum biliwn o bunnoedd
+£ 3bn	tri biliwn o bunnoedd
+£4.5bn	pedwar biliwn pum can miliwn o bunnoedd
+£2147483648k	dwy fil cant pedwar deg saith biliwn pedwar cant wyth deg tri miliwn chwe chant pedwar deg wyth mil o bunnoedd
+2147483648%	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth y cant
+2147483648.5	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth pwynt pump
+2147483648 kg	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth cilogram
+2147483648km	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth cilomedr
+2147483648.5kg	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth pwynt pum cilogram
+2147483648 blynedd	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth mlynedd
+2147483648p	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth geiniog
+4294967296c	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech ceiniog
+A2147483648	a dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth
+2147483648fed	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth fed
+2147483648th	dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth th
+4294967296x	pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech x
+Mae 4294967296 o bobl	mae pedwar biliwn dau gant naw deg pedwar miliwn naw cant chwe deg saith mil dau gant naw deg chwech o bobl
+£9223372036854775808	naw dau dau tri tri saith dau dim tri chwech wyth pump pedwar saith saith pump wyth dim wyth o bunnoedd
+£10000000000000000000	un dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim o bunnoedd
+£18446744073709551617	un wyth pedwar pedwar chwech saith pedwar pedwar dim saith tri saith dim naw pump pump un chwech un saith o bunnoedd
+£99999999999999999999	naw naw naw naw naw naw naw naw naw naw naw naw naw naw naw naw naw naw naw naw o bunnoedd
+£9,223,372,036,854,775,808	naw dau dau tri tri saith dau dim tri chwech wyth pump pedwar saith saith pump wyth dim wyth o bunnoedd
+£ 27670116110564327424	dau saith chwech saith dim un un chwech un un dim pump chwech pedwar tri dau saith pedwar dau pedwar o bunnoedd
+£9223372036854775808.50	naw dau dau tri tri saith dau dim tri chwech wyth pump pedwar saith saith pump wyth dim wyth bunt pum deg ceiniog
+£10000000000000000007.05	un dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim saith bunt pum ceiniog
+£0009223372036854775808	naw dau dau tri tri saith dau dim tri chwech wyth pump pedwar saith saith pump wyth dim wyth o bunnoedd
+9223372036854775808p	naw dau dau tri tri saith dau dim tri chwech wyth pump pedwar saith saith pump wyth dim wyth geiniog
+10000000000000000000p	un dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim dim ceiniog
+18446744073709551618c	un wyth pedwar pedwar chwech saith pedwar pedwar dim saith tri saith dim naw pump pump un chwech un wyth geiniog
+£8888888888888888888888888888888888888888	wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth wyth o bunnoedd
+£7777777777777777777777777777777777777777.07	saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith saith bunt saith geiniog
 “Chapter VI” Bank	“chapter chwech” bank
 «Pennod IV»	«pennod pedwar»
 'Chapter IV'	'chapter y pedwerydd'

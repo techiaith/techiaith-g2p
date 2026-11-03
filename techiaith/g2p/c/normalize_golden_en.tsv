@@ -2001,6 +2001,24 @@ C++	c++
 A+	a+
 A+ grade	a+ grade
 a+ b	a+ b
+Ewch i www.bbc.co.uk/cymrufyw am y newyddion diweddaraf.	ewch i w·w·w dot bbc dot co dot uk cymrufyw am y newyddion diweddaraf.
+www.bbc.co.uk am	w·w·w dot bbc dot co dot wc am
+http://www.bbc.co.uk/	w·w·w dot bbc dot co dot uk/
+https://s4c.cymru/clic	s four c dot cymru clic
+www.x	www.x
+www.x.y	www.x.y
+a@b.c	a at b.c
+x.y@ab.cd.	x dot y at ab dot cd.
+-ab@cd.ef	-ab at cd dot ef
+evans@thyme	evans at thyme
+www.x.com/@user	w·w·w dot x dot com/ at user
+www.abc.com4/x	w·w·w dot abc dot com four x
+www.BBC.co.uk	w·w·w dot bbc dot co dot wc
+https://s4c.cymru/IV	s four c dot cymru the fourth
+Gwefan: www.s4c.cymru/clic/7pm.	gwefan: w·w·w dot s four c dot cymru clic seven o'clock p·m
+www.x.com/7.30pm	w·w·w dot x dot com seven dot thirty pm
+post@bangor.ac.uk	post at bangor dot ac dot wc
+e-bostiwch help@bangor.ac.uk heddiw am 3:45pm	e-bostiwch help at bangor dot ac dot wc heddiw am three forty five p·m
 README	readme
 CHANGELOG	changelog
 CONTRIBUTING	contributing
@@ -2055,6 +2073,68 @@ GIF	g·i·f
 JPEG	j·p·e·g
 UKIP	ukip
 y DWP a'r NHS	y dwp a'r nhs
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY	yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB	b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b·b
+MAE BCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHEBCDFGHE YMA	mae bcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghebcdfghe yma
+80/12/10/2026	eighty twelve ten twenty twenty six
+x:80/12/10/2026	x eighty twelve ten twenty twenty six
+rhif 1/26/26/12/2026	rhif one twenty six twenty six twelve twenty twenty six
+ar 32/00/31/1/00.	ar thirty two zero zero thirty one one zero zero.
+8/12/10/2026	the eighth of december ten twenty twenty six
+4294967297af	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety seven af
+4294967298il	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety eight il
+8589934593ain	eight billion five hundred and eighty nine million nine hundred and thirty four thousand five hundred and ninety three ain
+12345678901af	twelve billion three hundred and forty five million six hundred and seventy eight thousand nine hundred and one af
+2147483648	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight
+2147483649	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty nine
+4294967295	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety five
+4294967296	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six
+4294967297	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety seven
+6442450944	six billion four hundred and forty two million four hundred and fifty thousand nine hundred and forty four
+9999999999999	nine nine nine nine nine nine nine nine nine nine nine nine nine
+999999999999999999	nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine
+2,147,483,648	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight
+rhif 4294967296 yma	rhif four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six yma
+£2147483648	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight pounds
+£4294967296	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six pounds
+£ 4294967296	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six pounds
+£3000000000	three billion pounds
+£9999999999999	nine nine nine nine nine nine nine nine nine nine nine nine nine pounds
+£2,147,483,648	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight pounds
+£2147483648.50	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight pounds fifty
+£ 5bn	five billion pounds
+£ 3bn	three billion pounds
+£4.5bn	four billion five hundred million pounds
+£2147483648k	two one four seven four eight three six four eight zero zero zero pounds
+2147483648%	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight percent
+2147483648.5	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight point five
+2147483648 kg	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight kilograms
+2147483648km	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight kilometres
+2147483648.5kg	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight point five kilograms
+2147483648 blynedd	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight blynedd
+2147483648p	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight pence
+4294967296c	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six pence
+A2147483648	a dau biliwn cant pedwar deg saith miliwn pedwar cant wyth deg tri mil chwe chant pedwar deg wyth
+2147483648fed	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eight fed
+2147483648th	two billion one hundred and forty seven million four hundred and eighty three thousand six hundred and forty eighth
+4294967296x	four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six x
+Mae 4294967296 o bobl	mae four billion two hundred and ninety four million nine hundred and sixty seven thousand two hundred and ninety six o bobl
+£9223372036854775808	nine two two three three seven two zero three six eight five four seven seven five eight zero eight pounds
+£10000000000000000000	one zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero pounds
+£18446744073709551617	one eight four four six seven four four zero seven three seven zero nine five five one six one seven pounds
+£99999999999999999999	nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine nine pounds
+£9,223,372,036,854,775,808	nine two two three three seven two zero three six eight five four seven seven five eight zero eight pounds
+£ 27670116110564327424	two seven six seven zero one one six one one zero five six four three two seven four two four pounds
+£9223372036854775808.50	nine two two three three seven two zero three six eight five four seven seven five eight zero eight pounds fifty
+£10000000000000000007.05	one zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero seven pounds five
+£0009223372036854775808	nine two two three three seven two zero three six eight five four seven seven five eight zero eight pounds
+9223372036854775808p	nine two two three three seven two zero three six eight five four seven seven five eight zero eight pence
+10000000000000000000p	one zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero zero pence
+18446744073709551618c	one eight four four six seven four four zero seven three seven zero nine five five one six one eight pence
+£8888888888888888888888888888888888888888	eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight eight pounds
+£7777777777777777777777777777777777777777.07	seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven seven pounds seven
 “Chapter VI” Bank	“chapter six” bank
 «Pennod IV»	«pennod four»
 'Chapter IV'	'chapter the fourth'

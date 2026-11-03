@@ -2,7 +2,146 @@
 
 All notable changes to `techiaith-g2p` are documented in this file.
 
-## [1.4.0] — unreleased (2026-09-07 → 2026-09-08; one release for the whole text-structure programme)
+## [1.5.0] — 2026-11-03
+
+Code only: `data_version` stays `718542836d1dcbdd` (no data file and no emission policy changes).
+Golden corpora at the end of this section: `normalize_golden.tsv` / `normalize_golden_en.tsv`
+2,152 / 2,324 rows, `segments_golden.tsv` 192, `word_marks_golden.tsv` 245.
+
+### Added
+- **Word highlighting: where each segment and each spoken word came from in the source text.**
+  The segments say what to render, but not where it came from, and the WORD_SEP-delimited
+  phone-words do not line up one-to-one with source words ("£9.50" is five spoken words, a bullet
+  none). Three calls, Python and C, held together by `word_marks_golden.tsv` (245 rows, AUTO and
+  forced `cy`/`en`, `test_word_marks.c` in `make check`), the C-vs-Python cross-check in
+  `tests/test_word_marks.py`, and a word-mark pass in both differential fuzzers:
+  - `BangorG2P.segment_spans(text, lang=None)` / C `cyp_segment_spans`: each segment's source
+    span, parallel to `segments()` — the sentence or line with the whitespace around it trimmed,
+    before a heading's full stop is added. Consumers raise a sentence event over it.
+  - `BangorG2P.word_marks(text, lang=None)` → `[WordMark(seg, word, start, end)]` / C
+    `cyp_word_marks` → `CypWordMark {seg, word, src_start, src_end}`: one mark per source word
+    that starts a new spoken word, by **prefix counting** per segment — the phone-words of the
+    segment's text up to the end of each source word, in the segment's `phone_lang`, clamped so
+    marks rise strictly and stay below the segment's count. Phonemising the prefix rather than the
+    word keeps every context effect (numbers, acronym runs, brand splits, heteronyms). From a
+    segment's 32nd word the prefix is a window of the 16 to 31 words before it (`_WM_WINDOW`), so
+    the cost is linear: whole prefixes cost O(words × length), and prose whose sentences start in
+    lower case is one segment however long (4 KB of it took 465 ms in C at -O2 on an M-series Mac;
+    with the window 25 ms, 0.02–0.035 ms per source word). The window gave the whole-prefix marks
+    on every long text measured. Measured consistent (the count at a segment's last word equals
+    its own) on 3,001 of 3,002 Welsh segments (brawddegau-tagiedig) and 2,180 of 2,184 English
+    ones (MASC written), with and without the window; the clamp keeps the rest in order, at worst
+    leaving a word unmarked. Compute marks per utterance, off the path to the first audio.
+  - `BangorG2P.word_starts(ids)` / C `cyp_word_starts`: the id index where each phone-word of one
+    segment's ids begins, so a model's per-id durations give each word's first frame and no
+    platform re-derives the WORD_SEP layout. A WORD_SEP directly before EOS starts nothing, so a
+    piece cut just after one (a segment over the model's id cap: `[…, PAD, 3, EOS]`) counts only its
+    own words and the ordinals carry across the pieces; after a hard split inside one over-long
+    phone-word, the next piece's first phone-word continues the last.
+  Offsets are code points in Python and UTF-8 bytes in C. `Segment` is unchanged. The C calls use
+  the library's static buffers like every other: callers keep their existing lock around them.
+  Size `max_segs` at 2,049 (2,048 boundaries plus the tail) for `cyp_segments` and
+  `cyp_segment_spans` alike: with fewer, `cyp_segments` truncates silently while the span and mark
+  calls fail, so the tail would be spoken with no events.
+  The ctypes binding (`bindings/python/cy_phonemize.py`) gains `segment_spans`, `word_marks` and
+  `word_starts`.
+
+### Fixed
+- **C on Windows: every number of 2³¹ and up was read wrong** (present in 1.4.0; the Windows app
+  has shipped it). The C normaliser built numbers in a `long`, which is 64 bits on macOS, Linux,
+  Android and iOS (LP64) but 32 bits on Windows (LLP64), so there they wrapped: "£3bn" read "minws
+  un biliwn dau gant naw deg pedwar miliwn … o bunnoedd" ("minus one billion two hundred and
+  ninety four million … pounds") where the API says "tri biliwn o bunnoedd", and 2³¹ itself
+  wrapped to −2³¹, whose negation overflows. A native Windows run of `test_norm` failed 10 of
+  2,104 Welsh and 11 of 2,276 English rows. Every number is now an `int64_t`, and
+  `cyp_num_to_welsh` takes one (the same register on LP64 hosts, where no output changes:
+  byte-identical normalise, AUTO normalise and ids on 14,900 big-number probe inputs). The longs
+  left hold code points and a headword count. Built for Windows x64, x86 and arm64 with the shim
+  flags, with no warnings (the old code drew `-Wtype-limits` on exactly these comparisons). 34
+  rows join each normalise golden and three sentences the segment and word-mark goldens.
+- **C: a pound or pence amount of 2⁶³ crashed the normaliser** (present in 1.4.0, on every host).
+  `atoin_commas` reads a plain amount modulo 2⁶⁴, so "£9223372036854775808",
+  "9223372036854775808p" and any amount ≡ 2⁶³ (mod 2⁶⁴) reached `cyp_num_to_welsh` as INT64_MIN,
+  whose negation is INT64_MIN again: it recursed until the stack overflowed (SIGSEGV on macOS;
+  Android, iOS and Linux run the same code). `cyp_num_to_welsh(INT64_MIN)` now reads 2⁶³ digit by
+  digit, as Python's `num_to_welsh(-2**63)` does, and `en_cardinal` is guarded the same way; no
+  other output changes (14,900 probe inputs: only the 25 that crashed differ).
+- **C: a plain pound or pence amount of 2⁶³ and up read a wrapped number** (present in 1.4.0, on
+  every host; Welsh only, English reads the digit string). `atoin_commas` read "£<digits>" and
+  "<digits>p" modulo 2⁶⁴, so "£10000000000000000000" said "minws wyth pedwar pedwar chwech … punt"
+  and "£18446744073709551617" "un bunt", where the API reads the digits one by one ("un dim dim …
+  o bunnoedd"). An amount of more than 18 significant digits now takes that reading, with the
+  plural, the singular before pence and the soft mutation after saith/wyth as Python builds them;
+  shorter amounts are unchanged. On the 14,900 big-number probe inputs C now equals Python in
+  every column (normalise `cy`/`en`, AUTO, ids, `cyp_num_to_welsh`); 1,152 Welsh rows differed. 14
+  rows join the normalise goldens.
+- **C: emails and web addresses read as the API reads them.** `pass_email_url` was an
+  approximation of `_EMAIL_OR_URL` that ran first in the C normaliser, where Python runs it after
+  the colon clock: on a targeted corpus of 20,026 address-shaped inputs, C and Python disagreed on
+  about half. Device and API said "Ewch i www.bbc.co.uk/cymrufyw" differently — C stopped the
+  address at the "/" and read "uk" as "wc", while the API keeps the path in the match ("uk/cymrufyw"
+  is not a label it maps) and says "U K". C also took "a@b.c", "www.x" and
+  "1.2.JavaMail.evans@thyme" for addresses, which Python does not (the host must end in a dot and
+  two letters). C now mirrors the pattern (host as `re` backtracks it, the `/\S*` path, `\b`) and
+  its place in the pipeline — `pass_time` is split into its colon and colonless halves with the
+  address pass between them, as in Python. 20,026/20,026 then agree (normalise `cy` and `en`, and
+  ids), and 18 rows join `normalize_golden.tsv` / `normalize_golden_en.tsv`, with the URL
+  sentence in `segments_golden.tsv` and `word_marks_golden.tsv`. This moves C
+  to the API's behaviour, quirks included: the owner's ".uk" → "wc" applies only when nothing
+  follows the host ("www.bbc.co.uk/" says "uk/"), and a clock time inside a path is read after the
+  address ("www.x.com/7.30pm" → "… dot com saith dot tri deg pm").
+- **C: a title after a curly quote, a guillemet, a dash or a no-break space ended the sentence.**
+  `nl_title_before` treated any non-ASCII byte before "Mr"/"Mrs"/"Ms"/"Dr" as a letter, so in
+  'Dywedodd Jeff Flake, “Mr. Llywydd, …' C split after "Mr." where Python (the API) does not: two
+  segments, a 250 ms gap and a sentence-final fall in the middle of a name. It now decodes the
+  code point and tests it as Python does (`str.isalnum()`). The six such rows join
+  `segments_golden.tsv` and so `word_marks_golden.tsv`. A non-Latin letter
+  directly before the title stays inside the known Latin-only letter-class gap
+  (docs/FOLLOWUPS.md §G).
+  `str.isalnum()` is also true for numeric forms (`²`, `½`, `①`, `Ⅳ`), which the first version of
+  this fix read as non-alphanumeric — a regression against 1.4.0, which agreed with Python on them
+  by accident. The splitter now asks Python's questions with the numeric No/Nl code points
+  included (`cyp__cp_numeric`, Unicode 13, checked over the whole code-point space): `isalnum()`
+  before a title and for the single-letter rule, `isdigit()` for what may follow a full stop
+  ("Diwedd. ² …" splits, "… ½ …" does not). The last two were 1.4.0 divergences too. Five rows
+  join `segments_golden.tsv`; `²Mr` itself still differs in ids, in the normaliser
+  (docs/FOLLOWUPS.md §G).
+- **C: two out-of-bounds writes in the sentence and clause splitters** (memory safety; no output
+  change below the caps). `nl_sentences` stops after 2,048 boundaries and `nl_clauses` after 64,
+  then — as Python's `_split_sentences` / `_split_clauses` do — still closes the rest of the text
+  as one more span, but every caller had sized its array for the cap alone, so that last span
+  was written one element past the end. AddressSanitizer found a global-buffer-overflow on 2,100
+  short lines (4.2 KB) and a stack-buffer-overflow on a bilingual sentence with 64 or more
+  comma clauses (about 270 bytes). The arrays now hold the extra span, so C also agrees with
+  Python at the caps (`tests/test_segments.py::test_c_span_caps_match_python`).
+- **C: an ordinal suffix after a digit run past 2³¹ read as a small ordinal** (present in 1.4.0).
+  `atoin` overflowed (undefined behaviour, flagged by UBSan on the committed goldens) and wrapped,
+  and `pass_ordinal` tests the whole run against 1..31, so "4294967297af" read "cyntaf" where the
+  API reads the number. It now saturates. Four rows join the normalise goldens.
+- **C: a date found inside a slash run that has none** (present in 1.4.0). When `_DATE_NUM`
+  matches a d/m/y whose day or month is out of range, Python leaves it as it is and `re.sub`
+  resumes after it; C stepped one byte and found a date inside, so "80/12/10/2026" read "wyth deg
+  y deuddegfed o hydref …" where the API reads the numbers. C now resumes after the match too: 0
+  of 19,604 date-shaped inputs differ (723 did). Five rows join the normalise goldens.
+- **C: an all-capital word of 128 letters or more was spelled out** (present in 1.4.0). The
+  acronym gate reads a capitalised token of four or more letters with a vowel as a word, at any
+  length in Python; C skipped the gate from 128 letters (the size of its lower-case buffer) and
+  spelled the token, so "A" × 128 gave 769 ids where the API gives 515. C now applies that rule at
+  any length (no vocabulary entry is that long). From 512 letters the LTS's documented word cap
+  still differs. Five rows join `normalize_golden.tsv` / `normalize_golden_en.tsv`.
+- **C: a run of emoji overflowed the normaliser's 64 KB arena** (memory safety; present in 1.4.0;
+  no output change below the caps). `pass_emoji` copied each name unbounded, and it is the
+  steepest expander in the file: "↪" is one UTF-16 unit and a 38-byte name, so 1,725 of them in one
+  sentence (5,175 bytes) overflowed (AddressSanitizer), inside Android's 4,000-character request
+  limit; 4,000 killed the process. It now stops when the arena is full, as the bounded passes do
+  (text that long is far past the 8,192-phone cap, so no speech changes), and two lookaheads
+  (`pp_bullet`, `emoji_skip_len`) no longer read past the end of a full arena. Re-measured in both
+  languages, no construct overflows below 6,370 bytes (a digit run through `pass_integer`, as
+  before) or 5,244 UTF-16 units (🆎, whose name later passes expand again). The passes still
+  unbounded are listed in docs/FOLLOWUPS.md ("Arena hardening"); the regression inputs are in
+  `test_c_span_caps_match_python`.
+
+## [1.4.0] — 2026-09-08 (one release for the whole text-structure programme)
 
 `data_version` **moves**: `e015a51f4373ef2b` → `718542836d1dcbdd`. The per-word language prior
 `data/lang/lang_prior.tsv` joins the hash and the emission policy goes to v5 (`route=prior+excl`),

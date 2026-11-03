@@ -17,6 +17,7 @@ sys.path.insert(0, str(_REPO / "bindings" / "python"))
 
 from techiaith.g2p.bangor_g2p import BangorG2P
 from cy_phonemize import CyPhonemizer  # noqa: E402
+from diff_fuzz_c_parity import marks_py  # noqa: E402
 
 ACCENTS = "âêîôûŵŷëïüäöáéíóúàèìòùñçøœæÂÊÎÔÛŴŶ"
 LATIN_EXT = "".join(chr(c) for c in range(0x0100, 0x0180))  # all Latin Ext-A
@@ -223,6 +224,19 @@ def main() -> int:
             if r != c:
                 if mism < 20:
                     print(f"  [{mode}] MISMATCH {t!r}\n     py={sym(r)}\n     c ={sym(c)}")
+                mism += 1
+                continue
+            try:                                   # word highlighting: spans and word marks
+                r = marks_py(ref, t)
+            except Exception as e:
+                r = ("PYERR", type(e).__name__)
+            try:
+                c = (lib.segment_spans(t), lib.word_marks(t))
+            except Exception as e:
+                c = ("CERR", type(e).__name__)
+            if r != c:
+                if mism < 20:
+                    print(f"  [{mode}] MARKS MISMATCH {t!r}\n     py={r}\n     c ={c}")
                 mism += 1
         print(f"[{mode}] {len(corpus) - mism}/{len(corpus)} match" + ("  ✓" if not mism else "  FAIL"))
         bad += mism

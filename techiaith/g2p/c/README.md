@@ -112,7 +112,10 @@ built `.so`) diffs live Python against C. See the comment above the `fuzz` targe
 ## API (`cy_phonemize.h`)
 `cyp_create(core_dir)` · `cyp_text_to_ids(p, utf8, out, max)` · `cyp_data_version(p)`
 · `cyp_num_symbols(p)` · `cyp_destroy(p)`. Shells must assert
-`model.data_version == cyp_data_version()` at load.
+`model.data_version == cyp_data_version()` at load. Rendering units: `cyp_segments` +
+`cyp_boundary_gap_ms`; word and sentence highlighting: `cyp_segment_spans`, `cyp_word_marks`,
+`cyp_word_starts` (header comments; docs/text-structure-programme.md §3.1, §3.8). None of the
+calls that take a handle is reentrant: one lock around each call and its copy-out.
 
 ## Next C increments (mirror the Python, each golden-gated)
 - Welsh LTS (OOV) · text normalization (numbers/dates/…) · native English G2P.

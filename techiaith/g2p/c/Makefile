@@ -45,22 +45,25 @@ test_ssml: test_ssml.c test_common.h $(OBJ)
 	$(CC) $(CFLAGS) $< $(OBJ) -o $@
 test_segments: test_segments.c test_common.h $(OBJ)
 	$(CC) $(CFLAGS) $< $(OBJ) -o $@
+test_word_marks: test_word_marks.c test_common.h $(OBJ)
+	$(CC) $(CFLAGS) $< $(OBJ) -o $@
 
 # libcy_phonemize.so is a prerequisite even though no ./test_* binary links it: the
 # Python C-vs-Python cross-checks in tests/test_ssml_primitives.py load it via ctypes.
 # Without it here, `make check` can pass green against freshly built test binaries
 # while pytest silently certifies a stale .so -- which is exactly what happened when
 # the isolated-K change landed (make check 82/82, pytest reporting C/Python divergence).
-check: test_golden test_lts test_norm test_bilingual test_ssml test_segments libcy_phonemize.so
+check: test_golden test_lts test_norm test_bilingual test_ssml test_segments test_word_marks libcy_phonemize.so
 	./test_golden $(CORE)
 	./test_lts $(CORE)
 	./test_norm $(CORE)
 	./test_bilingual $(CORE)
 	./test_ssml $(CORE)
 	./test_segments $(CORE)
+	./test_word_marks $(CORE)
 
 clean:
-	rm -f *.o *.a *.so test_golden test_lts test_norm test_bilingual test_ssml test_segments
+	rm -f *.o *.a *.so test_golden test_lts test_norm test_bilingual test_ssml test_segments test_word_marks
 
 # The differential fuzzers are not part of `check`: they need Python and the built .so, and
 # they are slower. They ARE the only gate that catches a Python/C divergence the frozen corpus

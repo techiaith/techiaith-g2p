@@ -1552,17 +1552,39 @@ static void number_score(CyPhonemizer *p, const unsigned char *s, size_t len, in
  * ASCII whitespace or the end (not after a single-letter word: "e.e.", "y.b.", "a.m."), or
  * at a newline; inside a sentence with evidence for BOTH languages, clauses end at , ; :
  * before whitespace or at a dash between spaces. A span with no evidence takes the language
- * of the span before it; the first defaults to Welsh. */
-enum { NL_MAX_SPANS = 2048 };
+ * of the span before it; the first defaults to Welsh.
+ * nl_sentences and nl_clauses stop looking for boundaries after `max` of them and then, like
+ * Python, still close the text after the last one as one more span: they write up to max + 1
+ * spans, so every array they fill has room for max + 1 (NL_SPANS for sentences). Sized `max`,
+ * the tail span was written one past the end -- a 4.2 KB text of 2,100 short lines, or a
+ * bilingual sentence with 64 commas, overflowed (AddressSanitizer, 2026-10-07). */
+enum { NL_MAX_SPANS = 2048, NL_SPANS = NL_MAX_SPANS + 1 };
 typedef struct { size_t start, end, dend; int lang; int kind; } NlSpan;   /* kind: CYP_BOUNDARY_* */
 static int nl_ws(unsigned char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; }
+/* str.isalnum() and str.isdigit() for one code point, as _split_sentences calls them: the decimal
+ * digits and Latin letters cyp__cp_is_alnum knows, plus the numeric No/Nl code points
+ * (cyp__cp_numeric) -- "²", "½", "①", "Ⅳ" are alphanumeric to Python, and "²" and "①" are digits. */
+static int nl_isalnum(long cp) { return cyp__cp_is_alnum(cp) || cyp__cp_numeric(cp); }
+static int nl_isdigit(long cp) { return (cyp__cp_is_alnum(cp) && !cyp__cp_is_alpha(cp)) || cyp__cp_numeric(cp) == 2; }
+static int nl_ascii_alpha(unsigned char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'); }
 /* bangor_g2p._NL_TITLES: a "." after Dr/Mr/Mrs/Ms is not a sentence end. The word before
  * position i is the run of ASCII letters ending there (the titles are ASCII), bounded by a
- * non-alphanumeric byte or the span start. */
+ * non-alphanumeric code point or the span start. ASCII by value, not isalpha(): under a UTF-8
+ * locale macOS's isalpha() is true for 65 bytes >= 0x80, and a host process may set one. */
 static int nl_title_before(const unsigned char *s, size_t start, size_t i) {
     size_t k = i;
-    while (k > start && isalpha(s[k - 1])) k--;
-    if (k > start && (isalnum(s[k - 1]) || s[k - 1] >= 0x80)) return 0;
+    while (k > start && nl_ascii_alpha(s[k - 1])) k--;
+    if (k > start) {
+        /* Python: `not text[k - 1].isalnum()` on the CODE POINT before the run. A letter there
+         * (é, ŵ) makes the word longer than any title, a digit or a numeric form ("²", "½")
+         * makes it no word -- either way not a title. Any other byte >= 0x80 used to count as
+         * alphanumeric too, so after a curly quote, a guillemet or a dash ("“Mr. Llywydd",
+         * "—Dr. Jones") C ended a sentence that Python did not. */
+        size_t q = k - 1;
+        while (q > start && (s[q] & 0xC0) == 0x80) q--;
+        long cp; nl_utf8_next(s + q, &cp);
+        if (nl_isalnum(cp)) return 0;
+    }
     size_t L = i - k; char w[8];
     if (L == 0 || L > 3) return 0;
     for (size_t t = 0; t < L; t++) w[t] = (char)tolower(s[k + t]);
@@ -1584,7 +1606,7 @@ static int nl_kind(const unsigned char *s, size_t a, size_t b) {   /* newlines i
 static int nl_follows(const unsigned char *s, size_t m, size_t n) {
     if (m >= n) return 1;
     long cp; int len = nl_utf8_next(s + m, &cp);
-    if (cyp__cp_is_alnum(cp) && !cyp__cp_is_alpha(cp)) return 1;               /* digit */
+    if (nl_isdigit(cp)) return 1;                                              /* str.isdigit() */
     if (cp == '"' || cp == '\'' || cp == 0xAB || cp == 0x2018 || cp == 0x201C) return 1;   /* " ' « ‘ “ */
     if (!cyp__cp_is_alpha(cp)) return 0;
     char one[8], low[16]; memcpy(one, s + m, (size_t)len); one[len] = 0;
@@ -1630,7 +1652,7 @@ static int nl_sentences(const unsigned char *s, size_t n, NlSpan *out, int max) 
         }
         long cp; int len = nl_utf8_next(s + i, &cp);
         cls_prev2 = cls_prev;
-        cls_prev = cyp__cp_is_alpha(cp) ? 1 : cyp__cp_is_alnum(cp) ? 2 : 0;
+        cls_prev = cyp__cp_is_alpha(cp) ? 1 : nl_isalnum(cp) ? 2 : 0;
         i += (size_t)len;
     }
     if (start < n || k == 0) { out[k].start = start; out[k].end = n; out[k].dend = n; out[k].kind = CYP_BOUNDARY_END; k++; }
@@ -1670,14 +1692,14 @@ static int nl_clauses(const unsigned char *s, size_t start, size_t end, NlSpan *
 static int number_spans(CyPhonemizer *p, const char *text, NlSpan *out, int max, int default_lang) {
     const unsigned char *s = (const unsigned char *)text;
     size_t n = strlen(text);
-    static NlSpan sents[NL_MAX_SPANS];
+    static NlSpan sents[NL_SPANS];
     int ns = nl_sentences(s, n, sents, NL_MAX_SPANS);
     int k = 0, lang = default_lang;
     for (int a = 0; a < ns && k < max; a++) {
         int sc = 0, strong_cy = 0, strong_en = 0;
         number_score(p, s + sents[a].start, sents[a].end - sents[a].start, &sc, &strong_cy, &strong_en);
         if (strong_cy && strong_en) {
-            NlSpan cl[64];
+            NlSpan cl[64 + 1];                       /* 64 clauses, then the rest as one */
             int nc = nl_clauses(s, sents[a].start, sents[a].end, cl, 64);
             for (int b = 0; b < nc && k < max; b++) {
                 int s2 = 0, x1, x2;
@@ -1755,24 +1777,40 @@ int cyp_boundary_gap_ms(int boundary) {
     default: return 0;
     }
 }
+/* The raw source span of each segment, in segments_flat's order: each nl_sentences span up to its
+ * delimiter end, ASCII whitespace trimmed from both ends, empty spans dropped (so a segment index
+ * is not a sentence index). out[k].start/.end are that trimmed [a, e) in bytes -- the source text,
+ * before any heading "." is appended to a copy -- and .kind the boundary that follows. One walk
+ * shared by segments_flat, cyp_segment_spans and cyp_word_marks, so a span cannot disagree with the
+ * segment it labels. Writes up to max + 1 spans, as nl_sentences does. Mirrors
+ * BangorG2P._source_segments. */
+static int nl_segment_spans(const unsigned char *s, size_t n, NlSpan *out, int max) {
+    int ns = nl_sentences(s, n, out, max), k = 0;
+    for (int i = 0; i < ns; i++) {
+        size_t a = out[i].start, e = out[i].dend;
+        int kind = out[i].kind;
+        while (a < e && nl_ws(s[a])) a++;
+        while (e > a && nl_ws(s[e - 1])) e--;
+        if (e == a) continue;
+        out[k].start = a; out[k].end = out[k].dend = e; out[k].kind = kind; out[k].lang = 0; k++;
+    }
+    return k;
+}
 /* The utterance as rendering units -- mirrors BangorG2P.segments. Returns the segment count;
  * each segment's phones (flat, no BOS/EOS) are written into flat_all[seg.start .. +seg.count).
  * -1 on overflow. */
 static int segments_flat(CyPhonemizer *p, const char *text, int lang, CypSegment *segs, int max_segs,
                          int32_t *flat_all, int cap) {
-    static NlSpan sp[NL_MAX_SPANS];
+    static NlSpan sp[NL_SPANS];
     static char pool[1 << 20];           /* the normalised segments */
-    static size_t noff[NL_MAX_SPANS];
-    static int nlang[NL_MAX_SPANS], score[NL_MAX_SPANS], kinds[NL_MAX_SPANS];
+    static size_t noff[NL_SPANS];
+    static int nlang[NL_SPANS], score[NL_SPANS], kinds[NL_SPANS];
     static char seg[65536], nbuf[65536];
     const unsigned char *s = (const unsigned char *)text;
     size_t n = strlen(text), used = 0;
-    int ns = nl_sentences(s, n, sp, NL_MAX_SPANS), nseg = 0, num = CYP_LANG_CY, total = 0;
+    int ns = nl_segment_spans(s, n, sp, NL_MAX_SPANS), nseg = 0, num = CYP_LANG_CY, total = 0;
     for (int k = 0; k < ns && nseg < max_segs; k++) {
-        size_t a = sp[k].start, e = sp[k].dend;
-        while (a < e && nl_ws(s[a])) a++;
-        while (e > a && nl_ws(s[e - 1])) e--;
-        if (e == a) continue;
+        size_t a = sp[k].start, e = sp[k].end;
         size_t L = e - a; if (L >= sizeof(seg) - 2) L = sizeof(seg) - 2;
         memcpy(seg, s + a, L); seg[L] = 0;
         if ((sp[k].kind == CYP_BOUNDARY_LINE || sp[k].kind == CYP_BOUNDARY_PARAGRAPH) &&
@@ -1821,9 +1859,9 @@ int cyp_text_to_ids_lang(CyPhonemizer *p, const char *text, int lang,
     if (!p || !text || !out) return -1;
     if (lang < CYP_LANG_AUTO || lang > CYP_LANG_EN) return -1;
     /* The segments' phones joined by SPACE -- mirrors BangorG2P.text_to_ids. */
-    static CypSegment segs[NL_MAX_SPANS];
+    static CypSegment segs[NL_SPANS];
     static int32_t flat[8192], joined[8192];
-    int nseg = segments_flat(p, text, lang, segs, NL_MAX_SPANS, flat, (int)(sizeof(flat) / sizeof(flat[0])));
+    int nseg = segments_flat(p, text, lang, segs, NL_SPANS, flat, (int)(sizeof(flat) / sizeof(flat[0])));
     if (nseg < 0) return -1;
     int fn = 0;
     for (int k = 0; k < nseg; k++) {
@@ -1836,6 +1874,125 @@ int cyp_text_to_ids_lang(CyPhonemizer *p, const char *text, int lang,
 }
 int cyp_text_to_ids(CyPhonemizer *p, const char *text, int32_t *out, int max_out) {
     return cyp_text_to_ids_lang(p, text, CYP_LANG_AUTO, out, max_out);
+}
+
+/* ---- source spans and word marks (word highlighting; mirrors bangor_g2p.segment_spans,
+ * word_marks, word_starts) ---- */
+
+int cyp_segment_spans(CyPhonemizer *p, const char *text, int lang, int *src_start, int *src_end,
+                      int max_segs) {
+    if (!p || !text || !src_start || !src_end || max_segs <= 0) return -1;
+    if (lang < CYP_LANG_AUTO || lang > CYP_LANG_EN) return -1;
+    static NlSpan sp[NL_SPANS];
+    int ns = nl_segment_spans((const unsigned char *)text, strlen(text), sp, NL_MAX_SPANS);
+    if (ns > max_segs) return -1;
+    for (int k = 0; k < ns; k++) { src_start[k] = (int)sp[k].start; src_end[k] = (int)sp[k].end; }
+    return ns;
+}
+/* Phone-words in one segment's interleaved ids: none in an empty [BOS,PAD,EOS], else one more
+ * than its WORD_SEPs (bangor_g2p._phone_words). The token just before EOS never starts a word, so
+ * a chunk cut just after a WORD_SEP (CySynth.chunk's [..., PAD, 3, EOS]) counts only the words it
+ * holds. */
+static int ids_phone_words(const int32_t *ids, int n) {
+    if (n <= 3) return 0;
+    int w = 1;
+    for (int i = 2; i < n - 2; i++) w += ids[i] == SPACE;
+    return w;
+}
+int cyp_word_starts(const int32_t *ids, int n_ids, int *starts, int max_starts) {
+    if (!ids || n_ids < 0 || max_starts < 0 || (max_starts > 0 && !starts)) return -1;
+    if (n_ids <= 3) return 0;
+    if (max_starts < 1) return -1;
+    int w = 0;
+    starts[w++] = 1;                                   /* the PAD after BOS */
+    for (int i = 2; i < n_ids - 2; i++)
+        if (ids[i] == SPACE) {
+            if (w >= max_starts) return -1;
+            starts[w++] = i + 1;                       /* the PAD after the WORD_SEP */
+        }
+    return w;
+}
+/* Whitespace between source words is str.isspace() (Python's \s, cyp__cp_is_space) at s; *len is
+ * the code point's byte length. A malformed byte decodes as itself (0x85, 0xA0 ...) and is never
+ * whitespace. */
+static int src_is_space(const unsigned char *s, int *len) {
+    long cp; *len = nl_utf8_next(s, &cp);
+    return (*len > 1 || cp < 0x80) && cyp__cp_is_space(cp);
+}
+/* Prefix counting, per segment: the source words are the runs between str.isspace() characters
+ * (Python's \S+) inside the segment's span; word i's count K(i) is the phone-words of
+ * cyp_text_to_ids_lang(span[:end of word i], the segment's phone_lang), clamped to [K(i-1), W]
+ * with W the segment's own count, and word i is marked at ordinal K(i-1) iff K(i) > K(i-1). A
+ * word that adds no spoken word (a lone dash, a dropped bullet, a word the clamp swallows) gets no
+ * mark. Phonemising the prefix, not the word alone, keeps every context effect -- numbers read as
+ * several words, acronym runs, brand splits, heteronyms -- exactly as the segment has them.
+ *
+ * The prefix is a WINDOW (WM_WINDOW = H, bangor_g2p._WM_WINDOW): from word 2H on, word i adds
+ * count(words c..i) - count(words c..i-1) with c = (i/H - 1)*H, so it is counted with H to 2H-1
+ * words of left context and both counts share the same left edge. Under 2H words the window is
+ * the whole prefix and K is exact. Phonemising the whole prefix made a segment cost O(words x
+ * bytes): 800 words of prose with lowercase sentence starts (one segment: a sentence ends only
+ * before an upper-case letter, a digit or a quote) took 465 ms, 1,600 words 1.26 s. The window
+ * keeps it linear. */
+enum { WM_WINDOW = 16 };
+static int wm_count(CyPhonemizer *p, const unsigned char *s, size_t from, size_t to, int lang,
+                    char *buf, int32_t *ids, int max_ids) {
+    memcpy(buf, s + from, to - from); buf[to - from] = 0;
+    int n = cyp_text_to_ids_lang(p, buf, lang, ids, max_ids);
+    return n < 0 ? -1 : ids_phone_words(ids, n);
+}
+int cyp_word_marks(CyPhonemizer *p, const char *text, int lang, CypWordMark *marks, int max_marks) {
+    if (!p || !text || max_marks < 0 || (max_marks > 0 && !marks)) return -1;
+    if (lang < CYP_LANG_AUTO || lang > CYP_LANG_EN) return -1;
+    /* cyp_segments' flat buffer holds 8192 phones; interleaving adds one PAD per phone and
+     * BOS, PAD, EOS per segment. The prefix calls below reuse every static buffer the segment
+     * pass used, so what this needs from it is copied out first. */
+    enum { WM_IDS = 2 * 8192 + 3 * NL_SPANS, WM_PREFIX_IDS = 2 * 8192 + 3 };
+    static CypSegment segs[NL_SPANS];
+    static int32_t ids[WM_IDS], pids[WM_PREFIX_IDS];
+    static int words[NL_SPANS], plang[NL_SPANS];
+    static NlSpan sp[NL_SPANS];
+    static char prefix[65536];
+    int nseg = cyp_segments(p, text, lang, segs, NL_SPANS, ids, WM_IDS);
+    if (nseg < 0) return -1;
+    for (int k = 0; k < nseg; k++) {
+        words[k] = ids_phone_words(ids + segs[k].start, segs[k].count);
+        plang[k] = segs[k].phone_lang;
+    }
+    const unsigned char *s = (const unsigned char *)text;
+    if (nl_segment_spans(s, strlen(text), sp, NL_MAX_SPANS) != nseg) return -1;   /* same walk */
+    int m = 0;
+    for (int k = 0; k < nseg; k++) {
+        size_t a = sp[k].start, e = sp[k].end, i = a;
+        if (e - a >= sizeof(prefix)) return -1;
+        size_t from = a, last_end = a, starts[WM_WINDOW];   /* starts: the last H words' starts */
+        int prev = 0, len, w = 0, est = 0, before = 0;      /* before: count(from .. word w-1) */
+        while (i < e && prev < words[k]) {             /* at W no later word can add one */
+            while (i < e && src_is_space(s + i, &len)) i += (size_t)len;
+            if (i >= e) break;
+            size_t ws = i;
+            while (i < e && !src_is_space(s + i, &len)) i += (size_t)len;
+            if (i > e) i = e;
+            if (w >= 2 * WM_WINDOW && w % WM_WINDOW == 0) {  /* slide: count from word w - H */
+                from = starts[w % WM_WINDOW];
+                before = wm_count(p, s, from, last_end, plang[k], prefix, pids, WM_PREFIX_IDS);
+                if (before < 0) return -1;
+            }
+            starts[w % WM_WINDOW] = ws;
+            int now = wm_count(p, s, from, i, plang[k], prefix, pids, WM_PREFIX_IDS);
+            if (now < 0) return -1;
+            est += now - before; before = now;
+            int K = est < words[k] ? est : words[k];
+            if (K > prev) {
+                if (m >= max_marks) return -1;
+                marks[m].seg = k; marks[m].word = prev; marks[m].src_start = (int)ws; marks[m].src_end = (int)i;
+                m++;
+                prev = K;
+            }
+            last_end = i; w++;
+        }
+    }
+    return m;
 }
 
 /* ---- author-supplied pronunciation (mirrors bangor_g2p.tokens_from_phones) ---- */

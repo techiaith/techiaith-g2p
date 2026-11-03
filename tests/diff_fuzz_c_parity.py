@@ -3,6 +3,7 @@
 Proves byte-identical phoneme IDs across a large, diverse corpus that the fixed
 golden/LTS/normalize suites do NOT cover — the real guard against Risk #1
 (phoneme drift between train-time Python and on-device C). Run in BOTH english modes.
+Where the ids agree, the word-highlighting layer (segment spans and word marks) must agree too.
 
     python3 tests/diff_fuzz_c_parity.py [N]
 
@@ -253,6 +254,14 @@ def build_corpus(n: int, seed: int = 1234) -> list[str]:
     return corpus[:n] if n < len(corpus) else corpus
 
 
+def marks_py(ref: BangorG2P, t: str):
+    """Word highlighting, Python side: segment_spans + word_marks with the code-point offsets
+    turned into the UTF-8 byte offsets the C ABI returns."""
+    b = lambda i: len(t[:i].encode("utf-8"))
+    return ([(b(a), b(e)) for a, e in ref.segment_spans(t)],
+            [(m.seg, m.word, b(m.start), b(m.end)) for m in ref.word_marks(t)])
+
+
 def run_mode(mode: str, corpus: list[str]) -> list[tuple]:
     ref = BangorG2P(english_mode=mode)
     lib = CyPhonemizer(english_mode=mode)
@@ -270,6 +279,19 @@ def run_mode(mode: str, corpus: list[str]) -> list[tuple]:
             c = ("CERR", type(e).__name__)
         if r != c:
             mism.append((t, r, c))
+            continue
+        # cyp_segment_spans / cyp_word_marks: word marks phonemise every prefix of every
+        # segment, so they reach inputs the whole-text comparison above never sees
+        try:
+            r = marks_py(ref, t)
+        except Exception as e:
+            r = ("PYERR", type(e).__name__)
+        try:
+            c = (lib.segment_spans(t), lib.word_marks(t))
+        except Exception as e:
+            c = ("CERR", type(e).__name__)
+        if r != c:
+            mism.append((t, ("marks",) + tuple(r), ("marks",) + tuple(c)))
     return mism
 
 

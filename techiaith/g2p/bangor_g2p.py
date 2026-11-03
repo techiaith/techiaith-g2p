@@ -95,6 +95,14 @@ class Segment(NamedTuple):
     phone_lang: str      # the language its phones were routed to
 
 
+class WordMark(NamedTuple):
+    """Where one source word's speech starts (BangorG2P.word_marks; C CypWordMark)."""
+    seg: int             # index into segments(text, lang=lang)
+    word: int            # phone-word ordinal in that segment: its ids from word_starts(seg.ids)[word]
+    start: int           # the source word's span in text, code points, end exclusive
+    end: int             #   (C: UTF-8 bytes)
+
+
 def _load_lang_prior(path: Path) -> Dict[str, int]:
     table: Dict[str, int] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -112,6 +120,12 @@ _NL_TITLES = frozenset({"dr", "mr", "mrs", "ms"})
 # An interior run of _PUNCT members, for _segment's split. The capturing group keeps
 # the runs in re.split's output so they can be re-attached as lead/trail punctuation.
 _INTERIOR_PUNCT = re.compile("([" + re.escape(_PUNCT) + "]+)")
+# A source word for word_marks: a run between str.isspace() characters (str patterns: Unicode
+# \s, the 29 code points cyp__cp_is_space mirrors), so a no-break space separates words in C too.
+_SOURCE_WORD = re.compile(r"\S+")
+# word_marks' counting window, in source words (C WM_WINDOW): from word 2*_WM_WINDOW on, a word is
+# counted with _WM_WINDOW to 2*_WM_WINDOW - 1 words of left context instead of the whole prefix.
+_WM_WINDOW = 16
 
 # Policy string folded into data_version so any emission-policy change invalidates
 # trained models (see docs/PARITY.md §4). v2 adds punctuation/pause emission (v1
@@ -1347,6 +1361,23 @@ class BangorG2P:
         ids += [pad, eos]
         return ids
 
+    @classmethod
+    def _source_segments(cls, text: str) -> List[Tuple[int, int, str]]:
+        """[(a, e, boundary)]: the raw source span of each segment, in segments' order -- each
+        _split_sentences span up to its delimiter end with the ASCII whitespace trimmed, empty
+        spans dropped (so a segment index is not a sentence index). One walk shared by segments,
+        segment_spans and word_marks, as nl_segment_spans is in C."""
+        out = []
+        for start, _end, dend, kind in cls._split_sentences(text):
+            a, e = start, dend
+            while a < e and text[a] in _NL_WS:
+                a += 1
+            while e > a and text[e - 1] in _NL_WS:
+                e -= 1
+            if e > a:
+                out.append((a, e, kind))
+        return out
+
     def segments(self, text: str, on_oov: str = "lts",
                  lang: Optional[str] = None) -> List[Segment]:
         """The utterance as rendering units (docs/text-structure-programme.md §3.1).
@@ -1359,10 +1390,8 @@ class BangorG2P:
         segment and insert BOUNDARY_GAP_MS[boundary] of silence between them; text_to_ids is the
         concatenation, so a whole-text caller and a per-segment caller agree by construction."""
         raw: List[Tuple[str, str]] = []
-        for start, end, dend, kind in self._split_sentences(text):
-            seg = text[start:dend].strip(_NL_WS)      # with its own terminal punctuation
-            if not seg:
-                continue
+        for a, e, kind in self._source_segments(text):
+            seg = text[a:e]                           # with its own terminal punctuation
             if kind in ("line", "paragraph") and seg[-1] not in _NO_FULL_STOP_AFTER:
                 seg += "."
             raw.append((seg, kind))
@@ -1397,6 +1426,83 @@ class BangorG2P:
                 toks.append(WORD_SEP)
             toks.extend(seg.tokens)
         return self.phonemes_to_ids(toks)
+
+    # --- source spans and word marks (word highlighting; C cyp_segment_spans, cyp_word_marks,
+    # cyp_word_starts). Offsets here are code points into text; C's are UTF-8 bytes. ---
+    def segment_spans(self, text: str, lang: Optional[str] = None) -> List[Tuple[int, int]]:
+        """[(start, end)]: the source span of each segment, parallel to segments(text, lang=lang)
+        -- same order, same count. The sentence or line with the whitespace around it trimmed,
+        before a heading's full stop is appended. The spans do not depend on `lang` (it is only
+        checked), so nothing is normalised. Consumers raise a sentence event over this span at
+        the first sample of the segment's audio."""
+        if lang not in (None, "cy", "en"):
+            raise ValueError(f"lang {lang!r} is not supported; use 'cy' or 'en'")
+        return [(a, e) for a, e, _kind in self._source_segments(text)]
+
+    def word_marks(self, text: str, lang: Optional[str] = None) -> List[WordMark]:
+        """One WordMark per source word that starts a new spoken word in its segment.
+
+        A source word is a whitespace-delimited run inside a segment's span. One source word can
+        be several spoken words ("£9.50", "BBC", "chromebook", an emoji) or none (a lone dash,
+        a dropped bullet), and a word phonemised alone is often not phonemised as it is in
+        context, so the mapping counts prefixes: word i's count K(i) is the phone-words of
+        text_to_ids(span up to the end of word i, lang=segment.phone_lang), clamped to
+        [K(i-1), W] with W the segment's own count; word i is marked at ordinal K(i-1) iff
+        K(i) > K(i-1). Marks are therefore strictly increasing in `word` within a segment and
+        never reach W. The clamp keeps an inconsistent count (K at the last word != W: dense
+        dates and times, all-caps text) in order, at worst leaving a word unmarked.
+
+        The prefix is a window (_WM_WINDOW = H words): from word 2H on, word i adds
+        count(words c..i) - count(words c..i-1) with c = (i // H - 1) * H, so it is counted with H
+        to 2H-1 words of left context and both counts share the same left edge; under 2H words K is
+        the whole-prefix count. Counting whole prefixes cost O(words x length) per segment, and
+        lowercase-start prose is a single segment however long. One text_to_ids per source word
+        (plus one per H words), each on at most 2H words: linear in the text.
+        With per-id model durations d[] for the segment's ids, mark m's speech starts at frame
+        sum(d[0 : word_starts(segments[m.seg].ids)[m.word]])."""
+        marks: List[WordMark] = []
+        segs = self.segments(text, lang=lang)
+        for si, (seg, (a, e, _kind)) in enumerate(zip(segs, self._source_segments(text))):
+            total, prev = self._phone_words(seg.ids), 0
+            count = lambda x, y: self._phone_words(self.text_to_ids(text[x:y], lang=seg.phone_lang))
+            start, last_end, starts = a, a, []
+            est = before = 0                         # before: count(start .. end of word w-1)
+            for w, m in enumerate(_SOURCE_WORD.finditer(text, a, e)):
+                if prev >= total:                    # no later word can add a spoken word
+                    break
+                if w >= 2 * _WM_WINDOW and w % _WM_WINDOW == 0:   # slide: count from word w - H
+                    start = starts[w - _WM_WINDOW]
+                    before = count(start, last_end)
+                starts.append(m.start())
+                now = count(start, m.end())
+                est += now - before
+                before = now
+                k = min(est, total)
+                if k > prev:
+                    marks.append(WordMark(si, prev, m.start(), m.end()))
+                    prev = k
+                last_end = m.end()
+        return marks
+
+    def word_starts(self, ids: List[int]) -> List[int]:
+        """The id index at which each phone-word of ONE segment's interleaved ids begins: 1 (the
+        PAD after BOS) for word 0, then the index just after each WORD_SEP. A WORD_SEP directly
+        before EOS starts nothing, so a piece cut just after a WORD_SEP (a segment over the model's
+        id cap, chunked at word boundaries: [..., PAD, WORD_SEP, EOS]) counts only its own words
+        and the ordinals carry across the pieces -- except after a hard split inside one word,
+        where the next piece's first phone-word continues the last one. Empty for an empty
+        segment [BOS, PAD, EOS]."""
+        if len(ids) <= 3:
+            return []
+        sep = self.id_map[WORD_SEP][0]
+        return [1] + [i + 1 for i in range(2, len(ids) - 2) if ids[i] == sep]
+
+    def _phone_words(self, ids: List[int]) -> int:
+        """Phone-words in one segment's interleaved ids: len(word_starts(ids))."""
+        if len(ids) <= 3:
+            return 0
+        sep = self.id_map[WORD_SEP][0]
+        return 1 + sum(1 for t in ids[2:len(ids) - 2] if t == sep)
 
     # --- integrity ---
     def _compute_data_version(self, id_map_raw: str) -> str:

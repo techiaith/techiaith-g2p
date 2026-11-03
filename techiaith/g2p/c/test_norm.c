@@ -7,7 +7,7 @@
 #include <string.h>
 
 /* Rows scripts/emit_c_data.py writes; a short corpus is a failure, not a pass. */
-enum { N_NORM_ROWS = 2072, N_NORM_EN_ROWS = 2244 };
+enum { N_NORM_ROWS = 2152, N_NORM_EN_ROWS = 2324 };
 
 static int run_corpus(const char *core, const char *file, int lang, int expected) {
     char path[4096];
